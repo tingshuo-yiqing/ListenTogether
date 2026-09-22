@@ -17,13 +17,14 @@ ListenApplication 持有 RoomClient；页面通过 StateFlow 观察 UiState，�
 有效身份触发 Service/Controller 绑定；页面销毁释放 Controller，正在播放的 Service 可继续。
 房主控制调用 command；成员播放按钮只改变本机跟听状态。退出调用 leave。
 
-## 界面结构（2026-09-21 Material 3 重构）
-- CenterAlignedTopAppBar：入房页应用名；房间页房间码+角色副标题+复制邀请码（新 Clipboard API）。
-- 状态横幅：圆点颜色随 ConnectionStatus（绿=Ready、橙=Reconnecting、红=Expired），重连中附"立即重试"按钮。
-- 正在播放卡片：ElevatedCard + 曲名 + 进度拖动（房主可用）+ 64dp 圆形播放/暂停按钮。
+## 界面结构（2026-09-21 Material 3 重构；2026-09-22 交互修补）
+- CenterAlignedTopAppBar：入房页应用名；房间页房间码+角色副标题+复制邀请码（新 Clipboard API），复制成功弹 Snackbar“邀请码已复制”。
+- 状态横幅：圆点颜色随 ConnectionStatus（绿=Ready、橙=Reconnecting、红=Expired），重连中附"立即重试"按钮；Expired 附"退出房间"快捷按钮（状态机操作闭环，无需滚动到页面底部）。
+- 正在播放卡片：ElevatedCard + 曲名 + 进度拖动（房主可用）+ 64dp 圆形播放/暂停按钮；滑块被禁用时在时间行下方说明原因（"连接未就绪"或"跟听模式，进度由房主控制"）。
 - 成员列表：首字母头像（在线/离线双色）、房主徽标、在线状态点。
 - 歌单：Card 列表，当前曲目 primaryContainer 高亮，仅房主可点选。
 - JoinInput 状态类持有表单输入；进程重建丢失表单可接受（地址从偏好重新预填）。
+- 软键盘适配：内容区加 imePadding（IME 弹出时输入框与按钮不被顶出视野），点空白处 clearFocus 收起键盘——真机实测该设备 ESC 事件无法关闭输入法（2026-09-22，PHQ110）。
 - 进度拖动采用"乐观预览 + 快照确认"：松手后滑条与时间标签停在目标位置（pendingSeek），不回跳到旧进度；
   收到 version 更新的快照且位置贴合目标（播放中 ≥ 目标-1.5s、暂停时 |差|≤1.5s）后恢复跟随服务器；
   5 秒未确认清除预览并提示"进度跳转未确认，请重试"，不自动重发。播放服务在 seek/装载后立即上报位置，
@@ -53,3 +54,4 @@ ListenApplication 持有 RoomClient；页面通过 StateFlow 观察 UiState，�
 ## 变更记录
 2026-09-21：基于现有单机版本建档；上述下一阶段能力尚未实现。
 2026-09-21：Material 3（Google 风格）界面重构完成——状态机展示、复制邀请码、立即重试入口已落地；亮/暗两套主题与播放回归在 PHQ110 截图/实测通过。
+2026-09-22：交互修补四项——IME 内边距+点空白收键盘、复制 Snackbar 反馈、Expired 快捷退出、滑块禁用原因说明；时间格式化支持 h:mm:ss（1 小时以上，FormatTimeTest 4 项覆盖；单测总计 36 项）。RoomClient 调用与行为约定不变；真机视觉抽查并入下一次真机批次。

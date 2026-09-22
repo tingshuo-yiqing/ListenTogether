@@ -34,7 +34,7 @@ npm.cmd start
 ## Android Studio 与真机联调
 
 1. 用 Android Studio 打开 D:\ListenTogether\android，选择 JDK 17，安装 SDK 35，并等待 Gradle 同步。
-2. USB 调试连接真机，或启动 Android 模拟器，运行 app。
+2. 用 USB 调试连接真机（USB 口/线不稳时见下方"无线连接真机"），或启动 Android 模拟器，运行 app。
 3. APP 首页填写服务器根地址，不要添加 /api：
    - 模拟器访问本机：http://10.0.2.2:3000。
    - 同一 Wi-Fi 的真机：http://电脑局域网IP:3000；Windows 防火墙仅对私人网络/测试设备放行 3000。
@@ -42,12 +42,36 @@ npm.cmd start
 4. 输入昵称创建房间，将 8 位邀请码告诉好友；好友填写同一服务器地址后加入。
 5. 房主选歌并点击播放。成员可本地暂停、恢复跟听。退出房间会释放身份。
 
+### 无线连接真机（免 USB）
+
+USB 口或线材不稳、设备在 device/offline 间抖动时，改用无线 adb。项目靠 `adb reverse` 把手机的 `127.0.0.1:3000` 转发到电脑后端，**这一机制在无线下同样有效**（已实测：手机端 `curl http://127.0.0.1:3000/health` 返回 `{"ok":true}`），APP 内地址仍填 `http://127.0.0.1:3000`，无需改后端 `HOST` 或防火墙。
+
+```powershell
+# 首次：手机「开发者选项 → 无线调试 → 使用配对码配对设备」，记下弹窗的配对端口与 6 位配对码
+cd D:\ListenTogether
+.\scripts\connect-wireless.ps1 -PairHost 192.168.43.15:37303 -PairCode 935250 `
+  -DebugHost 192.168.43.15:41959 -Install
+
+# 之后每次重连（配对记录已在，可加 -Port 3000,3001 供故障注入、-Verify 做端到端自检）
+.\scripts\connect-wireless.ps1 -DebugHost 192.168.43.15:41959 -Port 3000,3001 -Install -Verify
+```
+
+- `-DebugHost` 是「无线调试」页的「IP 地址和端口」，**与配对弹窗里的端口是两个不同端口**，且每次重开无线调试都会变。
+- 脚本在一个进程内完成 connect + `adb reverse`（+ 安装启动 APK），并打印后续脚本该用的 `-Serial`。**必须一次做完**：adb server 一重启，无线连接和 reverse 会同时失效。
+- 手机重启、切换 Wi-Fi、长时间息屏或 adb server 重启后，重跑脚本即可恢复。
+- 首次配对若报 `protocol fault`，说明这台电脑此前已配对过，直接 `adb connect` 通常就能连上，不必反复重试。
+- 若 `adb devices` 同时出现 `IP:端口` 与 `adb-...._adb-tls-connect._tcp` 两条（同一台手机的两个 transport），给 `install-debug.ps1` 传 `-Serial` 指定其一。
+
+更多无线专属陷阱见 [开发陷阱清单](docs/development-pitfalls.md) 2.7。
+
 也可在 android 目录运行：
 ```powershell
 .\gradlew.bat :app:assembleDebug :app:testDebugUnitTest
 ```
 成功后的 APK 路径为 android/app/build/outputs/apk/debug/app-debug.apk。
 没有 Android SDK 或依赖下载失败时不会生成 APK；详见 docs/verification.md。
+
+项目级检查可在根目录运行：scripts/check.ps1 默认依次执行后端、安卓和 Markdown 链接检查，也可使用 -Scope server、-Scope android 或 -Scope docs 单独执行。
 
 ## 行为约定
 
@@ -63,6 +87,8 @@ npm.cmd start
 
 ## 文档
 
+- [系统架构设计](docs/architecture.md)：分层结构、模块职责与依赖、端到端数据流。
+- [下一批推进与验收执行单](docs/execution-plan.md)：任务顺序、开始条件、操作与证据要求。
 - [下一阶段开发方案](docs/next-development-plan.md)：先完善双机同步和稳定性，再部署云端。
 - [模块文档索引](docs/modules/README.md)：10 个模块的职责、流程、接口、异常、验收和注释清单。
 - [开发与注释规范](docs/development-standards.md)：文档、核心注释与回归测试共同作为交付要求。
@@ -91,6 +117,6 @@ cd D:\ListenTogether
 .\scripts\install-debug.ps1
 ```
 
-APP 地址填写 `http://127.0.0.1:3000`，创建房间后可播放两段测试音。
+APP 地址填写 `http://127.0.0.1:3000`，创建房间后可播放 30 秒、45 秒与 40 分钟三段测试音。
 多台设备时用 `-Serial 设备序列号` 指定，每台手机都要做 USB 转发。
 详情见 `docs/usb-testing.md`；可用 `node scripts/smoke-test.mjs` 检查正在运行的演示后端。

@@ -9,10 +9,14 @@
  *   GET /__fault/status          当前模式与连接数
  *   GET /__fault/delay?ms=200    之后所有 HTTP 响应与 WS 帧双向延迟 ms 毫秒
  *   GET /__fault/cut?seconds=10  立即切断全部连接，并在窗口内拒绝新连接
- *   GET /__fault/clear           清除延迟与断线窗口
+ *   GET /__fault/audio401?seconds=30  窗口内仅音频路由返回 401（模拟令牌失效/鉴权故障），
+ *                                     HTTP/WS 其余路径保持透传；到期自动恢复
+ *   GET /__fault/clear           清除延迟、断线窗口与音频 401 注入
  *
  * 实现说明：
  * - HTTP 逐请求转发（方法/头/体），响应整体延迟；Range 音频请求同样生效。
+ * - 音频 401 注入按路径匹配 /api/rooms/:code/audio/:id，响应体与后端 Fault(401) 一致
+ *   （{message}），状态码保持 401，供 PlaybackFailure 分类与诊断取证（M3-AUTH）。
  * - WebSocket 升级用原始 TCP 隧道逐字节透传，不解析业务帧之外的内容；
  *   注入延迟时按 RFC6455 帧边界缓冲完整帧后延迟转发（不修改掩码与负载）。
  * - 断线窗口内直接销毁新连接，模拟服务器不可达；窗口结束自动恢复透传。
@@ -33,13 +37,17 @@ if (target.protocol !== 'http:') { console.error('target 仅支持 http'); exit(
 
 let delayMs = 0
 let cuttingUntil = 0
+let audio401Until = 0
 let tunnels = new Set()
-let stats = { http: 0, ws: 0, cutDropped: 0 }
+let stats = { http: 0, ws: 0, cutDropped: 0, audio401: 0 }
 
 const log = (event, detail = '') =>
   console.log(`[${new Date().toISOString()}] ${event}${detail ? ' ' + detail : ''}`)
 
 const cutting = () => Date.now() < cuttingUntil
+const audio401 = () => Date.now() < audio401Until
+// 音频路由（含查询串之前的部分）；401 注入只作用于该路径，其余 HTTP/WS 保持透传。
+const AUDIO_PATH = /^\/api\/rooms\/[^/]+\/audio\/[^/?]+/
 
 function respond(res, code, body) {
   res.writeHead(code, { 'content-type': 'application/json; charset=utf-8' })
@@ -50,7 +58,7 @@ const server = http.createServer((req, res) => {
   if (req.url.startsWith('/__fault/')) {
     const url = new URL(req.url, 'http://admin')
     if (url.pathname === '/__fault/status') {
-      return respond(res, 200, { delayMs, cutting: cutting(), cuttingUntil, tunnels: tunnels.size, stats })
+      return respond(res, 200, { delayMs, cutting: cutting(), audio401: audio401(), audio401Until: audio401Until ? new Date(audio401Until).toISOString() : null, tunnels: tunnels.size, stats })
     }
     if (url.pathname === '/__fault/delay') {
       delayMs = Math.max(0, Math.min(5000, Number(url.searchParams.get('ms') ?? 0) || 0))
@@ -65,15 +73,27 @@ const server = http.createServer((req, res) => {
       log('fault-cut', `seconds=${seconds}`)
       return respond(res, 200, { cuttingUntil: new Date(cuttingUntil).toISOString() })
     }
+    if (url.pathname === '/__fault/audio401') {
+      const seconds = Math.max(1, Math.min(600, Number(url.searchParams.get('seconds') ?? 30) || 30))
+      audio401Until = Date.now() + seconds * 1000
+      log('fault-audio401', `seconds=${seconds} until=${new Date(audio401Until).toISOString()}`)
+      return respond(res, 200, { audio401Until: new Date(audio401Until).toISOString() })
+    }
     if (url.pathname === '/__fault/clear') {
-      delayMs = 0; cuttingUntil = 0
+      delayMs = 0; cuttingUntil = 0; audio401Until = 0
       log('fault-clear')
-      return respond(res, 200, { delayMs, cutting: false })
+      return respond(res, 200, { delayMs, cutting: false, audio401: false })
     }
     return respond(res, 404, { error: 'unknown admin path' })
   }
 
   if (cutting()) { stats.cutDropped++; req.socket.destroy(); return }
+  // M3-AUTH：窗口内仅音频路由返回 401，响应体与后端 Fault(401) 一致，其余请求原样转发。
+  if (audio401() && AUDIO_PATH.test(req.url.split('?')[0])) {
+    stats.audio401++
+    log('fault-audio401-hit', `${req.method} ${req.url}`)
+    return respond(res, 401, { message: '成员令牌无效，请重新加入' })
+  }
   stats.http++
   const started = Date.now()
   const forward = () => {

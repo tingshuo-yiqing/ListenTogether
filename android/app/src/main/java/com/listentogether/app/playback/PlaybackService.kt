@@ -39,6 +39,7 @@ class PlaybackService : MediaSessionService() {
     /** 创建时绑定的会话代次；清理动作只允许作用于相同代次。 */
     private var boundGeneration: Int? = null
     private var lastBuffering = false
+    private var localPauseLogged = false
 
     override fun onCreate() {
         super.onCreate()
@@ -96,7 +97,17 @@ class PlaybackService : MediaSessionService() {
             player.stop(); player.clearMediaItems(); stopSelf(); return
         }
         // 状态未就绪（连接中/校时中/重连中）或本地暂停时只暂停；恢复必须来自明确播放动作。
-        if (!client.synchronized || room == null || ui.locallyPaused) { player.pause(); return }
+        if (!client.synchronized || room == null || ui.locallyPaused) {
+            player.pause()
+            // 本机暂停会被快照周期反复触发；只在进入暂停沿记录一条，保证 JSONL 能看到焦点/耳机中断的时刻。
+            if (ui.locallyPaused && !localPauseLogged) {
+                localPauseLogged = true
+                diag.playback(credentials.code, player.currentMediaItem?.mediaId, room?.version ?: -1L,
+                    player.currentPosition, player.currentPosition, 0, false, true, "localPause", client.serverNow)
+            }
+            return
+        }
+        localPauseLogged = false
         val track = ui.tracks.find { it.id == room.trackId }
         if (track == null) { player.pause(); return }
         http.setDefaultRequestProperties(mapOf("Authorization" to "Bearer " + credentials.token))

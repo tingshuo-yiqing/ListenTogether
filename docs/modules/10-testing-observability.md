@@ -2,10 +2,13 @@
 
 ## 当前资产与覆盖
 server/test：7项测试组，覆盖房间权限/生命周期、HTTP/Range、15个WS、真实MP3解析和坏清单。
-android/app/src/test：6项 ClockEstimator、6项 RoomClient 会话竞态（假传输层）、5项同步数学、4项本地播放策略、4项播放失败提示分类（PlaybackFailure），共25项。
-诊断：debug 构建 DiagnosticsLog 已实现（连接/校时/播放事件 JSONL，20MB/60分钟上限，不含令牌）；等待双机实测采集。
+android/app/src/test：6项 ClockEstimator、7项 RoomClient 会话竞态（假传输层）、5项同步数学、4项本地播放策略、4项播放失败提示分类（PlaybackFailure），共26项。
+诊断：debug 构建 DiagnosticsLog 已实现（连接/校时/播放事件 JSONL，单文件约20MB、实例创建起60分钟窗口，超限停止写入，不自动轮转，不含令牌）；等待双机实测采集。
 smoke-test.mjs：对运行后端执行HTTP、两个WS及真实Range验证。
-fault-proxy.mjs / fault-proxy-selftest.mjs：故障注入代理与其自测（延迟、断线、恢复）。
+check-doc-links.mjs：扫描项目 Markdown 的本地链接；跳过外部 URL、锚点和不参与文档验证的构建/依赖目录。
+fault-proxy.mjs / fault-proxy-selftest.mjs：故障注入代理与其自测（延迟、断线、恢复、音频 401 注入，共 10 项）。
+load15.mjs：15 路负载脚本（playback 码率模型 + throughput 容量模型），见 [LOAD-15 记录](../test-results/2026-09-22-load15/README.md)。
+demo 曲库：demo-soft/demo-high/demo-long（40 分钟）+ demo-load（11 分钟 192kbps，负载与码率模型专用）。
 PHQ110真机报告覆盖单机出声、暂停/跳转/切歌、后台、短时息屏和媒体会话暂停。完整证据见 [记录](../playback-test-2026-09-21.md)。
 2026-09-22 补：通知栏播放/暂停按钮真实点击（点后服务端 command pause）与 Dozing 息屏播放，见 [M3 记录](../test-results/2026-09-22-m3-notification-device/README.md)。
 2026-09-22 补：蓝牙耳机断开→本机暂停、重连不自动恢复、明确播放后追赶；音频 404（改名长测试音并拖到未缓冲区）→ERROR_CODE_IO_BAD_HTTP_STATUS→暂停→恢复文件后手动重试续播，见 [M3 记录](../test-results/2026-09-22-m3-bluetooth-audio-error/README.md)。新增 demo-long（40 分钟）测试音用于长时播放与错误注入。
@@ -28,7 +31,8 @@ PHQ110真机报告覆盖单机出声、暂停/跳转/切歌、后台、短时息
 
 ## 故障与长期场景
 本地代理按场景注入延迟和连接切断，避免修改系统级网络影响用户其他应用。
-2026-09-21 起可用：scripts/fault-proxy.mjs（管理路径 /__fault/{status,delay,cut,clear}，WS 按帧边界延迟、断线窗口拒绝新连接）；scripts/fault-proxy-selftest.mjs 提供无手机自测（6 项）。
+2026-09-21 起可用：scripts/fault-proxy.mjs（管理路径 /__fault/{status,delay,cut,clear}，WS 按帧边界延迟、断线窗口拒绝新连接）；scripts/fault-proxy-selftest.mjs 提供无手机自测。
+2026-09-22 起可用：/__fault/audio401?seconds=N 仅对音频路由注入 401（其余透传，到期/清除恢复），真机 401 路径验证见 [M3-AUTH 记录](../test-results/2026-09-22-m3-auth/README.md)；load15.mjs 完成 15 路 10 分钟本地记录见 [LOAD-15 记录](../test-results/2026-09-22-load15/README.md)。
 已在真机验证：300ms 延迟注入（RTT 307→644ms，保持 Ready）、12 秒受控断线（EOF 检测≈1s→退避被拒→窗口后自动恢复）、超 60 秒离线触发服务端宽限到期→404→Expired。证据见 [故障注入记录](../test-results/2026-09-21-m1-fault-proxy/README.md)。
 注意：USB 重插会清空 adb reverse 规则，测试前需重新执行。
 场景：RTT稳定约200ms/500ms、10秒/30秒断线、超过服务端60秒宽限、服务器重启、401/404、缺失MP3。
@@ -47,3 +51,6 @@ Debug诊断JSONL已实现（限60分钟或20MB，用户主动测试时采集）�
 阶段门槛以 [主计划](../next-development-plan.md) 为准。代码改动必须有与缺陷相对应的回归，不添加只复述实现的测试。
 测试核心辅助函数注释故障注入时钟、采样误差、为什么需要等待条件，以及finally清理测试成员/连接/进程。
 2026-09-21：建档；ClockEstimator 单测、debug 诊断日志与会话竞态假传输层回归已实现；第二设备、双机采集和故障矩阵尚待执行。
+
+## 2026-09-22 推进补充
+待执行工作包与报告模板见 [执行单](../execution-plan.md)。60 分钟播放前需替换为至少 65 分钟测试音，并全程外部采样，覆盖诊断窗口截止后的时段；不能中途重启拼接连续播放结论。15 路音频脚本与音频 401 注入已交付（见上），云端 TLS/公网重测与 60 分钟息屏记录仍待执行。

@@ -104,6 +104,20 @@ class RoomClientSessionTest {
         return sockets.sockets.size - 1
     }
 
+    /** 打开 Socket 并应答一次校时（服务器快 2 秒），推进到 Ready。 */
+    private fun reachReady(index: Int) {
+        sockets.open(index)
+        val sent = JSONObject(sockets.sockets[index].sent.single()).getLong("clientTimeMs")
+        sockets.listeners[index].onMessage(sockets.sockets[index],
+            JSONObject().put("type", "clock").put("clientTimeMs", sent).put("serverTimeMs", sent + 2_000).toString())
+    }
+
+    /** 构造房间快照消息；members 为空、trackId 为 null 即可满足 RoomState.parse。 */
+    private fun stateMessage(version: Long, playing: Boolean = true): String =
+        JSONObject().put("type", "state").put("hostId", "member-NEWROOM1").put("members", JSONArray())
+            .put("trackId", JSONObject.NULL).put("playing", playing).put("positionMs", 1_000)
+            .put("timestampMs", 1).put("version", version).toString()
+
     @Test
     fun joinReachesReadyAfterClockReply() = runTest(dispatcher) {
         val client = newClient()
@@ -132,6 +146,28 @@ class RoomClientSessionTest {
         assertEquals(mono + 2_000, client.serverNow)
         assertTrue(client.synchronized)
         // 结束常驻校时循环，避免虚拟时钟上留下无限 delay 任务。
+        client.leave()
+    }
+
+    @Test
+    fun clockSyncKeepsLocalPauseMessage() = runTest(dispatcher) {
+        val client = newClient()
+        val index = joinRoom(client, "http://a.local", null)
+        sockets.open(index)
+        val sent1 = JSONObject(sockets.sockets[index].sent.single()).getLong("clientTimeMs")
+        sockets.listeners[index].onMessage(sockets.sockets[index],
+            JSONObject().put("type", "clock").put("clientTimeMs", sent1).put("serverTimeMs", sent1 + 2_000).toString())
+        assertEquals(ConnectionStatus.Ready, client.state.value.status)
+
+        // 焦点丢失/音频 401 的本机暂停提示必须留在横幅上，不被 5 秒周期校时覆盖成“已同步”。
+        client.pauseLocally("登录已失效，请退出房间后重新加入")
+        advanceTimeBy(5_001)
+        val sent2 = JSONObject(sockets.sockets[index].sent.last()).getLong("clientTimeMs")
+        sockets.listeners[index].onMessage(sockets.sockets[index],
+            JSONObject().put("type", "clock").put("clientTimeMs", sent2).put("serverTimeMs", sent2 + 2_000).toString())
+        assertEquals(ConnectionStatus.Ready, client.state.value.status)
+        assertTrue(client.state.value.locallyPaused)
+        assertEquals("登录已失效，请退出房间后重新加入", client.state.value.message)
         client.leave()
     }
 
@@ -230,5 +266,123 @@ class RoomClientSessionTest {
         mono = 17_000
         advanceTimeBy(5_001)
         assertTrue(sockets.sockets[index].canceled)
+    }
+
+    @Test
+    fun olderSnapshotVersionIgnored() = runTest(dispatcher) {
+        val client = newClient()
+        val index = joinRoom(client, "http://a.local", null)
+        reachReady(index)
+
+        sockets.listeners[index].onMessage(sockets.sockets[index], stateMessage(5))
+        assertEquals(5L, client.state.value.room?.version)
+
+        // 更旧的快照（乱序/迟到）被丢弃，房间状态不被回滚。
+        sockets.listeners[index].onMessage(sockets.sockets[index], stateMessage(3, playing = false))
+        assertEquals(5L, client.state.value.room?.version)
+        assertTrue(client.state.value.room!!.playing)
+
+        // 同版本快照用于定期校准，仍然应用。
+        sockets.listeners[index].onMessage(sockets.sockets[index], stateMessage(5, playing = false))
+        assertEquals(false, client.state.value.room!!.playing)
+        client.leave()
+    }
+
+    @Test
+    fun duplicateJoinIgnoredWhileSessionActive() = runTest(dispatcher) {
+        val client = newClient()
+        joinRoom(client, "http://a.local", "AAAAAAAA")
+
+        // 会话活跃（含 Connecting/Ready）时重复 join 直接忽略：不发请求、不建 Socket。
+        client.join("http://b.local", "Tester", "BBBBBBBB")
+        assertEquals(2, httpRequests.size)
+        assertEquals(1, sockets.sockets.size)
+        client.leave()
+    }
+
+    @Test
+    fun retryOnlyWorksWhileReconnecting() = runTest(dispatcher) {
+        val client = newClient()
+        val index = joinRoom(client, "http://a.local", "AAAAAAAA")
+        reachReady(index)
+
+        // Ready 状态手动重试无效：不新建连接、不改变状态。
+        client.retry()
+        assertEquals(1, sockets.sockets.size)
+        assertEquals(ConnectionStatus.Ready, client.state.value.status)
+
+        sockets.fail(index, 500)
+        assertEquals(ConnectionStatus.Reconnecting, client.state.value.status)
+
+        // 重连等待期立即重试：清退避、马上重开连接，不等 1 秒延迟。
+        client.retry()
+        assertEquals(ConnectionStatus.Connecting, client.state.value.status)
+        assertEquals(2, sockets.sockets.size)
+        client.leave()
+    }
+
+    @Test
+    fun reconnectBackoffDoubles() = runTest(dispatcher) {
+        val client = newClient()
+        val index = joinRoom(client, "http://a.local", "AAAAAAAA")
+        sockets.open(index)
+
+        // 退避序列 1/2/4 秒：每次非终态失败后才按指数间隔重开连接。
+        sockets.fail(index, 500)
+        advanceTimeBy(1_001)
+        assertEquals(2, sockets.sockets.size)
+
+        sockets.fail(1, 500)
+        advanceTimeBy(1_500)
+        assertEquals(2, sockets.sockets.size) // 2 秒窗口未到，不得提前重连
+        advanceTimeBy(600)
+        assertEquals(3, sockets.sockets.size)
+
+        sockets.fail(2, 500)
+        advanceTimeBy(4_001)
+        assertEquals(4, sockets.sockets.size)
+        client.leave()
+    }
+
+    @Test
+    fun closeFrame1000ExpiredOtherwiseReconnecting() = runTest(dispatcher) {
+        // 正常关闭帧（1000）视为终态：服务器主动结束会话，进入 Expired。
+        val client = newClient()
+        val index = joinRoom(client, "http://a.local", "AAAAAAAA")
+        reachReady(index)
+        sockets.listeners[index].onClosed(sockets.sockets[index], 1000, "shutdown")
+        assertEquals(ConnectionStatus.Expired, client.state.value.status)
+        client.leave()
+
+        // 异常关闭码进入重连而不是过期。
+        val other = newClient()
+        val otherIndex = joinRoom(other, "http://a.local", "CCCCCCCC")
+        sockets.open(otherIndex)
+        sockets.listeners[otherIndex].onClosed(sockets.sockets[otherIndex], 1001, "abnormal")
+        assertEquals(ConnectionStatus.Reconnecting, other.state.value.status)
+        other.leave()
+    }
+
+    @Test
+    fun reconnectMustRecalibrateBeforeReady() = runTest(dispatcher) {
+        val client = newClient()
+        val index = joinRoom(client, "http://a.local", "AAAAAAAA")
+        reachReady(index)
+        assertTrue(client.synchronized)
+
+        // 断线清空校时样本：重连成功后仍停在 Calibrating，不得沿用旧偏移直接 Ready。
+        sockets.fail(index, null)
+        assertEquals(ConnectionStatus.Reconnecting, client.state.value.status)
+        advanceTimeBy(1_001)
+        val newIndex = sockets.sockets.size - 1
+        sockets.open(newIndex)
+        assertEquals(ConnectionStatus.Calibrating, client.state.value.status)
+
+        // 新连接重新发起校时，应答后才允许回 Ready 跟随播放。
+        val sent = JSONObject(sockets.sockets[newIndex].sent.single()).getLong("clientTimeMs")
+        sockets.listeners[newIndex].onMessage(sockets.sockets[newIndex],
+            JSONObject().put("type", "clock").put("clientTimeMs", sent).put("serverTimeMs", sent + 2_000).toString())
+        assertEquals(ConnectionStatus.Ready, client.state.value.status)
+        client.leave()
     }
 }

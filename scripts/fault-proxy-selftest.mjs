@@ -37,7 +37,7 @@ function openRoomWs(code, token) {
     const timer = setTimeout(() => { ws.terminate(); reject(new Error('WS 快照超时')) }, 8000)
     ws.on('message', text => {
       const json = JSON.parse(text)
-      if (json.type === 'state') { clearTimeout(timer); resolve(ws) }
+      if (json.type === 'state') { clearTimeout(timer); resolve({ ws, trackId: json.trackId }) }
     })
     ws.on('error', err => { clearTimeout(timer); reject(err) })
   })
@@ -73,7 +73,8 @@ try {
 
   // C WS 经代理建立并收到快照
   const room = await createRoom()
-  const ws = await openRoomWs(room.code, room.token)
+  const { ws, trackId } = await openRoomWs(room.code, room.token)
+  if (!trackId) throw new Error('快照缺少 trackId，无法测音频路由')
   console.log('PASS C WS 经代理建立，收到房间快照 code=' + room.code)
 
   // D 断线窗口：现有连接被切，窗口内新连接被拒，窗口后自动恢复
@@ -93,8 +94,47 @@ try {
   oldClosed ? console.log('PASS D2 断线窗口切断既有连接') : fail('D2 既有连接未被切断')
   await new Promise(r => setTimeout(r, 2500))
   const ws2 = await openRoomWs(room.code, room.token)
-  ws2.close()
+  ws2.ws.close()
   console.log('PASS D3 窗口结束后自动恢复，可重新建立 WS')
+
+  // 音频请求工具：带鉴权与 Range 的正常音频读取
+  const audioGet = async () => {
+    const res = await fetch(`${BASE}/api/rooms/${room.code}/audio/${trackId}`, {
+      headers: { Authorization: 'Bearer ' + room.token, Range: 'bytes=0-99' }, signal: AbortSignal.timeout(5000)
+    })
+    const json = await res.json().catch(() => null) // 音频 401 时为 JSON 错误体；正常时为 null
+    if (res.body) await res.arrayBuffer().catch(() => {})
+    return { status: res.status, json }
+  }
+  const baseline = await audioGet()
+  if (baseline.status !== 206 && baseline.status !== 200) fail(`E0 注入前音频请求异常 ${baseline.status}`)
+  else console.log(`PASS E0 注入前音频读取 ${baseline.status}`)
+
+  // E 音频 401：窗口内仅音频路由返回 401，HTTP 其余路径与 WS 保持可用
+  await admin('/__fault/audio401?seconds=2')
+  const e1 = await audioGet()
+  const e1ok = e1.status === 401 && e1.json && e1.json.message === '成员令牌无效，请重新加入'
+  e1ok ? console.log('PASS E1 音频请求被注入 401，响应体与后端 Fault(401) 一致') : fail(`E1 音频 401 注入异常 ${e1.status} ${JSON.stringify(e1.json)}`)
+  const e2 = await health()
+  const e3 = await fetch(BASE + '/api/rooms', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ nickname: 'ProxySelfTest401' }), signal: AbortSignal.timeout(5000) })
+  await e3.arrayBuffer()
+  const e4 = await openRoomWs(room.code, room.token)
+  e2.ok && e3.status === 200 && e4.ws ? console.log(`PASS E2 注入窗口内 health=${e2.ok} 新建房间=${e3.status} 既有房间 WS 可用`) : fail(`E2 非音频路径受牵连 health=${e2.ok} create=${e3.status}`)
+  e4.ws.close()
+
+  // F 窗口到期自动恢复（seconds=2，等待后不再需要 clear）
+  await new Promise(r => setTimeout(r, 2300))
+  const f = await audioGet()
+  f.status === 206 || f.status === 200 ? console.log('PASS F 音频 401 窗口到期自动恢复') : fail(`F 窗口到期后仍被注入 ${f.status}`)
+
+  // G clear 立即清除注入
+  await admin('/__fault/audio401?seconds=60')
+  const g1 = await audioGet()
+  if (g1.status !== 401) fail('G1 重新注入未生效')
+  await admin('/__fault/clear')
+  const g2 = await audioGet()
+  g2.status === 206 || g2.status === 200 ? console.log('PASS G clear 立即恢复音频透传') : fail(`G clear 后仍被注入 ${g2.status}`)
+
   console.log('PASS 故障注入代理自测全部通过')
 } catch (err) {
   fail(err.message)

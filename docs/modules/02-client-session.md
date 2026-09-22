@@ -22,7 +22,7 @@ generation 区分加入/退出，WS 回调同时检查连接引用，防止旧�
 
 ## 可替换边界与假传输层回归（2026-09-21 实现）
 - 存储（ConnectionStore）、诊断（Diagnostics 接口）、单调时钟、HTTP（HttpTransport）、WebSocket（WebSocket.Factory）、协程调度器均为构造注入；生产统一由 RoomClient.create 装配 OkHttp/SharedPreferences/Main.immediate，JVM 单测注入假实现，不访问公网。
-- RoomClientSessionTest 六场景全过：入房→校时→Ready、旧 Socket 迟到快照/断线回调被丢弃、退出 DELETE 带旧地址旧令牌、重连退避后重开且退出不再重连、401→Expired→重新加入、校时 15 秒超时主动断开。
+- RoomClientSessionTest 十三场景全过（2026-09-22 新增 6 项）：入房→校时→Ready、旧 Socket 迟到快照/断线回调被丢弃、退出 DELETE 带旧地址旧令牌、重连退避后重开且退出不再重连、401→Expired→重新加入、校时 15 秒超时主动断开、周期校时不覆盖本机暂停提示；新增：旧版本快照被忽略（同版本仍应用）、会话活跃期重复 join 被忽略、retry 仅在 Reconnecting 生效且立即重连、重连退避 1/2/4 秒指数递增、关闭帧 1000→Expired 而异常码→Reconnecting、断线重连后必须重新校时才回 Ready。
 - 已知差异：测试调度器把嵌套 launch（如 join 内部 leave 的 DELETE）排入事件循环，在 join 协程结束后执行；生产 Main.immediate 会立即发起。两者都满足“新会话不等待旧退出响应”。
 
 ## 资源回收与不变量

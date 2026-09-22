@@ -190,7 +190,9 @@ class RoomClient internal constructor(
                                         serverOffsetMs = offset
                                         pendingClock = null
                                         val room = state.value.room
-                                        mutable.value = state.value.copy(status = ConnectionStatus.Ready, message = "已同步")
+                                        // 周期校时不覆盖本机暂停/中断提示；恢复播放后由 setPlaying 重写“已同步”。
+                                        mutable.value = state.value.copy(status = ConnectionStatus.Ready,
+                                            message = if (state.value.locallyPaused) state.value.message else "已同步")
                                         diag.sync(context.credentials.code, room?.trackId, room?.version ?: -1L, sample.rttMs, offset)
                                         onState?.invoke()
                                     }

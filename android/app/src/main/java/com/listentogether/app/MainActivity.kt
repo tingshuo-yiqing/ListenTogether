@@ -10,6 +10,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -52,6 +54,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -69,8 +73,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -117,12 +123,19 @@ class MainActivity : ComponentActivity() {
                     onDispose { future?.let { MediaController.releaseFuture(it) } }
                 }
                 val input = remember { JoinInput().apply { address = client.baseUrl } }
+                // 软键盘弹出时给内容区加 IME 内边距，避免输入框与按钮被顶出视野；
+                // 点空白处收起键盘（实测该设备 ESC 无法关闭输入法）。
+                val focusManager = LocalFocusManager.current
+                val snackbar = remember { SnackbarHostState() }
                 Scaffold(
-                    topBar = { TopBar(ui) },
+                    topBar = { TopBar(ui, snackbar) },
+                    snackbarHost = { SnackbarHost(snackbar) },
                     containerColor = MaterialTheme.colorScheme.background
                 ) { padding ->
                     LazyColumn(
-                        Modifier.fillMaxSize().padding(padding),
+                        Modifier.fillMaxSize().padding(padding).imePadding().pointerInput(Unit) {
+                            detectTapGestures { focusManager.clearFocus() }
+                        },
                         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
@@ -134,10 +147,10 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** 顶栏：入房页显示应用名；房间页显示房间码与角色，附复制邀请码入口。 */
+/** 顶栏：入房页显示应用名；房间页显示房间码与角色，附复制邀请码入口（复制后有 Snackbar 反馈）。 */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TopBar(ui: UiState) {
+private fun TopBar(ui: UiState, snackbar: SnackbarHostState) {
     CenterAlignedTopAppBar(
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.background),
         title = {
@@ -161,6 +174,7 @@ private fun TopBar(ui: UiState) {
                 IconButton(onClick = {
                     scope.launch {
                         clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("code", ui.credentials.code)))
+                        snackbar.showSnackbar("邀请码已复制")
                     }
                 }) {
                     Icon(Icons.Filled.ContentCopy, contentDescription = "复制邀请码", tint = MaterialTheme.colorScheme.primary)
@@ -177,7 +191,7 @@ private fun LazyListScope.Content(client: RoomClient, ui: UiState, input: JoinIn
     if (ui.credentials == null) {
         JoinForm(client, ui, input)
     } else {
-        item { StatusBanner(ui, onRetry = { client.retry() }) }
+        item { StatusBanner(ui, onRetry = { client.retry() }, onLeave = { client.leave() }) }
         item { NowPlayingCard(client, ui, input, track) }
         MembersSection(room)
         PlaylistSection(client, ui, room?.trackId)
@@ -262,12 +276,13 @@ private fun LazyListScope.JoinForm(client: RoomClient, ui: UiState, input: JoinI
     item { Text("地址只填服务器根目录，不要带 /api 后缀。", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
 }
 
-/** 连接状态横幅：颜色随状态，重连中附“立即重试”。 */
+/** 连接状态横幅：颜色随状态；重连中附“立即重试”，已过期附“退出房间”形成操作闭环。 */
 @Composable
-private fun StatusBanner(ui: UiState, onRetry: () -> Unit) {
+private fun StatusBanner(ui: UiState, onRetry: () -> Unit, onLeave: () -> Unit) {
     val label = ui.message.ifBlank { statusLabel(ui.status) }
     if (label.isBlank()) return
     val reconnecting = ui.status == ConnectionStatus.Reconnecting
+    val expired = ui.status == ConnectionStatus.Expired
     Surface(
         shape = RoundedCornerShape(14.dp),
         color = when (ui.status) {
@@ -279,7 +294,7 @@ private fun StatusBanner(ui: UiState, onRetry: () -> Unit) {
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = 14.dp, end = if (reconnecting) 4.dp else 14.dp, top = 6.dp, bottom = 6.dp)
+            modifier = Modifier.padding(start = 14.dp, end = if (reconnecting || expired) 4.dp else 14.dp, top = 6.dp, bottom = 6.dp)
         ) {
             Box(
                 Modifier.size(9.dp).clip(CircleShape).background(
@@ -294,6 +309,7 @@ private fun StatusBanner(ui: UiState, onRetry: () -> Unit) {
             Spacer(Modifier.size(10.dp))
             Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
             if (reconnecting) TextButton(onClick = onRetry) { Text("立即重试") }
+            if (expired) TextButton(onClick = onLeave) { Text("退出房间") }
         }
     }
 }
@@ -368,6 +384,14 @@ private fun NowPlayingCard(client: RoomClient, ui: UiState, input: JoinInput, tr
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(formatTime(track?.durationMs ?: 0), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            // 滑块被禁用时说明原因，避免跟听者/断线时误以为界面失灵。
+            if (track != null && !(client.isHost && ui.connected)) {
+                Text(
+                    if (!ui.connected) "连接未就绪，暂不可拖动进度" else "跟听模式，进度由房主控制",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 FilledIconButton(
@@ -470,4 +494,9 @@ private fun statusLabel(status: ConnectionStatus): String = when (status) {
     ConnectionStatus.Expired -> "房间或成员已失效，请退出后重新加入"
 }
 
-private fun formatTime(ms: Long): String = "%d:%02d".format(ms / 60000, ms / 1000 % 60)
+internal fun formatTime(ms: Long): String {
+    val totalSeconds = ms / 1000
+    val h = totalSeconds / 3600
+    return if (h > 0) "%d:%02d:%02d".format(h, totalSeconds / 60 % 60, totalSeconds % 60)
+    else "%d:%02d".format(totalSeconds / 60, totalSeconds % 60)
+}

@@ -1,0 +1,23 @@
+== 1. health ==
+PASS: health={"ok":true}
+== 2. create room ==
+PASS: room=85EA324C created, token length=64
+== 3. catalog ==
+PASS: catalog 200, 5 tracks
+PASS: catalog without token -> 401
+== 4. audio ==
+PASS: full GET -> 200, size=481114
+PASS: Range bytes=0-1023 -> 206 1024, Content-Range: bytes 0-1023/481114
+PASS: suffix Range bytes=-500 -> 206 500
+PASS: open Range bytes=1024- -> 206, 480090 bytes
+PASS: out-of-range -> 416
+PASS: audio without token -> 401
+== 5. websocket ==
+PASS: WS open + sync reply (clock+state): WS-OPEN|WS-MSG type=state {"type":"state","code":"85EA324C","hostId":"8c266b44-0acd-4337-ab76-97e4c45edf0d","members|WS-MSG type=clock {"type":"clock","clientTimeMs":1790088158674,"serverTimeMs":17900
+PASS: WS without token rejected: WS-REJECTED Unexpected server response: 401
+== 6. cleanup ==
+PASS: temporary member left
+== 7. journal (recent 6 lines) ==
+  Sep 22 22:34:40 iZ640bdwb4odxlZ systemd[1]: Started listen-together.service - ListenTogether room server.
+  Sep 22 22:34:40 iZ640bdwb4odxlZ node[19534]: {"level":30,"time":1790087680652,"pid":19534,"hostname":"iZ640bdwb4odxlZ","msg":"Server listening at http://127.0.0.1:3000"}
+RESULT pass=13 fail=0

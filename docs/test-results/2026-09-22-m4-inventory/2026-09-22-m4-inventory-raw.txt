@@ -1,0 +1,87 @@
+
+===== 0. 基本身份 =====
+root
+HOME=/root
+iZ640bdwb4odxlZ
+Linux iZ640bdwb4odxlZ 7.0.0-30-generic #30-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 31 18:22:54 UTC 2026 x86_64 GNU/Linux
+PRETTY_NAME="Ubuntu 26.04.1 LTS"
+NAME="Ubuntu"
+
+===== 1. CPU / 内存 / 磁盘 =====
+2
+model name	: Intel(R) Xeon(R) Platinum
+               total        used        free      shared  buff/cache   available
+Mem:           1.7Gi       434Mi       403Mi       4.0Mi       1.0Gi       1.3Gi
+Swap:             0B          0B          0B
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/vda3        40G  3.7G   34G  10% /
+/dev/vda3        40G  3.7G   34G  10% /
+/dev/vda3      2608144 113447 2494697    5% /
+
+===== 2. Node.js 与目标目录现状 =====
+node 不存在（部署需 Node 24，见 deployment.md 第 1 节）
+drwxr-xr-x 2 root root 4096 Apr 21 02:05 /opt
+/opt/listen-together 不存在（首次部署）
+listen 账号不存在（首次部署需创建）
+
+===== 3. 端口与现有服务（确认 80/443/3000/22 占用） =====
+State  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess                                                  
+LISTEN 0      4096   127.0.0.53%lo:53         0.0.0.0:*    users:(("systemd-resolve",pid=12452,fd=18))             
+LISTEN 0      4096         0.0.0.0:22         0.0.0.0:*    users:(("sshd",pid=15557,fd=3),("systemd",pid=1,fd=127))
+LISTEN 0      128        127.0.0.1:33243      0.0.0.0:*    users:(("code-7debcd0e2a",pid=1724,fd=11))              
+LISTEN 0      4096      127.0.0.54:53         0.0.0.0:*    users:(("systemd-resolve",pid=12452,fd=20))             
+LISTEN 0      4096            [::]:22            [::]:*    users:(("sshd",pid=15557,fd=4),("systemd",pid=1,fd=128))
+  UNIT                        LOAD   ACTIVE SUB     DESCRIPTION
+  aliyun.service              loaded active running Aliyun Assist
+  chrony.service              loaded active running chrony, an NTP client/server
+  cron.service                loaded active running Regular background program processing daemon
+  dbus.service                loaded active running D-Bus System Message Bus
+  getty@tty1.service          loaded active running Getty on tty1
+  ModemManager.service        loaded active running Modem Manager
+  multipathd.service          loaded active running Device-Mapper Multipath Device Controller
+  networkd-dispatcher.service loaded active running Dispatcher daemon for systemd-networkd
+  polkit.service              loaded active running Authorization Manager
+  rsyslog.service             loaded active running System Logging Service
+  serial-getty@ttyS0.service  loaded active running Serial Getty on ttyS0
+  ssh.service                 loaded active running OpenBSD Secure Shell server
+  systemd-journald.service    loaded active running Journal Service
+  systemd-logind.service      loaded active running User Login Management
+  systemd-networkd.service    loaded active running Network Management
+  systemd-resolved.service    loaded active running Network Name Resolution
+  systemd-udevd.service       loaded active running Rule-based Manager for Device Events and Files
+  tuned.service               loaded active running Dynamic System Tuning Daemon
+  udisks2.service             loaded active running Disk Manager
+
+===== 4. SSH 排查（对应 deployment.md 第 0 节） =====
+drwx------ 12 root root 4096 Sep 21 16:16 /root
+drwx------  2 root root 4096 Sep 22 01:07 /root/.ssh
+-rw------- 1 root root 99 Sep 22 22:17 /root/.ssh/authorized_keys
+256 SHA256:05LmNZqMGfgeYR4r02hBoicM/mkbV7sxKW1nj5BHNWI 2917063923@qq.com (ED25519)
+permitrootlogin yes
+pubkeyauthentication yes
+passwordauthentication yes
+authorizedkeysfile .ssh/authorized_keys .ssh/authorized_keys2
+--- auth 日志中最近的拒绝记录（定位 publickey 被拒原因）---
+Sep 22 22:12:34 iZ640bdwb4odxlZ sshd-session[17670]: Accepted publickey for root from 100.104.128.250 port 35090 ssh2: ED25519 SHA256:9hcgkrEkUpFZRL0A/8xOs7MIeThLukOnLMpZYtB/dGE
+Sep 22 22:12:35 iZ640bdwb4odxlZ sshd-session[17702]: Accepted publickey for root from 100.104.128.224 port 50872 ssh2: ED25519 SHA256:9hcgkrEkUpFZRL0A/8xOs7MIeThLukOnLMpZYtB/dGE
+Sep 22 22:12:36 iZ640bdwb4odxlZ sshd-session[17859]: Accepted publickey for root from 100.104.128.224 port 50888 ssh2: ED25519 SHA256:9hcgkrEkUpFZRL0A/8xOs7MIeThLukOnLMpZYtB/dGE
+Sep 22 22:17:46 iZ640bdwb4odxlZ sshd-session[18036]: Accepted publickey for root from 106.224.116.126 port 16394 ssh2: ED25519 SHA256:05LmNZqMGfgeYR4r02hBoicM/mkbV7sxKW1nj5BHNWI
+Sep 22 22:18:04 iZ640bdwb4odxlZ sshd-session[18098]: Accepted publickey for root from 106.224.116.126 port 16416 ssh2: ED25519 SHA256:05LmNZqMGfgeYR4r02hBoicM/mkbV7sxKW1nj5BHNWI
+Sep 22 22:18:06 iZ640bdwb4odxlZ sshd-session[18149]: Accepted publickey for root from 106.224.116.126 port 16420 ssh2: ED25519 SHA256:05LmNZqMGfgeYR4r02hBoicM/mkbV7sxKW1nj5BHNWI
+
+===== 5. nginx / TLS / 域名现状 =====
+nginx 未安装
+certbot 未安装
+无既有证书
+
+===== 6. 出网与防火墙 =====
+egress http code=200 time=1.863605s
+inactive
+Status: inactive
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination         
+
+===== 7. journal 日志占用 =====
+Archived and active journals take up 8M in the file system.
+
+===== 盘点结束（以上全部只读，未修改任何配置） =====

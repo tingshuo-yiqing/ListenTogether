@@ -1,0 +1,14 @@
+PASS: health={"ok":true}
+PASS: room=6E003857 created, token length=64
+PASS: catalog 200, 5 tracks: demo-soft,demo-high,demo-long,demo-hour,demo-load
+PASS: Range 0-1023 -> 206 1024B, content-range=bytes 0-1023/481114
+PASS: suffix -500 -> 206 500B
+PASS: full GET -> 200, 481114B
+PASS: audio without token -> 401
+WS-OPEN
+WS-MSG type=state {"type":"state","code":"6E003857","hostId":"dc34fe16-42bd-475f-b242-2c6c64b13a66
+WS-MSG type=clock {"type":"clock","clientTimeMs":1790088312934,"serverTimeMs":1790088313592}
+WS-MSG type=state {"type":"state","code":"6E003857","hostId":"dc34fe16-42bd-475f-b242-2c6c64b13a66
+PASS: WS handshake + sync reply: WS-OK state,clock
+PASS: temporary member left (cleanup)
+RESULT pass=9 fail=0

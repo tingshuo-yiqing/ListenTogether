@@ -1,6 +1,6 @@
 # 开发陷阱与规避清单
 
-本文记录项目中**实际踩过**的问题（非理论风险），按"现象 → 根因 → 规避"组织。任何新会话开工前应通读一遍；踩到新坑必须回填本文，防止重复犯错。最近更新：2026-09-21。
+本文记录项目中**实际踩过**的问题（非理论风险），按"现象 → 根因 → 规避"组织。任何新会话开工前应通读一遍；踩到新坑必须回填本文，防止重复犯错。最近更新：2026-09-22（新增 2.7 无线 adb 通道实测打通；第 7 节为 Windows 路径/cmd 静默失效/曲库启动时加载等四条）。
 
 ## 1. Windows / PowerShell
 
@@ -18,6 +18,15 @@
 - 现象：Select-String / -match 中文常量匹配不到已经乱码的 uiautomator dump。
 - 规避：命令里**避免直接写中文**。匹配 UI 文本用 Unicode 码点拼接（`-join @([char]0x7ACB,...)`），或改用控件类名（EditText/Button/SeekBar）+ bounds 定位。
 
+### 1.4 PowerShell 5.1 不支持三元/空合并等 7+ 运算符（2026-09-22）
+- 现象：脚本里写 `($x -eq "" ? "a" : "b")`，PSParser 报"表达式中包含意外的标记'?'"，整个脚本无法解析。
+- 规避：项目脚本以 Windows PowerShell 5.1 为准——禁用 `?:`、`??`、`??=`、`?.`，条件取值改用 if 语句；新脚本交付前跑一次 PSParser 静态检查（见 m3long-sample.ps1 本轮修复）。
+
+### 1.5 check.ps1 的 Stop 偏好遇外层输出重定向 + Gradle 锁残留（2026-09-22）
+- 现象：外层 `& check.ps1 *>&1 | Out-File` 跑到 Gradle 阶段即抛**空消息异常**（"EXCEPTION: "后无内容）；之后单独重跑 gradle 报 `fileHashes.lock (拒绝访问)`，构建无法启动。
+- 根因：①脚本内 `$ErrorActionPreference='Stop'`，PS 5.1 下外层流重定向把原生命令的 **stderr 进度行**（Gradle Daemon 启动提示）转成终止错误；②被中断的运行残留 Gradle Daemon，持有 `~/.gradle/caches/8.11.1/fileHashes/fileHashes.lock`。
+- 规避：跑 check.ps1 **不做外层流合并重定向**；需要落盘证据时按阶段直跑、stdout/stderr 分文件输出（另注意 PS 5.1 的 `2>` 产出 UTF-16，读取前先 iconv）；锁冲突先 `gradlew --stop`（tasklist 确认无 java 进程）再重跑，**残留锁文件本身无需删除**。
+
 ## 2. 真机与 adb
 
 ### 2.1 USB 重插清空 adb reverse
@@ -28,9 +37,41 @@
 ### 2.2 adb 设备间歇性消失
 - 现象：`adb devices` 空列表，`wait-for-device` 无限阻塞。
 - 规避：用 `kill-server; start-server` + 有限次轮询（每次 4-5 秒），**不要用 wait-for-device 卡死命令**；连续失败再请用户检查授权弹窗/USB 用途选择框。
+- 加重形态（2026-09-22）：设备在 device/offline/消失间**秒级抖动**，换口换线只能换来几秒稳定窗口，交互式测试（入房→注入→观察横幅）必然中途断；且每次 USB 重插清空 adb reverse（2.1），手机侧连接也会中断污染证据。规避：这种形态下不要硬跑交互测试——改用**无线调试**（手机开发者选项 → 无线调试 → 使用配对码配对，`adb pair <ip>:<port>` 输入 6 位配对码后 `adb connect`），物理链路不再参与；配对前先把手机与电脑接入同一 Wi-Fi。具体流程、实测数据与无线专属陷阱见 2.7。
 
 ### 2.3 后端是内存态
 - 规避：后端重启 = 房间与成员全部丢失，WS 握手 404 → 客户端正确进入 Expired。测试脚本不能假设重启后房间还在；重新入房前先把旧会话 leave 干净。
+
+### 2.4 OPPO 息屏挂起后台网络 + 60 秒成员清扫（2026-09-22）
+- 现象：息屏数分钟后客户端 WS 报 EOF，1 秒退避重连即收到 404 → Expired，远快于 60 秒宽限期的预期。
+- 根因：息屏期间 OPPO 挂起后台网络，服务端 15 秒心跳收不到 pong 先 terminate；成员离线满 60 秒被 `store.tick()` 清扫。客户端半开 TCP 迟迟才发现，重连时房间/成员已清。
+- 规避：这是设计内失效路径，不要按 bug 排查。需要长时后台测试时先 `svc power stayon true`（USB 供电下保持亮屏）或加电池优化白名单；分析"快速 Expired"时先核对服务端心跳/清扫时间线，再核对客户端 EOF 时刻。
+
+### 2.5 OPPO 前台应用会查杀后台播放进程（2026-09-22）
+- 现象：其他媒体应用到前台约 33 秒后，本应用进程被系统杀掉（连媒体前台服务通知都没豁免）。
+- 规避：做焦点抢占类测试时，启动对方应用后 **2-3 秒内把本应用切回前台**（音乐应用会在后台继续播放并保持焦点占用）；每步采样前先 `pidof` 确认进程未变，防止把"新进程"数据当连续会话分析。此约束同样影响 M3-LONG 息屏方案，需提前申请电池优化白名单并实测。
+
+### 2.6 OPPO 音乐全屏广告与进程重启后的空昵称（2026-09-22）
+- 现象：切回本应用后 dump 到的是"入房页"，误判为状态被重置；实际一次是 OPPO 音乐全屏广告盖在前台，一次是进程真的被杀重启。
+- 根因：ConnectionStore 按设计只持久化 baseUrl，令牌与昵称不落盘；进程重启后地址预填、昵称为空，带空昵称点创建房间会校验失败且后续坐标点击全部落空。
+- 规避：每次冷启动/重启后**先 dump EditText 实际 text 再操作**；昵称必须重填（keyevent 123+DEL 清空校验，见 3.2）。uiautomator 报 idle 超时时 dump 是旧快照（见 3.1），先看 `mCurrentFocus` 属于哪个应用。
+
+### 2.7 无线 adb 通道（2026-09-22 实测打通）
+- 结论：**无线 adb 下 `adb reverse` 完全可用**，本项目"APP 填 127.0.0.1:3000 + reverse 转发"的架构不需要任何改动。实测（PHQ110 / Android 14，调试端口 192.168.43.15:41959）：`reverse --list` 同时列出 3000 与 3001；**设备端 `curl http://127.0.0.1:3000/health` 返回 `{"ok":true}`**（设备自带 `/system/bin/curl`，可用于隧道自检）。
+- 一把梭：`.\scripts\connect-wireless.ps1 -DebugHost <IP:调试端口> [-Port 3000,3001] [-PairHost <IP:配对端口> -PairCode <6位码>] [-Install] [-Verify]`，一个进程内完成配对→连接→reverse→（可选）装 APK→（可选）设备端自检，并打印后续脚本该用的 `-Serial`。
+- 坑 A：**配对端口 ≠ 调试端口**。配对用弹窗里的端口，connect/reverse 用"无线调试"页"IP 地址和端口"的端口；混填必失败。且**每次重开无线调试两个端口都会变**，脚本参数不能长期写死。
+- 坑 B：**配对码有时效**，弹窗关闭即失效。本次首次 `adb pair` 报 `error: protocol fault (couldn't read status message)`，但同一台手机 `adb connect` 仍直接成功并显示 `device`（该电脑此前配对过，记录在 `%USERPROFILE%\.android`）。规避：**配对失败先直接 connect 试一次，不要反复重试配对**。
+- 坑 C：**adb server 一重启，无线连接就没了，且不会自动恢复**。实测前一条命令刚 `connect` 成功，下一条命令开头即 `* daemon not running; starting now`，随后所有操作报 `device not found`。规避：**connect、reverse 与后续操作必须在同一条命令/同一进程内连续完成**。本机沙箱环境下每次工具调用都会回收 adb server（用户自己的终端窗口不受影响），这正是 connect-wireless.ps1 把四步写在一个脚本里的原因。
+- 坑 D：**同一台手机会出现两个 transport**。配对成功后 mDNS 追加一条 `adb-xxxxxxx-XXXX._adb-tls-connect._tcp`，与 `IP:端口` 并存且指向同一台手机。`install-debug.ps1` 不带 `-Serial` 时按条数判断设备数，会报"连接了多台设备"；传 `-Serial` 即可，或 `adb disconnect` 掉多余那条。
+- 坑 E：**`powershell -File` 传数组参数会被拼接**。`-Port 3000,3001` 实测变成 `30003001`，报 `adb.exe: error: cannot bind listener: bad port number '30003001'`。规避：connect-wireless.ps1 的 `-Port` 声明为字符串并按 `[,\s]+` 拆分；新脚本凡"逗号分隔多值"参数都按这条处理。数组参数只在交互式 PowerShell 提示符下直接调用时才正常。**同类**：`-PairCode 028776` 在提示符下会被当成数字丢掉前导 0（实际发出去的配对码变成 `28776`，配对必然失败），必须写成 `-PairCode '028776'`；connect-wireless.ps1 已做"不足 6 位左侧补 0"的兜底，但不要依赖它。
+- 坑 F：无线链路**同样受 2.4 约束**——adb 不掉线，但 OPPO 息屏照旧挂起业务网络；长时测试仍需 `svc power stayon true` 或电池优化白名单。
+- 存储注意事项：无线调试的配对记录保存在电脑 `%USERPROFILE%\.android`（adbkey），不要提交或外传；手机侧可在"无线调试 → 已配对设备"里撤销。
+
+### 2.8 OPPO 息屏冻结无线 adbd：TCP 端口在、握手永远 offline（2026-09-22 实测）
+- 现象：无线连接成功后数分钟内 `adb devices` 变 `offline`；重连报 10060/10061；端口扫描发现旧端口仍 TCP 可达，但 `adb connect` 永远停在 `offline`（20:46 连通 → 20:50 失联 → 21:01 后 30000-60000 扫描逐步无监听）。ICMP ping 一直通，说明 Wi-Fi 未断。当晚端口轮换实录：41559 → 39731 → 46888 →（人工亮屏）41145。
+- 根因：与 2.4 同源——OPPO 息屏挂起后台。TCP 监听队列由内核维持（`accept` 还能完成），但 adbd 用户态进程被冻结，TLS/adb 握手无响应 → 永远 offline。端口还会随 adbd 重启轮换（41559 → 39731 → 46888），不能写死。
+- 规避：**先让手机亮屏再连**（亮屏后 adbd 解冻，旧端口可能直接恢复，也可能换新端口，先扫一遍）。跑复验类长测试时脚本开头就要 `svc power stayon true`（m3-auth-recheck.sh 在链路建立后才设，链路建立前这一窗口同样会被冻结——亮屏是人工步骤，脚本救不了）。无 USB 备份通道时无法远程唤醒，只能人工解锁。
+- 排查顺序：ping 不通 = Wi-Fi 断；ping 通 + 扫描无端口 = adbd 未监听（无线调试被关）或全冻结；端口通但 offline = adbd 冻结，亮屏重试。
 
 ## 3. UI 自动化（uiautomator/input）
 
@@ -89,3 +130,33 @@
 - **APK hash 每轮记入 verification.md**，历史 hash 保留，用于回溯"哪版引入的问题"。
 - **故障注入先于修复**：构造失败场景再改代码，避免无依据的大规模重写（计划第 3 节原则）。
 - **短测试音会掩盖音频错误与长时问题**：本机环回下 ExoPlayer 会一次性缓冲 30/45 秒的 demo 测试音（buffered position = 文件全长），停后端或改名不再产生 HTTP 请求，401/404/断流错误无法触发；30 分钟息屏/60 分钟播放也需要足够长的测试音。规避：已加入 `demo-media/demo-long.mp3`（40 分钟 220Hz 单声道 32kbps，ffmpeg 合成），音频错误注入时改名该文件并拖动进度到未缓冲区域；新增长测试音后必须**重启演示后端**才会加载进曲库。
+- **压测/多成员脚本成员必须持有 WS**（2026-09-22）：服务端按"离线 60 秒"清扫无连接成员（store.ts:72 tick），空房间 300 秒后删除。纯 HTTP 的"假成员"先 401（成员被清）后 404（房间被删），表现为"前 60 秒成功之后全挂"。规避：load15.mjs 每名成员建立 WS 并保持（ws 客户端自动回 pong）；判断失败时间线时先对照服务端清扫/删除阈值。
+- **长时任务要脱离工具进程树**（2026-09-22）：终端工具超时会连带杀死 Start-Process 启动的子进程（10 分钟负载第一次启动即被杀）。规避：用 `Invoke-CimMethod Win32_Process Create`（WMI 创建，非工具子进程）+ 输出重定向到文件，再轮询日志取结果。
+
+## 7. 开发工具环境（2026-09-22）
+
+- 现象：本次 exec_command 与 apply_patch 在读取项目文件前报 helper_unknown_error: setup refresh had errors。
+- 定位：失败发生于 Windows 沙箱辅助进程初始化，尚未执行项目命令；具体环境根因未确认，不能归因于源码或 PowerShell 编码。
+- 规避：先用最小只读命令确认；本次经工具审批的沙箱外命令可用，随后限定在项目内读取和编辑。不要盲目重装项目依赖；写入后核对 git diff 与文件编码。
+- **Git Bash 外壳 PATH 损坏（2026-09-22 架构梳理时再次遇到）**：shim 脚本报 `dirname: command not found`、`cd: null directory`，随后 `ls/wc/find/cat` 全部 `command not found`，退出码却是 0，容易误判成"文件不存在"。规避：列文件/搜代码一律用 Glob/Grep/Read 专用工具（本次用它完成了全部源码核对）；必须跑脚本时用带绝对路径的解释器，例如 `C:/Users/ting/.workbuddy/binaries/node/versions/22.22.2-3/node.exe scripts/check-doc-links.mjs`，不要把失败输出当成 FS 事实。每条 Bash 命令开头 `export PATH=/usr/bin:/bin:$PATH` 可恢复 coreutils。
+- **Windows 原生程序不识别 Git Bash 的 /d/ 路径（2026-09-22）**：ffmpeg/ffprobe 收到 `/d/ListenTogether/...` 报 `No such file or directory`，而同路径 `ls -l` 明明能看到文件（ls 是 MSYS 程序，会做路径转换）。规避：给 Windows 程序传参用 Windows 风格路径（`D:/ListenTogether/...`）或先 cd 进目录用相对路径；诊断"文件不存在"报错时先想路径转换，不要当成 FS 事实。
+- **`cmd //c` 在 Git Bash 中静默失效（2026-09-22）**：`cmd //c "gradlew.bat ..."` 只打印 cmd 横幅就退出，构建根本没跑，退出码却是 0。规避：构建/Lint 用 PowerShell 工具执行；会话内 PowerShell 工具 stdout 可能不回显，命令末尾重定向到日志文件（`*>&1 | Out-File -Encoding utf8 <路径>; exit $LASTEXITCODE`），以退出码判成败、用 Read 工具读日志。禁止从 Bash 调 powershell.exe（安全策略拦截）。
+- **演示后端曲库是启动时加载（2026-09-22）**：server 的 loadCatalog 只在启动读一次 catalog.json；往 demo-media 加测试音后必须重启演示后端才生效，不要误以为是文件没生成。
+
+## 8. 云端部署（2026-09-22 首次部署实测）
+
+### 8.1 个人音频随 demo-media 整目录误上云
+- 现象：M4 首次部署后检查发现 demo-media 中的个人歌曲（有何不可.mp3）被带上服务器（catalog 未引用、API 不会提供，但违反"个人曲库不自动上传"约定）。
+- 根因：package-deploy.ps1 对 demo-media 整目录 `-Recurse` 复制，任何临时放进该目录的文件都会进包。
+- 规避：打包脚本已改为**按 demo-media/catalog.json 引用过滤**（只拷 catalog.json、README 与被引用的音频）；个人音频不要放进 demo-media，放 media/（不会被打包）。
+
+### 8.2 sha256sum -c 报 "FAILED open or read" ≠ hash 不匹配
+- 现象：校验 Node 二进制时报 `FAILED open or read`，误以为下载损坏。
+- 根因：SHASUMS256.txt 登记的是原始文件名，下载时改名（如存成 node.tar.xz）后 sha256sum -c 按名字找不到文件。
+- 规避：要么保留原始文件名下载，要么直接比对单值：`grep "  <文件名>$" SHASUMS256.txt | awk '{print $1}'` vs `sha256sum <本地文件>`。
+
+### 8.3 `node -e` 模式 process.argv 不含脚本名占位
+- 现象：部署验证脚本里 `node -e '...' "$CODE" "$TOKEN"` 后用 `process.argv.slice(2)` 取参，实际只取到了第二个参数——WS 连到 `ws://…/ws/<token>`，报 404（房间不存在），被误判成"鉴权后的 WS 被拒"。
+- 根因：`node -e` 下 argv = [execPath, ...args]，没有 `script.js` 那一格；`node script.js a b` 才是 argv = [execPath, script, a, b]。
+- 规避：`node -e` 场景取参用 `argv.slice(1)`；排查 WS 404 时先打印实际连接的 URL/房间号，再怀疑鉴权。
+- 同类：PowerShell 传数组参数被拼接（陷阱 2.7 坑 E）同属"参数传递形态差异"，跨 shell 调脚本先验证参数实际到达形态。
