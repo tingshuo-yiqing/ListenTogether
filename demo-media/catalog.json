@@ -1,0 +1,5 @@
+[
+  {"id":"demo-soft","title":"合成测试音 A · 30 秒","file":"demo-soft.mp3"},
+  {"id":"demo-high","title":"合成测试音 B · 45 秒","file":"demo-high.mp3"},
+  {"id":"demo-long","title":"合成长测试音 · 40 分钟","file":"demo-long.mp3"}
+]
