@@ -88,6 +88,15 @@
 - 现象：dump 全是"USB 调试已打开"等系统通知文本。
 - 规避：dump 前用 `dumpsys window` 确认 mCurrentFocus 是本应用；误抓通知栏先 keyevent 4 收起。
 
+### 3.4 Compose 输入框的 adb 自动化（2026-09-22，真机公网 E2E 因此暂停）
+- 现象：入房页自动填地址/昵称连续失败：①dump 节点属性顺序是 **text 在 class 前**，`class="…"[^>]*text="…"` 定位恒空；②地址框有残留默认值时，tap 后光标停在点击处，`KEYCODE_MOVE_END(123)` 在 Compose TextField **无效**，DEL 只删光标前内容——多轮输入后地址框变成"新URL+Host+旧URL"拼接体；③`pm clear` 被 OPPO 拒（SecurityException，shell 无 CLEAR_APP_USER_DATA）；④`run-as … sed -i` 改 `shared_prefs/connection.xml` **静默失败**（before/after 相同，toybox sed -i 在 run-as 下行为待排查）。
+- 规避（恢复 E2E 时照做）：
+  - 定位：先 `grep -o '<node[^>]*>'` 拆节点，再按属性**独立过滤**（先 grep text= 再 grep class=）；字段顺序看源码（2026-09-23 起：创建/加入切换→昵称→邀请码〔仅加入〕→地址→主按钮；旧坐标不可复用）；定位一律在 IME 收起后 dump（IME 会压缩布局使 y 漂移）。
+  - 有残留的输入框**不做 UI 编辑**：改走存储层——ConnectionStore 即 SharedPreferences `connection.xml` 的 `baseUrl` 键。`run-as rm shared_prefs/connection.xml`（删除而非 sed 改写）→ 重启 app 后地址框为空，空框输入无拼接问题；或手机手动输入（最快）。
+  - 播放验证以 `dumpsys media_session` 的 PlaybackState 位置推进为准；FAB content-desc="播放"，点曲目行只选曲不播。
+  - `svc power stayon true` 每次会话开头设置；用户报的无线端口可能是已关闭的配对端口（connect 拒绝 10061 时先看 mDNS transport 是否已在 device 态，配对记录在则无需配对码）。
+- 状态：**未解决**，记录见 [test-results/2026-09-22-m4-public-test](test-results/2026-09-22-m4-public-test/README.md)。
+
 ## 4. Compose / Material3
 
 ### 4.1 API 弃用与签名陷阱
@@ -160,3 +169,16 @@
 - 根因：`node -e` 下 argv = [execPath, ...args]，没有 `script.js` 那一格；`node script.js a b` 才是 argv = [execPath, script, a, b]。
 - 规避：`node -e` 场景取参用 `argv.slice(1)`；排查 WS 404 时先打印实际连接的 URL/房间号，再怀疑鉴权。
 - 同类：PowerShell 传数组参数被拼接（陷阱 2.7 坑 E）同属"参数传递形态差异"，跨 shell 调脚本先验证参数实际到达形态。
+
+
+### 8.4 UI 连接状态不能代表音频播放状态（2026-09-23）
+
+- 现象：401 真机截图中错误文字旁仍是绿色成功点，暂停/错误时卡片固定显示“正在播放”；入房异常写入 message 后首页没有显示位置。
+- 根因：横幅样式仅依赖连接状态，播放器标题写死，入房表单未消费错误信息。
+- 规避：错误反馈覆盖首页与房间页；通过媒体控制器观测播放/缓冲/错误，按 mediaId 隔离旧曲目数据；正常连接摘要与播放错误分别显示。纯状态回归与真机视觉验收分开记录。
+
+### 8.5 “云端入口不可达”实为同机其他负载 OOM 冻结整机（2026-09-23 凌晨实测）
+
+- 现象：真机公网建房 timeout、手机/电脑访问 8.166.126.136:3000 均超时、SSH banner 也超时，当轮记为“云端入口不可达、不归因于 UI”。数小时后复查 TCP/HTTP/SSH 全部恢复正常。
+- 根因：该 ECS 内存仅 1.7Gi。有人在同一台服务器上经 VS Code Remote-SSH 运行了 Cline 等 AI 代理（/root/.vscode-server、/root/.cline 时间戳 23:38-00:21，session-52.scope 22:37 建立且为常驻登录会话），Node 进程（内核 OOM 报告中 comm 名为 "MainThread"——**Node 主线程的 comm 名，后端 node 进程同样如此，不能按名字猜进程**）膨胀至 RSS ~1GB / VSZ ~19.6GB，于 23:57、00:11、01:13 三次触发内核全局 OOM；01:13:30 journald 看门狗超时，说明整机冻结——用户态不参与应答，外部表现即“全端口超时”。listen-together 全程 active、NRestarts=0，从未中断。
+- 规避：①1.7Gi 小机与重负载（VS Code Remote + AI 代理、并发构建）互相排斥，重负载请走本地 + `ssh aliyun` 执行单条命令，不要在服务器上挂常驻会话跑代理；②再遇“云端全端口超时”先 SSH 上去看 `journalctl -k | grep -i oom`、`free -h`，再查 `ls -lat /root`（.vscode-server/.cline 时间戳）与 session 来源，**不要先怀疑 listen-together 或安全组**；③判定“整机冻结”的旁证：TCP 三次握手能完成（内核收）但 HTTP/SSH banner 无响应（用户态冻）；④“服务恢复但原因不明”时核对 systemd NRestarts 与 ActiveEnterTimestamp，区分“服务死了重启”与“服务活着但整机不可达”。

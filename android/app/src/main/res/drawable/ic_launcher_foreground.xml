@@ -1,4 +1,10 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#FFFFFF" android:pathData="M58,28 L58,61 C55,59 51,59 48,60 C42,62 39,67 41,72 C43,77 49,78 55,76 C60,74 63,70 63,65 L63,40 L76,37 L76,27 Z"/>
-    <path android:fillColor="#C8C2FF" android:pathData="M29,42 L33,42 L33,62 L29,62 Z M22,47 L26,47 L26,57 L22,57 Z"/>
+    <!-- 双音符（连梁八分音符）：两支音符并排 = "一起听"；右侧淡蓝声波示意声音发出。
+         内容整体位于自适应图标安全区（中心 66dp）内。 -->
+    <path android:fillColor="#FFFFFF" android:pathData="M40,38 L74,32 L74,39 L40,45 Z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M40,42 L44,42 L44,70 L40,70 Z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M70,36 L74,36 L74,64 L70,64 Z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M30,70 a6.5,5 0 1,0 13,0 a6.5,5 0 1,0 -13,0 Z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M60,64 a6.5,5 0 1,0 13,0 a6.5,5 0 1,0 -13,0 Z"/>
+    <path android:strokeColor="#AECBFA" android:strokeWidth="3" android:strokeLineCap="round" android:fillColor="#00000000" android:pathData="M79,58 a7,7 0 0,1 0,16"/>
 </vector>

@@ -20,3 +20,5 @@ fault-proxy*.log
 load15-*.log
 # 个人音频不入库（demo-media 仅保留 catalog.json 引用的合成测试音）
 demo-media/有何不可.mp3
+# Kotlin 编译会话缓存
+android/.kotlin/

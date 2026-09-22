@@ -2,7 +2,7 @@
 
 ## 当前资产与覆盖
 server/test：7项测试组，覆盖房间权限/生命周期、HTTP/Range、15个WS、真实MP3解析和坏清单。
-android/app/src/test：6项 ClockEstimator、7项 RoomClient 会话竞态（假传输层）、5项同步数学、4项本地播放策略、4项播放失败提示分类（PlaybackFailure），共26项。
+android/app/src/test：6 项 ClockEstimator、13 项 RoomClient 会话竞态、5 项同步数学、4 项本地播放策略、4 项播放失败分类、4 项时间格式化、6 项 UI 状态语义回归，共 42 项（2026-09-23）。
 诊断：debug 构建 DiagnosticsLog 已实现（连接/校时/播放事件 JSONL，单文件约20MB、实例创建起60分钟窗口，超限停止写入，不自动轮转，不含令牌）；等待双机实测采集。
 smoke-test.mjs：对运行后端执行HTTP、两个WS及真实Range验证。
 check-doc-links.mjs：扫描项目 Markdown 的本地链接；跳过外部 URL、锚点和不参与文档验证的构建/依赖目录。
@@ -54,3 +54,5 @@ Debug诊断JSONL已实现（限60分钟或20MB，用户主动测试时采集）�
 
 ## 2026-09-22 推进补充
 待执行工作包与报告模板见 [执行单](../execution-plan.md)。60 分钟播放前需替换为至少 65 分钟测试音，并全程外部采样，覆盖诊断窗口截止后的时段；不能中途重启拼接连续播放结论。15 路音频脚本与音频 401 注入已交付（见上），云端 TLS/公网重测与 60 分钟息屏记录仍待执行。
+
+2026-09-23：新增 PlaybackViewTest，覆盖播放意图与实际播放区分、音频错误可见性、本机暂停、旧曲目隔离及入房错误；UI 目视场景见 [UI 交付记录](../test-results/2026-09-23-ui-refresh/README.md)，当前无连接设备，待执行。

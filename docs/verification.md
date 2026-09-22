@@ -1,7 +1,7 @@
 # 一起听歌 · 当前交付与验收记录
 
 项目：D:\ListenTogether
-更新日期：2026-09-22
+更新日期：2026-09-23
 
 ## 本轮完成
 - 补齐 Android SDK Platform 35、Build Tools 35.0.0，使用 JDK 17 / Gradle 8.11.1 完成安卓构建。
@@ -145,6 +145,45 @@
 - scripts/check.ps1 -Scope all 全过：后端 tsc 0 错误 + **7/7 测试**；安卓 assembleDebug 成功 + **36 项单测**（输入未变 UP-TO-DATE）+ **Lint 0 错误 0 警告**；APK SHA256 与上一轮一致 `5DA5082AA630A10AE324172FFA4B46F9D073A2AB4BDD07F6082EEA4C67D9119F`（构建可复现）；文档本地链接检查通过。云端复核：listen-together active、`{"ok":true}`、负载极低。
 - 环境坑回填 [开发陷阱清单](development-pitfalls.md) **1.5**：check.ps1 的 `$ErrorActionPreference='Stop'` 在外层 `*>&1` 重定向下，会把 Gradle 的 stderr 进度行转成终止错误（空消息 EXCEPTION）；被中断的运行残留 Gradle Daemon 持有 `~/.gradle/caches/8.11.1/fileHashes/fileHashes.lock`（拒绝访问）——`gradlew --stop` 后恢复，锁文件本体无需删除。
 - .gitignore 补 `demo-media/有何不可.mp3`（个人音频不入库）；本轮累积交付（UI 修补、无线调试、负载/注入工具、M3/M4 测试记录、云端首次部署脚本与文档）整体提交并推送 GitHub。
+
+## 本轮新增（最小可用开启：公网直连 + 真实曲库，2026-09-22 深夜）
+
+- 用户确认后解除回环绑定：`/etc/listen-together.env` HOST 改为 **0.0.0.0** 并重启，`ss` 实测监听 `0.0.0.0:3000`，health `{"ok":true}`。**公网可达还需用户在阿里云控制台安全组放行 TCP 3000**（服务器侧 ufw inactive，入口只受安全组控制），尚未放行前公网仍不可达。
+- 云端曲库按用户指定更换：删除全部 5 个合成测试音，上传 5 首真实 MP3（有何不可 / 痴心绝对 / 单车 / 富士山下 / 句号；来源用户本机音乐目录，句号源文件名"句号mp3.mp3"已改名）。重启后 API catalog 实测 5 首、时长来自文件真实解析（242/262/209/259/236s），audio Range 206、无令牌 401、journal 0 错误。
+- 边界：**《目及皆是你》在 C:\Users\ting\Music 全目录未找到**（用户指定位置无此文件），待用户确认位置后补传（补传需重启服务、清空房间）；HTTP 明文传令牌（好友小范围试用可接受，正式使用需 TLS+域名）；当前无任何房间在运行，重启无影响。
+
+## 本轮新增（图标更换 + 公网真机链路测试，2026-09-22 深夜；E2E 暂停）
+
+- **APP 图标去紫色**：背景 `#5143B8` → `#1A73E8`（Google 蓝，与主题一致），前景换白色双音符+淡蓝声波（自适应 vector）。构建成功，**新 APK SHA256：BE545EEFE1C3260A8F4E00C88D8C4C14A62F1A442E7D717978107E79B4E60924**（仅图标资源变更，既有单测/Lint 结论不变）；已 `adb install -r` 装机（Success）。桌面图标目视确认未做，并入下次真机批次。
+- **手机 → 公网服务器实测通过**：用户报的无线调试端口 192.168.43.15:37765 已失效（配对码 904907 未用到，本机有历史配对记录），mDNS 通道自动恢复 device 态；设备端 `curl http://8.166.126.136:3000/health` 返回 `{"ok":true}`——**安全组 3000 已生效，公网路径在真机上打通**（M4 公网验证首个数据点）。
+- **真机公网 E2E（建房→播放）连续 6 轮自动化失败，按用户指示暂停**：根因链（dump 属性顺序、Compose 光标不可控导致地址框拼接体、pm clear 被 OPPO 拒、run-as sed -i 静默失败）已回填 [开发陷阱清单](development-pitfalls.md) **3.4**，恢复路径（run-as rm 存储或手动输入）一并写入。完整记录见 [test-results/2026-09-22-m4-public-test](test-results/2026-09-22-m4-public-test/README.md)。
+- 《目及皆是你》按用户指示放弃；云端曲库维持 5 首真实 MP3 不变。
+- 当前手机状态：新 APK 已装、app 停在入房页（地址框预填旧值 127.0.0.1:3001、昵称空）；云端服务与曲库正常，无需回滚。
+
+## 本轮新增（简洁 UI 开发，2026-09-23）
+
+- 首页创建/加入 Tab、单主按钮与内联入房错误；正常连接收进人数摘要，成员默认折叠，房间码弱化，轻量歌单仅高亮当前曲目。
+- 当前歌曲两行标题；MediaController 实际播放/缓冲/错误观测驱动状态文字，按曲目隔离旧数据；控制器断连清空观测。正常连接不再给播放错误显示绿色成功点。
+- 明确房主/成员操作影响；校时完成才启用播放与拖动；进度预览按会话/曲目重置。协议、RoomClient 和播放服务未修改。
+- 最终验证：JDK 17；android/gradlew.bat -p android :app:testDebugUnitTest :app:assembleDebug :app:lintDebug --console=plain，BUILD SUCCESSFUL；42 项单测 / 0 失败 / 0 错误（新增 PlaybackViewTest 6 项），Lint 0 错误 / 0 警告。文档链接与 git diff --check 通过。
+- 最新调试 APK SHA256：59773A08ACB9A4FBFF815C8FEDF3680B55FC7FA4EDA992FC6DC664EFB7119EED。保留之前 5DA5082A… / BE545EEF… 等历史记录；本轮打包包含工作区已有图标更换。
+- 本轮无线 adb 真机 UI 验证已执行：本地 reverse 创建房间、播放/暂停、成员展开通过；公网地址 timeout 因云端入口当前不可达而失败。第二台手机、暗色/大字体/旋转、缓冲/401/404 真机显示与 M3-LONG 仍待验证，证据见 UI 真机记录。
+- 实现范围、回归场景与目视清单见 [UI 交付记录](test-results/2026-09-23-ui-refresh/README.md)。
+
+## 本轮新增（无线 UI 真机验证，2026-09-23）
+
+- 无线 adb 配对/连接成功：192.168.43.15:37289 配对、192.168.43.15:38645 调试连接；reverse 3000/3001 建立；设备端本地 health 通过；安装 APK 成功。
+- 公网建房尝试失败：8.166.126.136:3000 从手机、电脑访问均超时，SSH banner 同样超时；记录为当前云端入口不可达，不归因于 UI。
+- 切换到 http://127.0.0.1:3000 reverse 后，真机创建房间成功（房间 20DBB3F3）；创建/加入 Tab、错误区域、房间码/角色、人数摘要、成员折叠、轻量歌单通过目视检查。
+- 播放按钮后媒体会话为 PLAYING(3)，页面显示“播放中”；暂停后为 PAUSED(2)、speed=0，位置冻结；展开成员显示 UITest 与“房主 · 在线”。
+- 证据与未覆盖项见 UI 真机记录与 test-results/2026-09-23-ui-refresh/evidence/。
+- 本轮未执行第二台手机、暗色/大字体/旋转、长歌名完整显示、缓冲/401/404 真机显示和 M3-LONG；公网入口恢复后需重测。
+## 本轮新增（公网超时问题定位：同机负载 OOM，2026-09-23 凌晨）
+
+- 检查上一节记录的“云端入口不可达”（建房 timeout、手机/电脑 /health 超时、SSH banner 超时）：**现已全部恢复**——本机 TCP 22/3000 连通、公网 `GET /health` 返回 200 `{"ok":true}`、SSH 登录正常、listen-together active 且 **NRestarts=0（服务全程未中断）**，监听 0.0.0.0:3000 不变。
+- 根因（服务器侧证据，只读诊断）：root 常驻登录会话 session-52（22:37 建立，VS Code Remote-SSH 常驻会话；/root/.vscode-server、/root/.cline 时间戳 23:38–00:21 吻合）内运行的 Node 进程（OOM 报告 comm 名 "MainThread"，即 Node 主线程名）膨胀至 RSS ~1GB / VSZ ~19.6GB，在 9-22 23:57、9-23 00:11、01:13 **三次触发内核全局 OOM**；01:13:30 journald 看门狗超时——整机冻结期间外部访问即表现为超时，与真机测试时间窗吻合。详见 [开发陷阱清单 8.5](development-pitfalls.md)。
+- 当前状态：内存恢复（available 1.2Gi、swap 0B），VS Code/Cline 进程已不在运行，仅剩后端 node（~53MB）。本轮未改服务器与项目代码。
+- 结论与边界：超时不是 listen-together、安全组或 UI 的问题；若服务器上再次运行重内存负载会复发。M4 公网 E2E（建房→播放）自本轮起具备重测条件，仍待执行（入口恢复 + 按陷阱清单 3.4 恢复路径操作）。
 
 ## 最近代码交付的验证结果（沿用既有记录）
 - 本轮（RoomClient 暂停提示修复 + LOAD-15 脚本）完整构建：BUILD SUCCESSFUL，安卓单元测试 26 项通过，Android Lint 0 个问题。
