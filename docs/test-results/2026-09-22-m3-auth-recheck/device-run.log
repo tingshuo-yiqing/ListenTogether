@@ -1,0 +1,91 @@
+[19:32:44] port 192.168.43.15:46888 not usable (); scanning 192.168.43.15 30000-60000 for the debug port
+[19:33:17] FATAL: no open port found on 192.168.43.15
+[19:37:23] usb link up: fbddbe8
+[19:37:28] reverse: UsbFfs tcp:3001 tcp:3001 UsbFfs tcp:3000 tcp:3000  
+[19:37:30] proxy: {"delayMs":0,"cutting":false,"audio401":false,"audio401Until":null,"tunnels":0,"stats":{"http":0,"ws":0,"cutDropped":0,"audio401":0}}
+[19:38:09] nickname entered
+[19:38:29] room code: unknown
+[19:38:40] FATAL: demo-load row not found
+[19:40:01] usb link up: fbddbe8
+[19:40:05] reverse: UsbFfs tcp:3001 tcp:3001 UsbFfs tcp:3000 tcp:3000  
+[19:40:06] proxy: {"delayMs":0,"cutting":false,"audio401":false,"audio401Until":null,"tunnels":0,"stats":{"http":0,"ws":0,"cutDropped":0,"audio401":0}}
+[19:40:44] nickname entered
+[19:41:08] room code: unknown
+[19:41:13] tapping demo-load at 540 2249
+[19:41:39] FATAL: not PLAYING after track tap
+[19:43:37] FATAL: usb device fbddbe8 not in device state (offline)
+[21:01:42] port 192.168.43.15:39731 not usable (offline); scanning 192.168.43.15 30000-60000 for the debug port
+[21:02:16] scan found 46888; connecting
+[21:03:24] FATAL: wireless device not authorized (state=offline)
+[21:16:55] wireless link up: 192.168.43.15:41145
+[21:16:59] reverse: host-24 tcp:3001 tcp:3001 host-24 tcp:3000 tcp:3000  
+[21:17:02] proxy: {"delayMs":0,"cutting":false,"audio401":false,"audio401Until":null,"tunnels":0,"stats":{"http":0,"ws":0,"cutDropped":0,"audio401":0}}
+[21:17:56] nickname entered
+[21:18:26] room code: 6903C8E6
+[21:18:43] tapping demo-load at 540 1992
+[21:18:50]   waiting PLAYING:       state=PlaybackState {state=PAUSED(2), position=0, buffered position=1044, speed=0.0, updated=176758534, actions=7339997, custom actions=[], active item id=0, error=null}
+[21:19:12]   waiting PLAYING:       state=PlaybackState {state=PAUSED(2), position=0, buffered position=1044, speed=0.0, updated=176758534, actions=7339997, custom actions=[], active item id=0, error=null}
+[21:19:18] FATAL: not PLAYING after track tap
+[21:25:01] audio401 injected 120s (manual resume)
+[21:25:11] seekbar bounds: [90,486][990,618]
+[21:25:17] swiping seek to ~99% on [90,243][990,243]
+[21:25:31] media after seek:       state=PlaybackState {state=PLAYING(3), position=157120, buffered position=218462, speed=1.0, updated=177159489, actions=7339995, custom actions=[], active item id=0, error=null}
+[21:25:33] WARNING: expected ERROR(7)
+[21:25:43] sample 1: banner missing 401-text
+[21:25:59] sample 2: banner missing 401-text
+[21:26:16] sample 3: banner missing 401-text
+[21:26:45] sample 4: banner missing 401-text
+[21:27:04] sample 5: banner missing 401-text
+[21:27:14] BANNER RESULT: 401-text 0/5, 已同步 0/5
+[21:27:17] BANNER VERDICT: FAIL/INCONCLUSIVE
+{"delayMs":0,"cutting":false,"audio401":false,"audio401Until":"2026-09-22T13:27:00.351Z","tunnels":1,"stats":{"http":4,"ws":1,"cutDropped":0,"audio401":0}}[21:28:32] pre-inject media:       state=PlaybackState {state=PLAYING(3), position=340094, buffered position=393273, speed=1.0, updated=177342942, actions=7339995, custom actions=[], active item id=0, error=null}
+raw: 90,486
+990,618
+[21:28:45] seekbar [90,486,990,618][,] midY=309
+[21:28:47] audio401 injected 120s (attempt 2)
+[21:28:52] seek swipe done to x=-8
+[21:29:08] media after seek:       state=PlaybackState {state=PLAYING(3), position=372607, buffered position=436976, speed=1.0, updated=177374934, actions=7339995, custom actions=[], active item id=0, error=null}
+[21:29:10] WARNING: expected ERROR(7)
+{"delayMs":0,"cutting":false,"audio401":true,"audio401Until":"2026-09-22T13:30:46.175Z","tunnels":1,"stats":{"http":4,"ws":1,"cutDropped":0,"audio401":0}}[21:29:47] seekbar parsed: X1=90 Y1=486 X2=990 Y2=618 midY=552
+[21:29:49] audio401 injected 120s (attempt 3)
+[21:29:52] seek swipe (120,552) -> (982,552)
+[21:30:01] media +3s:       state=PlaybackState {state=ERROR(7), position=647193, buffered position=647193, speed=0.0, updated=177427929, actions=7339997, custom actions=[], active item id=0, error=Source error}
+[21:30:12] media +9s:       state=PlaybackState {state=ERROR(7), position=647193, buffered position=647193, speed=0.0, updated=177427929, actions=7339997, custom actions=[], active item id=0, error=Source error}
+[21:30:14] WARNING: expected ERROR(7)
+[21:30:55] sample 1: banner missing 401-text
+[21:31:09] sample 2: banner missing 401-text
+[21:31:22] sample 3: banner missing 401-text
+[21:31:37] sample 4: banner missing 401-text
+[21:31:52] sample 5: banner missing 401-text
+[21:32:01] BANNER RESULT: 401-text 0/5, 已同步 0/5
+[21:32:02] BANNER VERDICT: FAIL/INCONCLUSIVE
+[21:32:05] screenshot 04 saved (ERROR state)
+[21:34:16] sample 1: banner=401-text
+[21:34:31] sample 2: banner=401-text
+[21:34:45] sample 3: banner=401-text
+[21:35:00] sample 4: banner=401-text
+[21:35:13] sample 5: banner=401-text
+[21:35:22] BANNER RESULT: 401-text 5/5, 已同步 0/5
+[21:35:22] BANNER VERDICT: PASS
+{"delayMs":0,"cutting":false,"audio401":false}
+[21:35:52] injection cleared
+[21:35:56] tapped play FAB
+[21:36:56] FATAL: playback did not resume
+[21:37:09] banner after resume: still 401-text (FAIL)
+[21:37:11] === diagnostics ===
+[21:37:13] diag file: diag-20260922-211705.jsonl
+[21:37:16] diag lines: 1011
+[21:37:17] localPause events: 0
+[21:37:18] error entries: 1
+{"type":"playback","deviceLabel":"OPPO PHQ110","wallClockMs":1790083795214,"monotonicMs":177427906,"trackId":"demo-load","version":5,"playerPositionMs":647193,"targetPositionMs":647193,"driftMs":0,"buffering":false,"localPause":true,"correction":"error:ERROR_CODE_IO_BAD_HTTP_STATUS","estimatedServerMs":1790083794544}
+[21:37:22] === cleanup ===
+[21:37:29] diagnostics saved to evidence dir
+[21:37:30] DONE
+[21:38:08] play FAB center: (540,1067)
+[21:38:17] resumed:       state=PlaybackState {state=PLAYING(3), position=332708, buffered position=417384, speed=1.0, updated=177925468, actions=7339995, custom actions=[], active item id=0, error=null}
+[21:38:28] banner after resume: 已同步 (PASS)
+{"delayMs":0,"cutting":false,"audio401":false,"audio401Until":null,"tunnels":1,"stats":{"http":6,"ws":1,"cutDropped":0,"audio401":4}}
+[21:39:13] 退出房间 button at (0,0)
+[21:39:22] still in room?
+[21:40:43] 退出房间 at (579,2172)
+[21:40:53] left room OK (join page)

@@ -1,0 +1,284 @@
+[2026-09-22T07:02:58.530Z] room-ready code=0EF77F10 members=15 ws=15
+[2026-09-22T07:02:58.547Z] track-selected demo-load durationMs=660036 bytes=15841532 kbps=192
+[2026-09-22T07:02:58.548Z] load-start model=playback members=15
+[2026-09-22T07:07:58.563Z] seek member=1 pos=2894990
+[2026-09-22T07:07:58.564Z] seek member=10 pos=9587081
+[2026-09-22T07:07:58.564Z] seek member=3 pos=2113019
+[2026-09-22T07:07:58.565Z] seek member=5 pos=10232502
+[2026-09-22T07:07:58.566Z] seek member=0 pos=3848589
+[2026-09-22T07:07:58.567Z] seek member=11 pos=11530424
+[2026-09-22T07:07:58.567Z] seek member=9 pos=3435362
+[2026-09-22T07:07:58.568Z] seek member=2 pos=4351342
+[2026-09-22T07:07:58.569Z] seek member=4 pos=3557312
+[2026-09-22T07:07:58.569Z] seek member=8 pos=13650910
+[2026-09-22T07:07:58.570Z] seek member=7 pos=6002775
+[2026-09-22T07:07:58.571Z] seek member=14 pos=5635560
+[2026-09-22T07:07:58.571Z] seek member=13 pos=8331955
+[2026-09-22T07:07:58.572Z] seek member=6 pos=6346395
+[2026-09-22T07:07:58.573Z] seek member=12 pos=5380676
+=== LOAD15 SUMMARY ===
+{
+  "model": "playback",
+  "target": "http://127.0.0.1:3000",
+  "code": "0EF77F10",
+  "trackId": "demo-load",
+  "trackKbps": 192,
+  "sizeBytes": 15841532,
+  "members": 15,
+  "wallSeconds": 600,
+  "bitrateKbps": 192,
+  "totalBytes": 215455359,
+  "totalMbps": 2.873,
+  "unexpectedStatuses": [],
+  "processTrend": {
+    "rssStart": 62468096,
+    "rssEnd": 75309056,
+    "cpuMsStart": 187,
+    "cpuMsEnd": 8218,
+    "note": "本机 node 进程自身指标（含后端与脚本的合计不可分），仅记录趋势；不设合格阈值"
+  },
+  "perMember": [
+    {
+      "member": 0,
+      "bytes": 14376000,
+      "chunks": 599,
+      "avgBps": 23960,
+      "rateOk": true,
+      "statuses": {
+        "206": 599
+      },
+      "failures": 0,
+      "canceled": 1,
+      "seeks": 1,
+      "fullReads": 0,
+      "minSecondBytes": 24000,
+      "granularity": "1s"
+    },
+    {
+      "member": 1,
+      "bytes": 14376000,
+      "chunks": 599,
+      "avgBps": 23960,
+      "rateOk": true,
+      "statuses": {
+        "206": 599
+      },
+      "failures": 0,
+      "canceled": 1,
+      "seeks": 1,
+      "fullReads": 0,
+      "minSecondBytes": 24000,
+      "granularity": "1s"
+    },
+    {
+      "member": 2,
+      "bytes": 14376000,
+      "chunks": 599,
+      "avgBps": 23960,
+      "rateOk": true,
+      "statuses": {
+        "206": 599
+      },
+      "failures": 0,
+      "canceled": 1,
+      "seeks": 1,
+      "fullReads": 0,
+      "minSecondBytes": 24000,
+      "granularity": "1s"
+    },
+    {
+      "member": 3,
+      "bytes": 14376000,
+      "chunks": 599,
+      "avgBps": 23960,
+      "rateOk": true,
+      "statuses": {
+        "206": 599
+      },
+      "failures": 0,
+      "canceled": 1,
+      "seeks": 1,
+      "fullReads": 0,
+      "minSecondBytes": 24000,
+      "granularity": "1s"
+    },
+    {
+      "member": 4,
+      "bytes": 14376000,
+      "chunks": 599,
+      "avgBps": 23960,
+      "rateOk": true,
+      "statuses": {
+        "206": 599
+      },
+      "failures": 0,
+      "canceled": 1,
+      "seeks": 1,
+      "fullReads": 0,
+      "minSecondBytes": 24000,
+      "granularity": "1s"
+    },
+    {
+      "member": 5,
+      "bytes": 14369030,
+      "chunks": 599,
+      "avgBps": 23948,
+      "rateOk": true,
+      "statuses": {
+        "206": 599
+      },
+      "failures": 0,
+      "canceled": 1,
+      "seeks": 2,
+      "fullReads": 0,
+      "minSecondBytes": 17030,
+      "granularity": "1s"
+    },
+    {
+      "member": 6,
+      "bytes": 14376000,
+      "chunks": 599,
+      "avgBps": 23960,
+      "rateOk": true,
+      "statuses": {
+        "206": 599
+      },
+      "failures": 0,
+      "canceled": 1,
+      "seeks": 1,
+      "fullReads": 0,
+      "minSecondBytes": 24000,
+      "granularity": "1s"
+    },
+    {
+      "member": 7,
+      "bytes": 14376000,
+      "chunks": 599,
+      "avgBps": 23960,
+      "rateOk": true,
+      "statuses": {
+        "206": 599
+      },
+      "failures": 0,
+      "canceled": 1,
+      "seeks": 1,
+      "fullReads": 0,
+      "minSecondBytes": 24000,
+      "granularity": "1s"
+    },
+    {
+      "member": 8,
+      "bytes": 14358622,
+      "chunks": 599,
+      "avgBps": 23931,
+      "rateOk": true,
+      "statuses": {
+        "206": 599
+      },
+      "failures": 0,
+      "canceled": 1,
+      "seeks": 2,
+      "fullReads": 0,
+      "minSecondBytes": 6622,
+      "granularity": "1s"
+    },
+    {
+      "member": 9,
+      "bytes": 14352613,
+      "chunks": 599,
+      "avgBps": 23921,
+      "rateOk": true,
+      "statuses": {
+        "206": 599
+      },
+      "failures": 0,
+      "canceled": 1,
+      "seeks": 2,
+      "fullReads": 0,
+      "minSecondBytes": 613,
+      "granularity": "1s"
+    },
+    {
+      "member": 10,
+      "bytes": 14342962,
+      "chunks": 599,
+      "avgBps": 23905,
+      "rateOk": true,
+      "statuses": {
+        "206": 599
+      },
+      "failures": 0,
+      "canceled": 1,
+      "seeks": 3,
+      "fullReads": 0,
+      "minSecondBytes": 511,
+      "granularity": "1s"
+    },
+    {
+      "member": 11,
+      "bytes": 14343517,
+      "chunks": 599,
+      "avgBps": 23906,
+      "rateOk": true,
+      "statuses": {
+        "206": 599
+      },
+      "failures": 0,
+      "canceled": 1,
+      "seeks": 3,
+      "fullReads": 0,
+      "minSecondBytes": 409,
+      "granularity": "1s"
+    },
+    {
+      "member": 12,
+      "bytes": 14352307,
+      "chunks": 599,
+      "avgBps": 23920,
+      "rateOk": true,
+      "statuses": {
+        "206": 599
+      },
+      "failures": 0,
+      "canceled": 1,
+      "seeks": 2,
+      "fullReads": 0,
+      "minSecondBytes": 307,
+      "granularity": "1s"
+    },
+    {
+      "member": 13,
+      "bytes": 14352205,
+      "chunks": 599,
+      "avgBps": 23920,
+      "rateOk": true,
+      "statuses": {
+        "206": 599
+      },
+      "failures": 0,
+      "canceled": 1,
+      "seeks": 2,
+      "fullReads": 0,
+      "minSecondBytes": 205,
+      "granularity": "1s"
+    },
+    {
+      "member": 14,
+      "bytes": 14352103,
+      "chunks": 599,
+      "avgBps": 23920,
+      "rateOk": true,
+      "statuses": {
+        "206": 599
+      },
+      "failures": 0,
+      "canceled": 1,
+      "seeks": 2,
+      "fullReads": 0,
+      "minSecondBytes": 103,
+      "granularity": "1s"
+    }
+  ]
+}
+[2026-09-22T07:12:58.560Z] load-pass total=215.5MB over 600s
+[2026-09-22T07:12:58.895Z] cleanup-done code=0EF77F10 members-removed=15

@@ -1,0 +1,7 @@
+[2026-09-22T06:34:48.585Z] proxy-listening port=3001 target=127.0.0.1:3000
+[2026-09-22T06:53:58.997Z] fault-audio401 seconds=90 until=2026-09-22T06:55:28.997Z
+[2026-09-22T06:54:21.590Z] fault-audio401-hit GET /api/rooms/CC84F634/audio/demo-load
+[2026-09-22T06:54:21.613Z] fault-audio401-hit GET /api/rooms/CC84F634/audio/demo-load
+[2026-09-22T06:54:22.649Z] fault-audio401-hit GET /api/rooms/CC84F634/audio/demo-load
+[2026-09-22T06:54:24.698Z] fault-audio401-hit GET /api/rooms/CC84F634/audio/demo-load
+[2026-09-22T07:09:56.530Z] ws-closed /ws/CC84F634 upstream-close active=0

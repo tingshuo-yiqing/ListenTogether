@@ -1,0 +1,79 @@
+[22:28:59] connected serial=adb-fbddbe8-WFMDTR._adb-tls-connect._tcp
+[22:28:59] reverse: 3000
+[22:29:00] device-side health: {"ok":true}
+[22:29:00] device-side public health: {"ok":true}
+[22:29:01] baseUrl written: OK
+[22:29:29] room code = 83888A9C
+[22:29:29] playlist rows: ['有何不可', '当前 · 4:01', '痴心绝对', '单车', '富士山下']
+[22:29:29] === step: select+play '当前 · 4:01' ===
+[22:29:34] FAB(播放) at (540, 1181)
+[22:29:43] play: ('PLAYING', 8854, 87353, 1.0, 267417870)
+[22:29:49]   playing sample 1: (('PLAYING', 11874, 87353, 1.0, 267420887),)
+[22:29:54]   playing sample 2: (('PLAYING', 17895, 87353, 1.0, 267426914),)
+[22:29:59]   playing sample 3: (('PLAYING', 23950, 87353, 1.0, 267432966),)
+[22:29:59] === step: pause ===
+[22:30:03] after tap1(pause): ('PAUSED', 24800, 87353, 0.0, 267433823)
+[22:30:03] === step: drag ===
+[22:30:09] after drag: ('PAUSED', 161423, 162533, 0.0, 267439133)
+[22:30:09] === step: switch track to '有何不可' ===
+[22:30:16] rows after switch: ['有何不可', '当前 · 4:01', '痴心绝对', '单车', '富士山下']
+[22:30:16] FAB after switch: 播放 (540, 1181)
+[22:30:24] after switch play: ('PLAYING', 5885, 87379, 1.0, 267456799)
+[22:30:30]   post-switch sample 1: (('PLAYING', 11900, 87379, 1.0, 267462815),)
+[22:30:35]   post-switch sample 2: (('PLAYING', 17907, 87379, 1.0, 267468827),)
+[22:30:35] === step: exit room ===
+[22:30:41] ERROR: confirm dialog button not found
+[22:30:43] exit -> EditText count after exit = 0 (入房页应为 1)
+[22:30:44] diag exported: D:\ListenTogether\.workbuddy\w1-e2e-diag-20260923-222905.jsonl (47927 bytes, file=diag-20260923-222905.jsonl)
+[22:30:44] analyze[e2e]: playback=141 window=84.5s corrections={'': 130, 'buffering': 8, 'load': 1, 'seek': 2}
+[22:30:44] analyze[e2e]: seek count=2 intervals(s)=[5.35]
+[22:30:44] analyze[e2e]: speed count=0
+[22:30:44] analyze[e2e]: buffering true count=8
+[22:30:44] analyze[e2e]: position rate median=995.040 p10=0.000 p90=1006.951 n=81
+[22:30:44] analyze[e2e]: |drift| median=160ms max=161423ms
+[22:30:44] analyze[e2e]: sync samples=17 rtt median=71ms max=123ms offset spread=27ms
+[22:30:44] analyze[e2e]: room versions seen = [2, 3, 4, 5, 6, 7, 8]
+[22:31:13] connected serial=adb-fbddbe8-WFMDTR._adb-tls-connect._tcp
+[22:31:15] playlist rows now: ['有何不可', '当前 · 4:01', '痴心绝对', '单车', '富士山下']
+[22:31:15] === step: switch track to 痴心绝对 (tap (532, 1769)) ===
+[22:31:21] FAB after switch = 暂停 at (540, 1181)
+[22:31:22] after switch: ('PLAYING', 5575, 87353, 1.04, 267516045)
+[22:31:27]   playing sample 1: (('PLAYING', 8693, 87353, 1.0, 267519051),)
+[22:31:32]   playing sample 2: (('PLAYING', 14706, 87353, 1.0, 267525064),)
+[22:31:37]   playing sample 3: (('PLAYING', 20726, 87353, 1.0, 267531083),)
+[22:31:37] === step: exit room ===
+[22:31:40] exit icon candidates: [('[960,167][1032,239]', 'android.view.View')]
+[22:31:46] dialog texts: ['退出房间？', '退出后需要重新输入邀请码才能回来。', '取消', '退出房间']
+[22:31:55] after exit: EditText=1 texts=['此刻，一起听', '和朋友分享同一段旋律', '创建房间', '加入房间', '怎么称呼你', '高级设置：更换服务器地址', '创建房间', '一起听歌']
+[22:31:56] diag exported: D:\ListenTogether\.workbuddy\w1-e2e2-diag-20260923-222905.jsonl (80046 bytes, file=diag-20260923-222905.jsonl)
+[22:31:56] analyze[e2e2]: playback=234 window=147.0s corrections={'': 217, 'buffering': 10, 'load': 2, 'seek': 2, 'speed': 3}
+[22:31:56] analyze[e2e2]: seek count=2 intervals(s)=[5.35]
+[22:31:56] analyze[e2e2]: speed count=3
+[22:31:56] analyze[e2e2]: buffering true count=10
+[22:31:56] analyze[e2e2]: position rate median=998.885 p10=0.000 p90=1008.964 n=138
+[22:31:56] analyze[e2e2]: |drift| median=164ms max=161423ms
+[22:31:56] analyze[e2e2]: sync samples=30 rtt median=65ms max=123ms offset spread=27ms
+[22:31:56] analyze[e2e2]: room versions seen = [2, 3, 4, 5, 6, 7, 8, 9]
+[22:31:56] seg[0] track=he-bu-ke records=187 t=[0.0s..116.8s]
+[22:31:56] seg[1] track=chi-xin-jue-dui records=47 t=[116.9s..147.0s]
+[22:31:56]   -> 切歌后首个推进位置: +0.07s (pos=59224ms, buffering=False, corr='load')
+[22:31:56]   -> 新段内 correction 记录: seek=0 speed=3 buffering=2
+[22:33:53] connected serial=adb-fbddbe8-WFMDTR._adb-tls-connect._tcp
+[22:34:21] room code = 4EC9D5D1
+[22:34:36] public play: ('PLAYING', 8852, 87353, 1.0, 267710533)
+[22:34:41] screenshot: D:\ListenTogether\.workbuddy\public-playing.png (134886 bytes)
+[22:34:41] public sample: ('PLAYING', 11858, 87353, 1.0, 267713538)
+[22:34:52] exited public room 4EC9D5D1
+[22:34:52] diag exported: D:\ListenTogether\.workbuddy\w1-w2c-diag-20260923-223357.jsonl (24063 bytes, file=diag-20260923-223357.jsonl)
+[22:34:52] analyze[w2c]: playback=71 window=40.3s corrections={'': 63, 'buffering': 6, 'load': 2}
+[22:34:52] analyze[w2c]: seek count=0
+[22:34:52] analyze[w2c]: speed count=0
+[22:34:52] analyze[w2c]: buffering true count=6
+[22:34:52] analyze[w2c]: position rate median=992.497 p10=0.000 p90=1007.944 n=38
+[22:34:52] analyze[w2c]: |drift| median=19ms max=220ms
+[22:34:52] analyze[w2c]: sync samples=9 rtt median=53ms max=119ms offset spread=13ms
+[22:34:52] analyze[w2c]: room versions seen = [2, 3, 4]
+[22:34:52] seg[0] track=he-bu-ke records=22 t=[0.0s..10.0s]
+[22:34:52] seg[1] track=dan-che records=49 t=[10.3s..40.3s]
+[22:34:52]   -> 切歌后首个推进位置: +7.04s (pos=1085ms, buffering=False, corr='')
+[22:34:52]   -> 新段内 correction 记录: seek=0 speed=0 buffering=2

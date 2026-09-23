@@ -1,0 +1,221 @@
+[22:07:37] ERROR: device not found
+[22:09:00] connected serial=adb-fbddbe8-WFMDTR._adb-tls-connect._tcp
+[22:09:01] reverse: 3000
+[22:09:02] device-side health: {"ok":true}
+[22:09:02] low_power=0
+[22:09:02] flinger[before]: Fifo frame underruns: (mean: 1281.200673  min: 5.000000  max: 48143.000000  last: 48034.000000  n: 8317) || numTracks=1 writeErrors=0 underruns=54 overruns=82 || Normal mixer raw underrun counters: partial=0 empty=596 || Type     Id Active Client Session Port Id S  Flags   Format Chn mask  SRate ST Usg CT  G db  L dB  R dB  VS dB   Server FrmCnt  FrmRdy F Underruns  Flushed BitPerfect   Latency Spat Meta Sce Silent || Fifo frame underruns: (mean: 3083.530806  min: 6.000000  max: 75564.000000  last: 458.000000  n: 422) || Normal mixer raw underrun counters: partial=0 empty=0
+[22:09:30] room code = 2AF8BEA0
+[22:09:35] FAB(播放) at (540, 1181)
+[22:09:44] state after play: ('PLAYING', 5615, 262086, 1.0, 266215851)
+[22:09:59] sample[close] t=+15s state=PLAYING pos=20655 buf=262086 speed=1.00 updated=266230891
+[22:10:14] sample[close] t=+30s state=PLAYING pos=35722 buf=262086 speed=1.00 updated=266245958
+[22:10:29] sample[close] t=+45s state=PLAYING pos=50843 buf=262086 speed=1.00 updated=266261084
+[22:10:44] sample[close] t=+60s state=PLAYING pos=65991 buf=262086 speed=1.00 updated=266276232
+[22:10:59] sample[close] t=+75s state=PLAYING pos=81134 buf=262086 speed=1.00 updated=266291371
+[22:11:14] sample[close] t=+90s state=PLAYING pos=96324 buf=262086 speed=1.00 updated=266306563
+[22:11:30] sample[close] t=+106s state=PLAYING pos=111476 buf=262086 speed=1.00 updated=266321715
+[22:11:45] sample[close] t=+121s state=PLAYING pos=126634 buf=262086 speed=1.00 updated=266336869
+[22:12:00] sample[close] t=+136s state=PLAYING pos=141748 buf=262086 speed=1.00 updated=266351983
+[22:12:15] sample[close] t=+151s state=PLAYING pos=156787 buf=262086 speed=1.00 updated=266367023
+[22:12:30] sample[close] t=+166s state=PLAYING pos=171821 buf=262086 speed=1.00 updated=266382059
+[22:12:45] sample[close] t=+181s state=PLAYING pos=186887 buf=262086 speed=1.00 updated=266397119
+[22:12:45] sample[close] overall position rate = 1.001 x (166232ms over 166s)
+[22:12:46] diag exported: D:\ListenTogether\.workbuddy\w1-close-diag-20260923-220906.jsonl (102342 bytes, file=diag-20260923-220906.jsonl)
+[22:12:46] analyze[close]: playback=300 window=205.4s corrections={'': 292, 'buffering': 6, 'load': 2}
+[22:12:46] analyze[close]: seek count=0
+[22:12:46] analyze[close]: speed count=0
+[22:12:46] analyze[close]: buffering true count=6
+[22:12:46] analyze[close]: position rate median=999.010 p10=987.315 p90=1006.931 n=203
+[22:12:46] analyze[close]: |drift| median=415ms max=426ms
+[22:12:46] flinger[after]: Fifo frame underruns: (mean: 1286.777951  min: 5.000000  max: 48143.000000  last: 47673.000000  n: 8318) || numTracks=1 writeErrors=0 underruns=54 overruns=82 || Normal mixer raw underrun counters: partial=0 empty=598 || Type     Id Active Client Session Port Id S  Flags   Format Chn mask  SRate ST Usg CT  G db  L dB  R dB  VS dB   Server FrmCnt  FrmRdy F Underruns  Flushed BitPerfect   Latency Spat Meta Sce Silent || Fifo frame underruns: (mean: 3079.652482  min: 6.000000  max: 75564.000000  last: 1443.000000  n: 423) || Normal mixer raw underrun counters: partial=0 empty=0
+[22:13:02] connected serial=adb-fbddbe8-WFMDTR._adb-tls-connect._tcp
+[22:13:02] reverse: 3000
+[22:13:04] device-side health: {"ok":true}
+[22:13:06] low_power=0 sticky=0
+[22:13:06] ERROR: cannot enable low_power via settings
+[22:13:59] connected serial=adb-fbddbe8-WFMDTR._adb-tls-connect._tcp
+[22:13:59] reverse: 3000
+[22:14:00] device-side health: {"ok":true}
+[22:14:00] cmd power set-mode 1 -> 
+[22:14:04] low_power=1 sticky=1
+[22:14:04] flinger[before]: Fifo frame underruns: (mean: 1326.246697  min: 5.000000  max: 48143.000000  last: 47663.000000  n: 8326) || numTracks=1 writeErrors=0 underruns=54 overruns=82 || Normal mixer raw underrun counters: partial=0 empty=616 || Type     Id Active Client Session Port Id S  Flags   Format Chn mask  SRate ST Usg CT  G db  L dB  R dB  VS dB   Server FrmCnt  FrmRdy F Underruns  Flushed BitPerfect   Latency Spat Meta Sce Silent || Fifo frame underruns: (mean: 3079.652482  min: 6.000000  max: 75564.000000  last: 1443.000000  n: 423) || Normal mixer raw underrun counters: partial=0 empty=0
+[22:14:34] room code = C3CEBB79
+[22:14:48] state after play: ('PLAYING', 5682, 262086, 1.0, 266520385)
+[22:15:03] sample[open] t=+15s state=PLAYING pos=3118 buf=262086 speed=1.04 updated=266535778
+[22:15:18] sample[open] t=+30s state=PLAYING pos=18815 buf=262086 speed=1.04 updated=266550877
+[22:15:34] sample[open] t=+45s state=PLAYING pos=35906 buf=262086 speed=1.00 updated=266567955
+[22:15:49] sample[open] t=+60s state=PLAYING pos=48985 buf=262086 speed=1.00 updated=266581085
+[22:16:04] sample[open] t=+75s state=PLAYING pos=64072 buf=262086 speed=1.00 updated=266596180
+[22:16:19] sample[open] t=+90s state=PLAYING pos=79160 buf=262086 speed=1.00 updated=266611261
+[22:16:34] sample[open] t=+106s state=PLAYING pos=94236 buf=262086 speed=1.00 updated=266626342
+[22:16:49] sample[open] t=+121s state=PLAYING pos=109341 buf=262086 speed=1.00 updated=266641444
+[22:17:05] sample[open] t=+136s state=PLAYING pos=124396 buf=262086 speed=1.00 updated=266656505
+[22:17:20] sample[open] t=+151s state=PLAYING pos=139571 buf=262086 speed=1.00 updated=266671676
+[22:17:35] sample[open] t=+166s state=PLAYING pos=154728 buf=262086 speed=1.00 updated=266686830
+[22:17:50] sample[open] t=+181s state=PLAYING pos=169800 buf=262086 speed=1.00 updated=266701910
+[22:17:50] sample[open] overall position rate = 1.004 x (166682ms over 166s)
+[22:17:50] diag exported: D:\ListenTogether\.workbuddy\w1-open-diag-20260923-221408.jsonl (106206 bytes, file=diag-20260923-221408.jsonl)
+[22:17:50] analyze[open]: playback=311 window=205.2s corrections={'': 288, 'buffering': 10, 'load': 4, 'speed': 9}
+[22:17:50] analyze[open]: seek count=0
+[22:17:50] analyze[open]: speed count=9
+[22:17:50] analyze[open]: buffering true count=11
+[22:17:50] analyze[open]: position rate median=1000.000 p10=960.884 p90=1034.072 n=192
+[22:17:50] analyze[open]: |drift| median=198ms max=15988ms
+[22:17:51] flinger[after]: Fifo frame underruns: (mean: 1326.246697  min: 5.000000  max: 48143.000000  last: 47663.000000  n: 8326) || numTracks=1 writeErrors=0 underruns=54 overruns=82 || Normal mixer raw underrun counters: partial=0 empty=616 || Type     Id Active Client Session Port Id S  Flags   Format Chn mask  SRate ST Usg CT  G db  L dB  R dB  VS dB   Server FrmCnt  FrmRdy F Underruns  Flushed BitPerfect   Latency Spat Meta Sce Silent || Fifo frame underruns: (mean: 3061.807963  min: 6.000000  max: 75564.000000  last: 898.000000  n: 427) || Normal mixer raw underrun counters: partial=0 empty=0
+[22:17:53] low_power restored to 0
+[22:18:46] connected serial=adb-fbddbe8-WFMDTR._adb-tls-connect._tcp
+[22:18:46] reverse: 3000
+[22:18:48] device-side health: {"ok":true}
+[22:18:48] low_power=Invalid namespace 'low_power'
+[22:19:19] room code = 23A41828
+[22:19:30] state after play: ('PLAYING', 5870, 30040, 1.0, 266804590)
+[22:19:31] screenshot: D:\ListenTogether\.workbuddy\light-playing.png (174893 bytes)
+[22:19:37] sample[advance] t=+5s state=PLAYING pos=11888 buf=30040 speed=1.00 updated=266810604
+[22:19:42] sample[advance] t=+10s state=PLAYING pos=14893 buf=30040 speed=1.00 updated=266813609
+[22:19:47] sample[advance] t=+15s state=PLAYING pos=20897 buf=30040 speed=1.00 updated=266819620
+[22:19:52] sample[advance] t=+20s state=PLAYING pos=26926 buf=30040 speed=1.00 updated=266825639
+[22:19:57] sample[advance] t=+26s state=PLAYING pos=26 buf=4022 speed=1.00 updated=266828842
+[22:20:02] sample[advance] t=+31s state=PLAYING pos=6184 buf=45035 speed=1.00 updated=266835284
+[22:20:07] sample[advance] t=+36s state=PLAYING pos=12203 buf=45035 speed=1.00 updated=266841302
+[22:20:13] sample[advance] t=+41s state=PLAYING pos=15210 buf=45035 speed=1.00 updated=266844312
+[22:20:18] sample[advance] t=+46s state=PLAYING pos=21237 buf=45035 speed=1.00 updated=266850340
+[22:20:23] sample[advance] t=+51s state=PLAYING pos=27256 buf=45035 speed=1.00 updated=266856360
+[22:20:28] sample[advance] t=+56s state=PLAYING pos=33281 buf=45035 speed=1.00 updated=266862379
+[22:20:33] sample[advance] t=+62s state=PLAYING pos=36287 buf=45035 speed=1.00 updated=266865387
+[22:20:38] sample[advance] t=+67s state=PLAYING pos=42308 buf=45035 speed=1.00 updated=266871405
+[22:20:43] sample[advance] t=+72s state=PLAYING pos=3133 buf=262138 speed=1.00 updated=266877316
+[22:20:49] sample[advance] t=+77s state=PLAYING pos=6157 buf=262138 speed=1.00 updated=266880336
+[22:20:54] sample[advance] t=+82s state=PLAYING pos=12196 buf=262138 speed=1.00 updated=266886373
+[22:20:59] sample[advance] t=+87s state=PLAYING pos=18251 buf=262138 speed=1.00 updated=266892432
+[22:21:04] sample[advance] t=+92s state=PLAYING pos=24300 buf=262138 speed=1.00 updated=266898481
+[22:21:09] sample[advance] t=+98s state=PLAYING pos=27327 buf=262138 speed=1.00 updated=266901506
+[22:21:14] sample[advance] t=+103s state=PLAYING pos=33383 buf=262138 speed=1.00 updated=266907564
+[22:21:19] sample[advance] t=+108s state=PLAYING pos=39419 buf=262138 speed=1.00 updated=266913599
+[22:21:25] sample[advance] t=+113s state=PLAYING pos=42445 buf=262138 speed=1.00 updated=266916624
+[22:21:30] sample[advance] t=+118s state=PLAYING pos=48465 buf=262138 speed=1.00 updated=266922645
+[22:21:35] sample[advance] t=+124s state=PLAYING pos=54492 buf=262138 speed=1.00 updated=266928664
+[22:21:40] sample[advance] t=+129s state=PLAYING pos=60510 buf=262138 speed=1.00 updated=266934683
+[22:21:46] sample[advance] t=+134s state=PLAYING pos=63521 buf=262138 speed=1.00 updated=266937693
+[22:21:46] sample[advance] overall position rate = 0.400 x (51633ms over 129s)
+[22:21:46] diag exported: D:\ListenTogether\.workbuddy\w1-advance-diag-20260923-221852.jsonl (81033 bytes, file=diag-20260923-221852.jsonl)
+[22:21:46] analyze[advance]: playback=239 window=157.3s corrections={'': 228, 'buffering': 8, 'load': 3}
+[22:21:46] analyze[advance]: seek count=0
+[22:21:46] analyze[advance]: speed count=0
+[22:21:46] analyze[advance]: buffering true count=8
+[22:21:46] analyze[advance]: position rate median=1000.000 p10=734.959 p90=1005.941 n=155
+[22:21:46] analyze[advance]: |drift| median=355ms max=44716ms
+[22:21:46] seg[0] track=demo-soft records=74 t=[0.0s..45.2s]
+[22:21:46] seg[1] track=demo-high records=68 t=[45.4s..90.6s]
+[22:21:46]   -> 切歌后首个推进位置: +0.28s (pos=29905ms, buffering=False, corr='load')
+[22:21:46]   -> 新段内 correction 记录: seek=0 speed=0 buffering=2
+[22:21:46] seg[2] track=demo-long records=97 t=[90.6s..157.3s]
+[22:21:46]   -> 切歌后首个推进位置: +0.03s (pos=44732ms, buffering=False, corr='load')
+[22:21:46]   -> 新段内 correction 记录: seek=0 speed=0 buffering=2
+[22:23:32] connected serial=adb-fbddbe8-WFMDTR._adb-tls-connect._tcp
+[22:23:32] reverse: 3000
+[22:23:34] device-side health: {"ok":true}
+[22:23:34] low_power=Invalid namespace 'low_power'
+[22:23:34] uimode night (orig) = 'Night mode: no'
+[22:23:34] === theme=light (uimode night no) ===
+[22:24:04] room code = F56C9E94
+[22:24:16] state after play: ('PLAYING', 5816, 262086, 1.0, 267089709)
+[22:24:23] screenshot: D:\ListenTogether\.workbuddy\light-playing.png (174492 bytes)
+[22:24:23] light before drag: (('PLAYING', 11830, 262086, 1.0, 267095719),)
+[22:24:29] light after drag: (('PLAYING', 1891863, 2150896, 1.0, 267102270),)
+[22:24:29] light drag: position 11.8s -> 1891.9s (target=1848.0s)
+[22:24:30] screenshot: D:\ListenTogether\.workbuddy\light-after-drag.png (174932 bytes)
+[22:24:32] === theme=dark (uimode night yes) ===
+[22:25:12] room code = CF13C597
+[22:25:25] state after play: ('PLAYING', 5732, 262086, 1.0, 267158075)
+[22:25:32] screenshot: D:\ListenTogether\.workbuddy\dark-playing.png (175305 bytes)
+[22:25:32] dark before drag: (('PLAYING', 11755, 262086, 1.0, 267164091),)
+[22:25:38] dark after drag: (('PLAYING', 1908941, 2167640, 1.04, 267171071),)
+[22:25:38] dark drag: position 11.8s -> 1908.9s (target=1848.0s)
+[22:25:39] screenshot: D:\ListenTogether\.workbuddy\dark-after-drag.png (176213 bytes)
+[22:25:42] uimode night restored: Night mode: no
+[22:25:43] diag exported: D:\ListenTogether\.workbuddy\w1-ui-diag-20260923-222439.jsonl (26027 bytes, file=diag-20260923-222439.jsonl)
+[22:25:43] analyze[ui]: playback=76 window=41.2s corrections={'': 58, 'buffering': 8, 'load': 2, 'seek': 1, 'speed': 7}
+[22:25:43] analyze[ui]: seek count=1
+[22:25:43] analyze[ui]: speed count=7
+[22:25:43] analyze[ui]: buffering true count=8
+[22:25:43] analyze[ui]: position rate median=994.054 p10=0.000 p90=1034.826 n=32
+[22:25:43] analyze[ui]: |drift| median=155ms max=1890749ms
+[22:28:59] connected serial=adb-fbddbe8-WFMDTR._adb-tls-connect._tcp
+[22:28:59] reverse: 3000
+[22:29:00] device-side health: {"ok":true}
+[22:29:00] device-side public health: {"ok":true}
+[22:29:01] baseUrl written: OK
+[22:29:29] room code = 83888A9C
+[22:29:29] playlist rows: ['有何不可', '当前 · 4:01', '痴心绝对', '单车', '富士山下']
+[22:29:29] === step: select+play '当前 · 4:01' ===
+[22:29:34] FAB(播放) at (540, 1181)
+[22:29:43] play: ('PLAYING', 8854, 87353, 1.0, 267417870)
+[22:29:49]   playing sample 1: (('PLAYING', 11874, 87353, 1.0, 267420887),)
+[22:29:54]   playing sample 2: (('PLAYING', 17895, 87353, 1.0, 267426914),)
+[22:29:59]   playing sample 3: (('PLAYING', 23950, 87353, 1.0, 267432966),)
+[22:29:59] === step: pause ===
+[22:30:03] after tap1(pause): ('PAUSED', 24800, 87353, 0.0, 267433823)
+[22:30:03] === step: drag ===
+[22:30:09] after drag: ('PAUSED', 161423, 162533, 0.0, 267439133)
+[22:30:09] === step: switch track to '有何不可' ===
+[22:30:16] rows after switch: ['有何不可', '当前 · 4:01', '痴心绝对', '单车', '富士山下']
+[22:30:16] FAB after switch: 播放 (540, 1181)
+[22:30:24] after switch play: ('PLAYING', 5885, 87379, 1.0, 267456799)
+[22:30:30]   post-switch sample 1: (('PLAYING', 11900, 87379, 1.0, 267462815),)
+[22:30:35]   post-switch sample 2: (('PLAYING', 17907, 87379, 1.0, 267468827),)
+[22:30:35] === step: exit room ===
+[22:30:41] ERROR: confirm dialog button not found
+[22:30:43] exit -> EditText count after exit = 0 (入房页应为 1)
+[22:30:44] diag exported: D:\ListenTogether\.workbuddy\w1-e2e-diag-20260923-222905.jsonl (47927 bytes, file=diag-20260923-222905.jsonl)
+[22:30:44] analyze[e2e]: playback=141 window=84.5s corrections={'': 130, 'buffering': 8, 'load': 1, 'seek': 2}
+[22:30:44] analyze[e2e]: seek count=2 intervals(s)=[5.35]
+[22:30:44] analyze[e2e]: speed count=0
+[22:30:44] analyze[e2e]: buffering true count=8
+[22:30:44] analyze[e2e]: position rate median=995.040 p10=0.000 p90=1006.951 n=81
+[22:30:44] analyze[e2e]: |drift| median=160ms max=161423ms
+[22:30:44] analyze[e2e]: sync samples=17 rtt median=71ms max=123ms offset spread=27ms
+[22:30:44] analyze[e2e]: room versions seen = [2, 3, 4, 5, 6, 7, 8]
+[22:31:13] connected serial=adb-fbddbe8-WFMDTR._adb-tls-connect._tcp
+[22:31:15] playlist rows now: ['有何不可', '当前 · 4:01', '痴心绝对', '单车', '富士山下']
+[22:31:15] === step: switch track to 痴心绝对 (tap (532, 1769)) ===
+[22:31:21] FAB after switch = 暂停 at (540, 1181)
+[22:31:22] after switch: ('PLAYING', 5575, 87353, 1.04, 267516045)
+[22:31:27]   playing sample 1: (('PLAYING', 8693, 87353, 1.0, 267519051),)
+[22:31:32]   playing sample 2: (('PLAYING', 14706, 87353, 1.0, 267525064),)
+[22:31:37]   playing sample 3: (('PLAYING', 20726, 87353, 1.0, 267531083),)
+[22:31:37] === step: exit room ===
+[22:31:40] exit icon candidates: [('[960,167][1032,239]', 'android.view.View')]
+[22:31:46] dialog texts: ['退出房间？', '退出后需要重新输入邀请码才能回来。', '取消', '退出房间']
+[22:31:55] after exit: EditText=1 texts=['此刻，一起听', '和朋友分享同一段旋律', '创建房间', '加入房间', '怎么称呼你', '高级设置：更换服务器地址', '创建房间', '一起听歌']
+[22:31:56] diag exported: D:\ListenTogether\.workbuddy\w1-e2e2-diag-20260923-222905.jsonl (80046 bytes, file=diag-20260923-222905.jsonl)
+[22:31:56] analyze[e2e2]: playback=234 window=147.0s corrections={'': 217, 'buffering': 10, 'load': 2, 'seek': 2, 'speed': 3}
+[22:31:56] analyze[e2e2]: seek count=2 intervals(s)=[5.35]
+[22:31:56] analyze[e2e2]: speed count=3
+[22:31:56] analyze[e2e2]: buffering true count=10
+[22:31:56] analyze[e2e2]: position rate median=998.885 p10=0.000 p90=1008.964 n=138
+[22:31:56] analyze[e2e2]: |drift| median=164ms max=161423ms
+[22:31:56] analyze[e2e2]: sync samples=30 rtt median=65ms max=123ms offset spread=27ms
+[22:31:56] analyze[e2e2]: room versions seen = [2, 3, 4, 5, 6, 7, 8, 9]
+[22:31:56] seg[0] track=he-bu-ke records=187 t=[0.0s..116.8s]
+[22:31:56] seg[1] track=chi-xin-jue-dui records=47 t=[116.9s..147.0s]
+[22:31:56]   -> 切歌后首个推进位置: +0.07s (pos=59224ms, buffering=False, corr='load')
+[22:31:56]   -> 新段内 correction 记录: seek=0 speed=3 buffering=2
+[22:33:53] connected serial=adb-fbddbe8-WFMDTR._adb-tls-connect._tcp
+[22:34:21] room code = 4EC9D5D1
+[22:34:36] public play: ('PLAYING', 8852, 87353, 1.0, 267710533)
+[22:34:41] screenshot: D:\ListenTogether\.workbuddy\public-playing.png (134886 bytes)
+[22:34:41] public sample: ('PLAYING', 11858, 87353, 1.0, 267713538)
+[22:34:52] exited public room 4EC9D5D1
+[22:34:52] diag exported: D:\ListenTogether\.workbuddy\w1-w2c-diag-20260923-223357.jsonl (24063 bytes, file=diag-20260923-223357.jsonl)
+[22:34:52] analyze[w2c]: playback=71 window=40.3s corrections={'': 63, 'buffering': 6, 'load': 2}
+[22:34:52] analyze[w2c]: seek count=0
+[22:34:52] analyze[w2c]: speed count=0
+[22:34:52] analyze[w2c]: buffering true count=6
+[22:34:52] analyze[w2c]: position rate median=992.497 p10=0.000 p90=1007.944 n=38
+[22:34:52] analyze[w2c]: |drift| median=19ms max=220ms
+[22:34:52] analyze[w2c]: sync samples=9 rtt median=53ms max=119ms offset spread=13ms
+[22:34:52] analyze[w2c]: room versions seen = [2, 3, 4]
+[22:34:52] seg[0] track=he-bu-ke records=22 t=[0.0s..10.0s]
+[22:34:52] seg[1] track=dan-che records=49 t=[10.3s..40.3s]
+[22:34:52]   -> 切歌后首个推进位置: +7.04s (pos=1085ms, buffering=False, corr='')
+[22:34:52]   -> 新段内 correction 记录: seek=0 speed=0 buffering=2
