@@ -1,0 +1,7 @@
+﻿[1/4] server 构建通过（tsc 0 错误）
+      demo-media 按 catalog 引用打包 5 个音频
+[2/4] 暂存目录就绪：D:\ListenTogether\deploy-artifacts\staging-20260923-2157
+[3/4] 打包完成：D:\ListenTogether\deploy-artifacts\listen-together-0.1.0-20260923-2157.tar.gz
+      大小 11.4 MB
+[4/4] SHA256 清单：D:\ListenTogether\deploy-artifacts\SHA256SUMS-20260923-2157.txt
+暂存目录已清理。上传服务器后用 sha256sum -c SHA256SUMS-*.txt 校验（tarball 行需手工比对）。

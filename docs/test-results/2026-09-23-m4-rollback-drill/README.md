@@ -223,7 +223,7 @@ health 第 2 秒 200；PID 14935→**15175**、ActiveEnterTimestamp=22:56:01、N
 
 ## 七、证据文件
 
-- `evidence/01-package-seg1.log`：段 1 打包脚本完整输出（tsc 0 错误、11.4MB、5 个音频按 catalog 过滤）
+- `evidence/01-package-seg1.txt`：段 1 打包脚本完整输出（tsc 0 错误、11.4MB、5 个音频按 catalog 过滤）
 - `evidence/02-server-extract-verify.txt`：服务端解包 + **CRLF 口径不对称取证** + 34/34 校验
 - `evidence/03-upgrade.txt`：restart 前只读盘点（含 0 条 ESTABLISHED）、升级切换与重启、构建三关、受控房间 200→404
 - `evidence/04-rollback.txt`：回滚命令与输出、重启、受控房间 200→404、公网复核
