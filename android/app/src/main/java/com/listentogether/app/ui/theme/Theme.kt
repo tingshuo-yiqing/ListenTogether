@@ -10,6 +10,7 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 
 private val LightScheme = lightColorScheme(
     primary = BluePrimaryLight,
@@ -43,8 +44,14 @@ private val DarkScheme = darkColorScheme(
     outline = OutlineDark
 )
 
-/** 应用字体：沿用 Material 3 默认字阶，标题加粗由调用处按需指定。 */
-val AppTypography = Typography()
+/** 应用字体：Material 3 默认字阶，标题级字重在此统一为 SemiBold，调用处不再临时指定。 */
+private val BaseTypography = Typography()
+val AppTypography = Typography(
+    headlineMedium = BaseTypography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
+    headlineSmall = BaseTypography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
+    titleLarge = BaseTypography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+    titleMedium = BaseTypography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+)
 
 /**
  * 应用主题：Android 12+ 使用壁纸动态取色（Monet，Google 应用现行风格），

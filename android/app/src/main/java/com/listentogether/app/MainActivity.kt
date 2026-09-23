@@ -6,9 +6,12 @@ import android.content.ComponentName
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +20,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,6 +29,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
@@ -33,12 +38,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ExitToApp
-import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.MusicNote
-import androidx.compose.material.icons.rounded.Pause
-import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.outlined.Pause
+import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ElevatedCard
@@ -49,10 +56,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -73,15 +80,18 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -99,7 +109,13 @@ import com.listentogether.app.ui.PlaybackView
 import com.listentogether.app.ui.joinError
 import com.listentogether.app.ui.playbackLabel
 import com.listentogether.app.ui.showStatusNotice
+import com.listentogether.app.ui.theme.BannerShape
+import com.listentogether.app.ui.theme.CardShape
+import com.listentogether.app.ui.theme.FieldShape
 import com.listentogether.app.ui.theme.ListenTogetherTheme
+import com.listentogether.app.ui.theme.PillShape
+import com.listentogether.app.ui.theme.RowShape
+import java.util.Locale
 import kotlin.math.abs
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -118,11 +134,23 @@ class MainActivity : ComponentActivity() {
     private val permission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (Build.VERSION.SDK_INT >= 33) permission.launch(Manifest.permission.POST_NOTIFICATIONS)
         val client = (application as ListenApplication).roomClient
         setContent {
             ListenTogetherTheme {
                 val ui by client.state.collectAsState()
+                // 通知权限延迟到有实际播放场景（入房成功）再申请，避免冷启动弹窗；每次安装只问一次。
+                var notificationAsked by rememberSaveable { mutableStateOf(false) }
+                LaunchedEffect(ui.credentials != null) {
+                    if (ui.credentials != null && Build.VERSION.SDK_INT >= 33 && !notificationAsked) {
+                        notificationAsked = true
+                        permission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
+                // 房间内按返回只退出界面：播放由 Service 继续，提示用户去通知栏停止。
+                if (ui.credentials != null) BackHandler {
+                    Toast.makeText(this@MainActivity, "仍在后台播放，可在通知栏停止", Toast.LENGTH_SHORT).show()
+                    finish()
+                }
                 var playback by remember(ui.credentials?.token) { mutableStateOf(PlaybackView()) }
                 // Controller 保持与 Service 连接；Activity 销毁只释放控制器，不销毁后台播放器。
                 DisposableEffect(ui.credentials?.token) {
@@ -165,38 +193,60 @@ class MainActivity : ComponentActivity() {
                 // 点空白处收起键盘（实测该设备 ESC 无法关闭输入法）。
                 val focusManager = LocalFocusManager.current
                 val snackbar = remember { SnackbarHostState() }
+                val scope = rememberCoroutineScope()
+                var showLeaveConfirm by rememberSaveable { mutableStateOf(false) }
                 Scaffold(
-                    topBar = { TopBar(ui, snackbar) },
+                    topBar = { TopBar(ui, snackbar, onLeaveRequest = { showLeaveConfirm = true }) },
                     snackbarHost = { SnackbarHost(snackbar) },
                     containerColor = MaterialTheme.colorScheme.background
                 ) { padding ->
-                    LazyColumn(
+                    // 大屏上限宽居中，避免表单与卡片被横向拉伸；窄屏行为不变。
+                    Box(
                         Modifier.fillMaxSize().padding(padding).imePadding().pointerInput(Unit) {
                             detectTapGestures { focusManager.clearFocus() }
                         },
-                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        contentAlignment = Alignment.TopCenter
                     ) {
-                        Content(client, ui, input, playback)
+                        LazyColumn(
+                            Modifier.fillMaxWidth().widthIn(max = 560.dp),
+                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Content(client, ui, input, playback, onLockedTap = {
+                                scope.launch { snackbar.showSnackbar("只有房主可以切歌") }
+                            })
+                        }
                     }
+                }
+                if (showLeaveConfirm && ui.credentials != null) {
+                    AlertDialog(
+                        onDismissRequest = { showLeaveConfirm = false },
+                        title = { Text("退出房间？") },
+                        text = { Text("退出后需要重新输入邀请码才能回来。") },
+                        confirmButton = {
+                            TextButton(onClick = { showLeaveConfirm = false; client.leave() }) { Text("退出房间") }
+                        },
+                        dismissButton = { TextButton(onClick = { showLeaveConfirm = false }) { Text("取消") } }
+                    )
                 }
             }
         }
     }
 }
 
-/** 顶栏：入房页显示应用名；房间页显示房间码与角色，附复制邀请码入口（复制后有 Snackbar 反馈）。 */
+/** 顶栏：入房页显示应用名；房间页显示房间码与角色，附分享/复制邀请码与退出房间入口（退出走确认弹窗）。 */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TopBar(ui: UiState, snackbar: SnackbarHostState) {
+private fun TopBar(ui: UiState, snackbar: SnackbarHostState, onLeaveRequest: () -> Unit) {
     CenterAlignedTopAppBar(
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.background),
         title = {
             if (ui.credentials == null) {
-                Text("一起听歌", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                Text("一起听歌", style = MaterialTheme.typography.titleLarge)
             } else {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(ui.credentials.code, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    // 房间码等宽显示，降低 B/8、0/O 误读概率。
+                    Text(ui.credentials.code, style = MaterialTheme.typography.titleMedium, fontFamily = FontFamily.Monospace)
                     Text(
                         if (ui.room?.hostId == ui.credentials.memberId) "房主" else "一起听歌",
                         style = MaterialTheme.typography.bodySmall,
@@ -207,23 +257,36 @@ private fun TopBar(ui: UiState, snackbar: SnackbarHostState) {
         },
         actions = {
             if (ui.credentials != null) {
+                val context = LocalContext.current
                 val clipboard = LocalClipboard.current
                 val scope = rememberCoroutineScope()
+                IconButton(onClick = {
+                    val send = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, "来一起听歌，房间邀请码 ${ui.credentials.code}")
+                    }
+                    context.startActivity(Intent.createChooser(send, "分享邀请码"))
+                }) {
+                    Icon(Icons.Outlined.Share, contentDescription = "分享邀请码", tint = MaterialTheme.colorScheme.primary)
+                }
                 IconButton(onClick = {
                     scope.launch {
                         clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("code", ui.credentials.code)))
                         snackbar.showSnackbar("邀请码已复制")
                     }
                 }) {
-                    Icon(Icons.Filled.ContentCopy, contentDescription = "复制邀请码", tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Outlined.ContentCopy, contentDescription = "复制邀请码", tint = MaterialTheme.colorScheme.primary)
+                }
+                IconButton(onClick = onLeaveRequest) {
+                    Icon(Icons.AutoMirrored.Outlined.ExitToApp, contentDescription = "退出房间", tint = MaterialTheme.colorScheme.primary)
                 }
             }
         }
     )
 }
 
-/** 内容主体：按是否在房间切换入房表单与房间内容。 */
-private fun LazyListScope.Content(client: RoomClient, ui: UiState, input: JoinInput, playback: PlaybackView) {
+/** 内容主体：按是否在房间切换入房表单与房间内容；退出房间统一走顶栏确认弹窗。 */
+private fun LazyListScope.Content(client: RoomClient, ui: UiState, input: JoinInput, playback: PlaybackView, onLockedTap: () -> Unit) {
     val room = ui.room
     val track = ui.tracks.find { it.id == room?.trackId }
     if (ui.credentials == null) {
@@ -232,18 +295,7 @@ private fun LazyListScope.Content(client: RoomClient, ui: UiState, input: JoinIn
         if (showStatusNotice(ui, playback)) item { StatusBanner(ui, playback, onRetry = { client.retry() }, onLeave = { client.leave() }) }
         item { MembersSection(ui) }
         item { NowPlayingCard(client, ui, input, track, playback) }
-        PlaylistSection(client, ui, room?.trackId)
-        item {
-            OutlinedButton(
-                onClick = { client.leave() },
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                shape = RoundedCornerShape(24.dp)
-            ) {
-                Icon(Icons.AutoMirrored.Outlined.ExitToApp, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.size(8.dp))
-                Text("退出房间")
-            }
-        }
+        PlaylistSection(client, ui, room?.trackId, onLockedTap)
     }
 }
 
@@ -251,7 +303,7 @@ private fun LazyListScope.Content(client: RoomClient, ui: UiState, input: JoinIn
 private fun LazyListScope.JoinForm(client: RoomClient, ui: UiState, input: JoinInput) {
     item {
         Column(Modifier.padding(vertical = 12.dp)) {
-            Text("此刻，一起听", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
+            Text("此刻，一起听", style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.height(8.dp))
             Text("和朋友分享同一段旋律", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -266,7 +318,7 @@ private fun LazyListScope.JoinForm(client: RoomClient, ui: UiState, input: JoinI
         OutlinedTextField(
             value = input.name, onValueChange = { input.name = it.take(24) },
             label = { Text("怎么称呼你") }, singleLine = true, enabled = !ui.busy,
-            shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()
+            shape = FieldShape, modifier = Modifier.fillMaxWidth()
         )
     }
     if (input.joining) item {
@@ -274,21 +326,32 @@ private fun LazyListScope.JoinForm(client: RoomClient, ui: UiState, input: JoinI
             value = input.code, onValueChange = { input.code = it.trim().uppercase().take(8) },
             label = { Text("8 位邀请码") }, singleLine = true, enabled = !ui.busy,
             supportingText = { Text("向房主获取邀请码") },
-            shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()
+            shape = FieldShape, modifier = Modifier.fillMaxWidth()
         )
     }
     item {
-        OutlinedTextField(
-            value = input.address, onValueChange = { input.address = it },
-            label = { Text("服务器地址") }, placeholder = { Text("https://music.example.com") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-            singleLine = true, enabled = !ui.busy, shape = RoundedCornerShape(14.dp),
-            supportingText = { Text("与好友使用同一个服务器地址") }, modifier = Modifier.fillMaxWidth()
-        )
+        // 服务器地址属基础设施细节，默认收起以保持主路径干净；
+        // 地址为空（首次使用或未记住）时自动展开，避免用户不知道去哪填。
+        var showAdvanced by rememberSaveable { mutableStateOf(false) }
+        Column {
+            if (showAdvanced || input.address.isBlank()) {
+                OutlinedTextField(
+                    value = input.address, onValueChange = { input.address = it },
+                    label = { Text("服务器地址") }, placeholder = { Text("https://music.example.com") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                    singleLine = true, enabled = !ui.busy, shape = FieldShape,
+                    supportingText = { Text("与好友使用同一个服务器地址") }, modifier = Modifier.fillMaxWidth()
+                )
+            } else {
+                TextButton(onClick = { showAdvanced = true }, enabled = !ui.busy) {
+                    Text("高级设置：更换服务器地址")
+                }
+            }
+        }
     }
     joinError(ui)?.let { message ->
         item {
-            Surface(color = MaterialTheme.colorScheme.errorContainer, shape = RoundedCornerShape(12.dp)) {
+            Surface(color = MaterialTheme.colorScheme.errorContainer, shape = BannerShape) {
                 Text(message, color = MaterialTheme.colorScheme.onErrorContainer,
                     modifier = Modifier.fillMaxWidth().padding(14.dp).semantics { liveRegion = LiveRegionMode.Polite })
             }
@@ -303,7 +366,7 @@ private fun LazyListScope.JoinForm(client: RoomClient, ui: UiState, input: JoinI
             },
             enabled = !ui.busy && input.name.isNotBlank() && input.address.isNotBlank() &&
                 (!input.joining || input.code.matches(Regex("[0-9A-F]{8}"))),
-            shape = RoundedCornerShape(26.dp), modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
+            shape = PillShape, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
         ) { Text(if (ui.busy) "正在连接…" else if (input.joining) "加入，一起听" else "创建房间") }
     }
     if (ui.busy) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
@@ -321,7 +384,7 @@ private fun StatusBanner(ui: UiState, playback: PlaybackView, onRetry: () -> Uni
         else -> ui.message.ifBlank { statusLabel(ui.status) }
     }
     Surface(
-        shape = RoundedCornerShape(14.dp),
+        shape = BannerShape,
         color = if (error) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant,
         contentColor = if (error) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }
@@ -347,6 +410,7 @@ private fun StatusBanner(ui: UiState, playback: PlaybackView, onRetry: () -> Uni
  * 收到 version 更新的快照且位置贴合目标后恢复跟随服务器进度；
  * 5 秒仍未确认则清除预览并提示重试，不自动重发。
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun NowPlayingCard(client: RoomClient, ui: UiState, input: JoinInput, track: Track?, playback: PlaybackView) {
     val room = ui.room
@@ -375,7 +439,7 @@ private fun NowPlayingCard(client: RoomClient, ui: UiState, input: JoinInput, tr
             }
         }
     }
-    ElevatedCard(shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth()) {
+    ElevatedCard(shape = CardShape, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("当前歌曲", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -384,11 +448,13 @@ private fun NowPlayingCard(client: RoomClient, ui: UiState, input: JoinInput, tr
             Text(
                 track?.title ?: if (client.isHost) "选一首喜欢的歌" else "等待房主选歌",
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
             Spacer(Modifier.size(6.dp))
+            // 默认 M3 Slider 手柄是 4×44dp 竖长条，观感突兀且占竖向空间；改用圆点端点 + 细轨道。
+            val sliderColors = SliderDefaults.colors()
+            val sliderEnabled = client.isHost && ui.status == ConnectionStatus.Ready && track != null
             Slider(
                 value = (input.dragged ?: pendingSeek?.toFloat() ?: ui.positionMs.toFloat()).coerceIn(0f, duration),
                 onValueChange = { input.dragged = it },
@@ -402,7 +468,28 @@ private fun NowPlayingCard(client: RoomClient, ui: UiState, input: JoinInput, tr
                     input.dragged = null
                 },
                 valueRange = 0f..duration,
-                enabled = client.isHost && ui.status == ConnectionStatus.Ready && track != null
+                enabled = sliderEnabled,
+                thumb = {
+                    Box(
+                        Modifier.size(14.dp)
+                            .clip(CircleShape)
+                            .background(if (sliderEnabled) sliderColors.thumbColor else sliderColors.disabledThumbColor)
+                    )
+                },
+                track = {
+                    val shown = (input.dragged ?: pendingSeek?.toFloat() ?: ui.positionMs.toFloat()).coerceIn(0f, duration)
+                    val played = if (duration > 0f) shown / duration else 0f
+                    Box(
+                        Modifier.fillMaxWidth().height(5.dp)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(if (sliderEnabled) sliderColors.inactiveTrackColor else sliderColors.disabledInactiveTrackColor)
+                    ) {
+                        Box(
+                            Modifier.fillMaxWidth(played).fillMaxHeight()
+                                .background(if (sliderEnabled) sliderColors.activeTrackColor else sliderColors.disabledActiveTrackColor)
+                        )
+                    }
+                }
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 // 数字与滑块显示同一来源：拖动中跟随手指，确认前停在目标，其余跟随服务器进度。
@@ -432,7 +519,7 @@ private fun NowPlayingCard(client: RoomClient, ui: UiState, input: JoinInput, tr
                     )
                 ) {
                     Icon(
-                        if (playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                        if (playing) Icons.Outlined.Pause else Icons.Outlined.PlayArrow,
                         contentDescription = if (playing) "暂停" else "播放",
                         modifier = Modifier.size(32.dp)
                     )
@@ -472,11 +559,11 @@ private fun MembersSection(ui: UiState) {
     }
 }
 
-/** 歌单：当前曲目高亮；仅房主可点选。 */
+/** 歌单：当前曲目高亮；仅房主可切歌，非房主点击给出提示而不是静默无响应。 */
 @OptIn(ExperimentalMaterial3Api::class)
-private fun LazyListScope.PlaylistSection(client: RoomClient, ui: UiState, currentTrackId: String?) {
+private fun LazyListScope.PlaylistSection(client: RoomClient, ui: UiState, currentTrackId: String?, onLockedTap: () -> Unit) {
     item {
-        Text("歌单", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Text("歌单", style = MaterialTheme.typography.titleMedium)
     }
     if (ui.tracks.isEmpty()) {
         item { Text("还没有歌曲，联系房主添加后再来听。", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
@@ -484,11 +571,13 @@ private fun LazyListScope.PlaylistSection(client: RoomClient, ui: UiState, curre
     items(ui.tracks, key = { it.id }) { song ->
         val current = song.id == currentTrackId
         Surface(
-            shape = RoundedCornerShape(12.dp),
+            shape = RowShape,
             color = if (current) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
-            modifier = Modifier.fillMaxWidth().clickable(enabled = client.isHost && ui.status == ConnectionStatus.Ready) {
-                client.command("select", trackId = song.id)
-            }
+            modifier = Modifier.fillMaxWidth()
+                .semantics { if (current) stateDescription = "当前曲目" }
+                .clickable(enabled = ui.status == ConnectionStatus.Ready) {
+                    if (client.isHost) client.command("select", trackId = song.id) else onLockedTap()
+                }
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 12.dp, vertical = 10.dp)) {
                 Icon(
@@ -526,6 +615,6 @@ private fun statusLabel(status: ConnectionStatus): String = when (status) {
 internal fun formatTime(ms: Long): String {
     val totalSeconds = ms / 1000
     val h = totalSeconds / 3600
-    return if (h > 0) "%d:%02d:%02d".format(h, totalSeconds / 60 % 60, totalSeconds % 60)
-    else "%d:%02d".format(totalSeconds / 60, totalSeconds % 60)
+    return if (h > 0) String.format(Locale.ROOT, "%d:%02d:%02d", h, totalSeconds / 60 % 60, totalSeconds % 60)
+    else String.format(Locale.ROOT, "%d:%02d", totalSeconds / 60, totalSeconds % 60)
 }

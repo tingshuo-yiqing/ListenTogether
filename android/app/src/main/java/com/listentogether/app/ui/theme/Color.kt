@@ -35,7 +35,3 @@ val BackgroundDark = Color(0xFF111318)
 val SurfaceVariantDark = Color(0xFF44474F)
 val OnSurfaceVariantDark = Color(0xFFC4C6D0)
 val OutlineDark = Color(0xFF8E9099)
-
-/** 状态点缀色：在线/已同步绿、重连中橙，与 Google 产品状态色一致。 */
-val StatusGreen = Color(0xFF1E8E3E)
-val StatusAmber = Color(0xFFE8710A)

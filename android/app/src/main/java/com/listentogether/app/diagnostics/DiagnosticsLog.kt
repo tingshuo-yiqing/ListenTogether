@@ -58,7 +58,8 @@ class DiagnosticsLog(context: Context) : Diagnostics {
 
     /**
      * 播放事件：记录目标位置、实际位置、偏差、缓冲与本地暂停，以及本次纠正方式。
-     * correction 取值：load（装载新曲目）、seek（超过 500ms 阈值校正）、
+     * correction 取值：load（装载新曲目）、seek（漂移超过 2.5s 的硬纠正）、
+     * speed（500ms–2.5s 之间的连续变速追赶，不出声缺口）、
      * buffering（缓冲状态变化）、error:XXX（播放错误）、空串（无需纠正）。
      */
     override fun playback(roomCode: String?, trackId: String?, version: Long, playerPositionMs: Long, targetPositionMs: Long, driftMs: Long, buffering: Boolean, localPause: Boolean, correction: String, estimatedServerMs: Long) = event(

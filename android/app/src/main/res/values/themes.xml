@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 启动窗口主题：Compose 绘制前的窗口背景跟随系统明暗，避免暗色模式冷启动白闪 -->
+    <style name="Theme.ListenTogether" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

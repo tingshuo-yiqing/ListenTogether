@@ -6,10 +6,10 @@ ListenApplication 持有 RoomClient；页面通过 StateFlow 观察 UiState，�
 
 ## 当前入口与数据
 - MainActivity.kt：Compose 首页/房间页、通知权限申请、MediaController 绑定。
-- ui/theme/：Material 3 主题——Google 蓝 #0B57D0 固定色板 + Android 12+ 壁纸动态取色（Monet）+ 暗色方案；StatusGreen/StatusAmber 为在线/重连点缀色。
+- ui/theme/：Material 3 主题——Google 蓝 #0B57D0 固定色板 + Android 12+ 壁纸动态取色（Monet）+ 暗色方案；标题级字重在 Typography 统一为 SemiBold；Shape.kt 按用途集中圆角 token（横幅/列表行/输入框/卡片/全宽按钮）。
 - ListenApplication.kt：创建进程级 RoomClient。
 - network/Models.kt：UiState、RoomState、Track、Member、Credentials。
-- 首页输入服务器根地址、昵称、邀请码；房间页显示状态横幅、正在播放卡片、成员、歌单。
+- 首页输入昵称、邀请码；服务器地址默认折叠在“高级设置”内（地址为空时自动展开）；房间页显示状态横幅、正在播放卡片、成员、歌单。
 - 本机只保存服务器地址。成员令牌不持久化。
 
 ## 当前流程
@@ -17,19 +17,22 @@ ListenApplication 持有 RoomClient；页面通过 StateFlow 观察 UiState，�
 有效身份触发 Service/Controller 绑定；页面销毁释放 Controller，正在播放的 Service 可继续。
 房主控制调用 command；成员播放按钮只改变本机跟听状态。退出调用 leave。
 
-## 界面结构（2026-09-23 简洁 UI）
+## 界面结构（2026-09-23 简洁 UI；2026-09-23 晚 UI 优化批次）
 
-- 入房页：创建/加入两个 Tab，只有加入模式显示邀请码；昵称、服务器地址与一个主按钮。地址仍可直接编辑，不预设尚未确认的正式服务。
+- 入房页：创建/加入两个 Tab，只有加入模式显示邀请码；昵称、邀请码与一个主按钮。服务器地址默认折叠为“高级设置：更换服务器地址”，已记住地址的用户不面对基础设施细节；地址为空（首启）时自动展开。
 - 失败消息在表单按钮上方持续显示，连接中禁用输入和重复提交；语义 liveRegion 提示读屏用户。
-- 顶栏：房间码降为 titleMedium，角色简写；复制保留 Snackbar 反馈。
+- 顶栏：房间码降为 titleMedium 并用等宽字体（降低 B/8、0/O 误读），角色简写；操作区为分享（系统分享面板）、复制（Snackbar 反馈）、退出房间（确认弹窗，退出后需重新输码）；列表底部不再放退出按钮。
+- 通知权限（Android 13+）延迟到入房成功后申请且每次安装只问一次，不再冷启动即弹。
+- 房间内按系统返回只退出界面，Toast 提示“仍在后台播放，可在通知栏停止”；播放由 Service 继续。
 - 正常连接收进人数摘要，成员默认折叠，展开显示房主与在线/离线文字；不只依赖颜色传达状态。
 - 异常、本机暂停和非默认消息保留横幅；媒体错误采用错误色与图标，提供退出入口，重连可立即重试。
 - 播放卡片固定标题“当前歌曲”，曲名允许两行，64dp 播放按钮；房主/成员操作影响在控制区说明，校时完成后才启用播放/拖动。
 - 页面通过 MediaController 的 Player.Listener 读取 isPlaying、STATE_BUFFERING、playerError 和 mediaId；PlaybackView 只负责展示，不修改 UiState 或同步规则。实际播放器观测只用于对应曲目，迟到的旧曲目数据不能把新歌显示为播放中。
 - 播放按钮仍通过 RoomClient.setPlaying 发送用户意图；缓冲时可暂停，成员本机暂停不影响房间。
-- 歌单为轻量列表行，仅当前曲目高亮并标“当前”；不会以播放箭头冒充正在播放，成员仍可清楚阅读歌单。
+- 歌单为轻量列表行，仅当前曲目高亮并标“当前”（TalkBack 读作 stateDescription“当前曲目”）；非房主点击歌曲不再静默无响应，弹 Snackbar“只有房主可以切歌”。
 - 进度采用既有乐观预览和快照确认，5 秒未确认提示重试；预览绑定房间身份与曲目，切歌清除拖动状态。
 - 页面保留 IME 内边距；操作按钮用最小高度，允许大字体撑高，不缩小触控区域。
+- 内容区在 560dp 以上宽度限宽居中，避免平板/横屏拉伸；图标统一 Material Outlined 族；启动窗口主题按系统明暗切换（values-night），消除暗色冷启动白闪。
 
 ## 下一阶段
 拆分连接页、房间页和播放器组件，保留单 Activity；采用单一不可变状态，避免控件各自推测连接情况。
@@ -58,3 +61,6 @@ ListenApplication 持有 RoomClient；页面通过 StateFlow 观察 UiState，�
 
 
 2026-09-23：实现首页路径切换、入房错误、紧凑连接状态、成员折叠、轻量歌单及本机播放状态；新增 PlaybackViewTest 状态回归。构建与设备验收结果见 verification.md，未将自动化替代目视验收。
+2026-09-23 凌晨：UI 优化批次（系统评审后落地）——服务器地址折叠进高级设置（空地址自动展开）；退出房间移至顶栏并加确认弹窗；通知权限改为入房后申请；新增邀请码系统分享、房间码等宽字体、返回键后台播放提示、非房主点歌 Snackbar 提示、歌单 stateDescription、560dp 大屏限宽；主题层标题字重固化、Shape.kt 圆角 token、图标统一 Outlined 族、暗色启动主题消除白闪；删除未使用的 StatusGreen/StatusAmber。RoomClient 调用与行为约定不变。
+2026-09-23 上午：上述 UI 优化批次真机验证通过（PHQ110 无线通道，地址折叠/顶栏三入口/退出确认/播放反馈/返回 Toast 全过；分享面板与非房主 Snackbar 等待后续条件），记录见 test-results/2026-09-23-ui-optimize。
+2026-09-23 傍晚：进度条端点样式改造——material3 1.3 默认手柄是 4×44dp 竖长条（用户报告"很长的竖线不美观且占空间"），改为自定义 thumb/track：14dp 圆点手柄 + 5dp 细轨道，禁用态仍取 SliderDefaults 色，拖动/乐观预览逻辑不变；NowPlayingCard 加 @OptIn(ExperimentalMaterial3Api)。真机目视验收并入下一批次。

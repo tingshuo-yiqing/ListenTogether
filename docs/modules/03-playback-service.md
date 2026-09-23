@@ -12,8 +12,13 @@ PlaybackPolicy 判断共享播放与本地暂停；音频属性使用媒体用�
 
 ## 会话绑定与缓冲（2026-09-21 实现）
 - Service 创建时通过 attachStateObserver 捕获会话代次；onDestroy/onTaskRemoved 只在代次仍匹配时 detach 回调并退出房间，旧实例不再无条件清空 onState 或替新会话发退出。
-- 缓冲期间（STATE_BUFFERING）不做 seek；进入缓冲和回到 READY 都会触发一次 applyState，实现“缓冲完成后立即按最新快照校准”。
-- 播放错误、校准（load/seek）、缓冲进出、进入本地暂停的边沿写入诊断 JSONL（correction 字段），release 构建为空操作。本地暂停被快照周期反复触发，只在进入暂停沿记录一条 `correction:"localPause"`，避免刷屏（2026-09-22 补，此前暂停期间 JSONL 无条目）。
+- 缓冲期间（STATE_BUFFERING）不做 seek/变速纠正；进入缓冲和回到 READY 都会触发一次 applyState，实现“缓冲完成后立即按最新快照校准”。
+- 播放错误、校准（load/seek/speed）、缓冲进出、进入本地暂停的边沿写入诊断 JSONL（correction 字段），release 构建为空操作。本地暂停被快照周期反复触发，只在进入暂停沿记录一条 `correction:"localPause"`，避免刷屏（2026-09-22 补，此前暂停期间 JSONL 无条目）。
+
+## 漂移自检与渲染缓冲（2026-09-23 实现）
+- 位置上报仍为 500ms 一次；自检（applyState）从"仅 5 秒校时/状态变化时触发"改为每秒一次，欠载型漂移不再在 5 秒间隔内累积成风暴。
+- 纠正分级见同步模块文档：500ms–2.5s 连续变速追赶（correction:"speed"），>2.5s 才 seek；暂停/load/大漂移 seek 时倍速复位。
+- 新增 SmoothRenderers：AudioTrack 缓冲加大到约 0.7 秒（120KB，默认几十毫秒），吸收省电降频/后台负载造成的调度抖动，减少"卡顿音"；位置上报按已渲染帧计算，不受缓冲深度影响，同步精度不变。
 
 ## 播放失败提示（2026-09-22 实现）
 onPlayerError 沿异常链取 HTTP 状态码交给 [PlaybackFailure] 分类：401 提示退出后重新加入，404 提示音乐文件缺失，其余保留 ExoPlayer 错误码并提示点击播放重试。失败一律进入本机暂停，只有明确点击播放才重试。

@@ -4,16 +4,28 @@
 SyncMath.kt 接收发送/接收的手机 elapsedRealtime 与服务器时间，计算 offset：
 offset = serverTime - (sent + received) / 2。
 播放目标为 positionMs + max(0, serverNow - timestampMs)，暂停不累加，结果限制在歌曲范围。
-差值大于500ms时seek；每5秒校准。RoomClient保留最高版本，等版本可用于再校准。
+播放服务每秒自检一次漂移（不等 5 秒校时）；差值超过 500ms 即需纠正，纠正手段分级（2026-09-23）：
+- |漂移| ≤ 300ms：保持 1.0 倍速；
+- 300ms < |漂移| ≤ 2.5s：连续变速追赶（catchupSpeed，追赶系数=漂移/25 秒、限制在 ±4%~±12%，Sonic 变速不变调）——不丢缓冲、不出声音缺口；
+- |漂移| > 2.5s：seek 硬纠正（会丢缓冲并重新起流，本身是一次可闻中断）。
+RoomClient保留最高版本，等版本可用于再校准。
 PlaybackPolicy只在校时就绪、房间播放且本地未暂停时允许播放。
 
 ## ClockEstimator（2026-09-21 实现）
 已提取独立 ClockEstimator（sync/ClockEstimator.kt），参数集中在 Config：maxSamples=8、sampleTtlMs=45秒、maxRttMs=1500。
 add() 丢弃负 RTT 与非法时间样本；offsetMs() 先剔除过期样本，再在 RTT 达标样本中选往返最短者。
 没有合格样本时保持“校时中”并暂停，不用手机日期猜位置；重连/退出/断线时 clear() 清空全部样本。
-首版仍每 5 秒请求一次、保持 500ms seek 阈值，不引入变速播放；缓冲期间不 seek（见播放服务模块）。
 6 项单元测试覆盖最短 RTT 选择、非法样本、RTT 上限、样本过期、窗口裁剪与会话清理。
-服务端可注入单调时基仍未实现；速度微调仍不在本轮范围。
+服务端可注入单调时基仍未实现。
+
+## 分级纠正的由来（2026-09-23，推翻"不引入变速播放"的首版决策）
+真机诊断（PHQ110，diag-20260923-113108 等 3 个会话）发现"渲染欠载型漂移"：省电降频/后台负载使音频渲染线程
+周期性 underrun（audio_flinger 大量 empty 计数），播放位置以约 0.86x 落后于服务端，期间无 BUFFERING、
+无本地暂停。原">500ms 即 seek"策略每 5 秒 seek 一次、贯穿全程（实测 24 分钟内 272 次恢复超 1.5s 的纠正），
+seek 丢缓冲+重新起流本身就是可闻断裂，且换曲时初始 3 秒缓冲 + 连环 seek 表现为用户报告的
+"自动切歌后无声卡住/进度条在动没有声音"。因此改为分级纠正：小漂移变速追赶（连续出声），
+大漂移才 seek。诊断 correction 字段新增 "speed"。变速仅在追赶期间临时生效，追上即恢复原速，
+不改变"服务端为播放唯一来源"的行为约定；暂停/load/大漂移 seek 时倍速复位。
 
 ## 数据与不变量
 positionMs、durationMs为媒体时间；timestampMs和serverTimeMs必须来自同一服务端时基；手机elapsedRealtime仅可经offset换算。

@@ -1,12 +1,16 @@
 package com.listentogether.app.playback
 
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import androidx.media3.common.*
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.HttpDataSource
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
@@ -16,6 +20,7 @@ import com.listentogether.app.ListenApplication
 import com.listentogether.app.MainActivity
 import com.listentogether.app.sync.SyncMath
 import com.listentogether.app.sync.PlaybackPolicy
+import kotlin.math.abs
 import kotlinx.coroutines.*
 
 /**
@@ -41,10 +46,13 @@ class PlaybackService : MediaSessionService() {
     private var lastBuffering = false
     private var localPauseLogged = false
 
+    /** 当前生效的追赶倍速（1.0 = 原速）；load/大漂移 seek 时复位。 */
+    private var catchupSpeed = 1.0f
+
     override fun onCreate() {
         super.onCreate()
         http = DefaultHttpDataSource.Factory()
-        player = ExoPlayer.Builder(this).setMediaSourceFactory(DefaultMediaSourceFactory(http)).build()
+        player = ExoPlayer.Builder(this, SmoothRenderers(this)).setMediaSourceFactory(DefaultMediaSourceFactory(http)).build()
         player.setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(), true)
         player.setHandleAudioBecomingNoisy(true)
         player.setWakeMode(C.WAKE_MODE_NETWORK)
@@ -85,7 +93,16 @@ class PlaybackService : MediaSessionService() {
         session = MediaSession.Builder(this, controlled).setSessionActivity(activity).build()
         // 只绑定创建时的会话；之后用户换房间，旧实例销毁也不会影响新会话的回调。
         boundGeneration = client.attachStateObserver { applyState() }
-        scope.launch { while (isActive) { client.updatePosition(player.currentPosition); delay(500) } }
+        // 500ms 上报位置给 UI；每秒一次漂移自检——周期校时 5 秒才回调一次 applyState，
+        // 渲染欠载型漂移（省电降频/后台负载）会在间隔内累积到 700ms+，把纠正拖成风暴。
+        scope.launch {
+            var tick = 0
+            while (isActive) {
+                client.updatePosition(player.currentPosition)
+                if (tick++ % 2 == 0) applyState()
+                delay(500)
+            }
+        }
         applyState()
     }
 
@@ -99,6 +116,11 @@ class PlaybackService : MediaSessionService() {
         // 状态未就绪（连接中/校时中/重连中）或本地暂停时只暂停；恢复必须来自明确播放动作。
         if (!client.synchronized || room == null || ui.locallyPaused) {
             player.pause()
+            // 暂停期间不保留追赶倍速，恢复后由校准逻辑重新决定。
+            if (catchupSpeed != 1.0f) {
+                catchupSpeed = 1.0f
+                player.playbackParameters = player.playbackParameters.withSpeed(1.0f)
+            }
             // 本机暂停会被快照周期反复触发；只在进入暂停沿记录一条，保证 JSONL 能看到焦点/耳机中断的时刻。
             if (ui.locallyPaused && !localPauseLogged) {
                 localPauseLogged = true
@@ -121,11 +143,30 @@ class PlaybackService : MediaSessionService() {
                 .setUri(client.baseUrl + "/api/rooms/" + credentials.code + "/audio/" + track.id)
                 .setMediaMetadata(MediaMetadata.Builder().setTitle(track.title).setArtist("一起听歌").build()).build()
             player.setMediaItem(item, expected); player.prepare()
+            catchupSpeed = 1.0f
             correction = "load"
         } else if (!buffering && SyncMath.needsSeek(actualBefore, expected)) {
-            // 缓冲期间位置不可信，不反复 seek；缓冲结束的 onPlaybackStateChanged 会再次触发校准。
-            player.seekTo(expected)
-            correction = "seek"
+            // 分级纠正（漂移 = 服务端目标 - 本机位置，正值为落后）：
+            // 500ms–2.5s 用连续变速追赶——不丢缓冲、不出声音缺口，追上即恢复原速；
+            // 超过 2.5s 才真正 seek——seek 会丢弃已缓冲数据并重新起流，本身就是一次可闻中断。
+            // 缓冲期间位置不可信，不反复纠正；缓冲结束的 onPlaybackStateChanged 会再次触发校准。
+            val drift = expected - actualBefore
+            if (abs(drift) > SyncMath.SPEED_MAX_DRIFT_MS) {
+                player.seekTo(expected)
+                catchupSpeed = 1.0f
+                correction = "seek"
+            } else {
+                val speed = SyncMath.catchupSpeed(drift)
+                if (abs(speed - catchupSpeed) >= 0.01f) {
+                    catchupSpeed = speed
+                    player.playbackParameters = player.playbackParameters.withSpeed(speed)
+                }
+                correction = "speed"
+            }
+        } else if (!buffering && catchupSpeed != 1.0f && abs(expected - actualBefore) <= SyncMath.SPEED_DONE_MS) {
+            catchupSpeed = 1.0f
+            player.playbackParameters = player.playbackParameters.withSpeed(1.0f)
+            correction = "speed"
         }
         if (player.playbackState == Player.STATE_IDLE) player.prepare()
         player.playWhenReady = PlaybackPolicy.shouldPlay(client.synchronized, room.playing, ui.locallyPaused)
@@ -173,5 +214,27 @@ class PlaybackService : MediaSessionService() {
         }
         scope.cancel(); session?.release(); player.release()
         super.onDestroy()
+    }
+}
+
+/**
+ * 渲染工厂：把 AudioTrack 缓冲加大到约 0.7 秒（默认只有几十毫秒）。
+ * 真机实测（2026-09-23，PHQ110）发现省电降频/后台负载会周期性饿死渲染线程：
+ * audio_flinger 大量 underrun，播放位置以 ~0.86x 落后于服务端，听感即"卡顿音"。
+ * 更大的 track 缓冲可吸收调度抖动、明显减少欠载；只增不减，低于系统最小值时仍用系统值。
+ * 位置上报与同步不受缓冲深度影响（currentPosition 仍按已渲染帧计算）。
+ */
+@UnstableApi
+private class SmoothRenderers(context: Context) : DefaultRenderersFactory(context) {
+    override fun buildAudioSink(context: Context, enableFloatOutput: Boolean, enableAudioTrackPlaybackParams: Boolean): AudioSink =
+        DefaultAudioSink.Builder(context)
+            .setEnableFloatOutput(enableFloatOutput)
+            .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
+            .setAudioTrackBufferSizeProvider { minBufferSize, _, _, _, _, _, _ -> maxOf(minBufferSize, AUDIO_TRACK_BUFFER_BYTES) }
+            .build()
+
+    private companion object {
+        /** 约 0.7 秒（44.1kHz 立体声 16bit ≈ 176KB/s）。 */
+        const val AUDIO_TRACK_BUFFER_BYTES = 120_000
     }
 }

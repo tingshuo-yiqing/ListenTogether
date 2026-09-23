@@ -56,7 +56,7 @@ offset = serverTime - (sent + received)/2。
 serverNow = elapsedRealtime + offset。
 target = clamp(positionMs + (playing ? max(0,serverNow-timestampMs) : 0),0,durationMs)。
 
-每次快照校准；超过 500ms 时 seek。相同版本可校准时间，较旧版本丢弃。
+每次快照校准；漂移超过 500ms 即需纠正，纠正手段分级：500ms–2.5s 用连续变速追赶（不产生声音缺口），超过 2.5s 才 seek（会丢弃缓冲并重新起流）。相同版本可校准时间，较旧版本丢弃。
 首次校时前不播放。断线暂停本地播放器，重连恢复完整状态。
 缓冲、设备解码和网络不对称都可能产生残余误差，500ms 是验收目标而非保证。
 服务器基于真实文件时长推进歌单；手机结束回调不改变全房间状态。

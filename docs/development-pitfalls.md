@@ -1,6 +1,6 @@
 # 开发陷阱与规避清单
 
-本文记录项目中**实际踩过**的问题（非理论风险），按"现象 → 根因 → 规避"组织。任何新会话开工前应通读一遍；踩到新坑必须回填本文，防止重复犯错。最近更新：2026-09-22（新增 2.7 无线 adb 通道实测打通；第 7 节为 Windows 路径/cmd 静默失效/曲库启动时加载等四条）。
+本文记录项目中**实际踩过**的问题（非理论风险），按"现象 → 根因 → 规避"组织。任何新会话开工前应通读一遍；踩到新坑必须回填本文，防止重复犯错。最近更新：2026-09-23（新增 2.9 shell 写不了系统设置、2.10 screenrecord 段错误、3.5 adb 回收导致坐标错位、3.6 Compose 长串输入丢字符、9.3 采样间隔口径）。
 
 ## 1. Windows / PowerShell
 
@@ -26,6 +26,11 @@
 - 现象：外层 `& check.ps1 *>&1 | Out-File` 跑到 Gradle 阶段即抛**空消息异常**（"EXCEPTION: "后无内容）；之后单独重跑 gradle 报 `fileHashes.lock (拒绝访问)`，构建无法启动。
 - 根因：①脚本内 `$ErrorActionPreference='Stop'`，PS 5.1 下外层流重定向把原生命令的 **stderr 进度行**（Gradle Daemon 启动提示）转成终止错误；②被中断的运行残留 Gradle Daemon，持有 `~/.gradle/caches/8.11.1/fileHashes/fileHashes.lock`。
 - 规避：跑 check.ps1 **不做外层流合并重定向**；需要落盘证据时按阶段直跑、stdout/stderr 分文件输出（另注意 PS 5.1 的 `2>` 产出 UTF-16，读取前先 iconv）；锁冲突先 `gradlew --stop`（tasklist 确认无 java 进程）再重跑，**残留锁文件本身无需删除**。
+
+### 1.6 PS 脚本调原生命令：stderr 警告在 EAP=Stop 下变终止异常，exit 0 也白搭（2026-09-23）
+- 现象：add-media.ps1 首跑《单车》时报 `Invalid UTF8 sequence in avio_put_str16le` 判为"转码失败"；实际 ffmpeg **转码成功（exit 0）**——那只是复制 ID3 元数据时的警告（老文件 GBK 字节被标成 UTF-16，ffmpeg 跳过该标签继续）。脚本内 `$ErrorActionPreference='Stop'` 把这行 stderr 转成 NativeCommandError 直接抛出，显式的 `$LASTEXITCODE` 检查和兜底重试永远执行不到；修 EAP 后同文件一次通过。
+- 根因：PS 5.1 下原生命令**任何** stderr 输出（警告、进度行）在 EAP=Stop 时都会变终止错误；陷阱 1.5 的机制在"命令其实成功"的场景再现，且失败信息具有误导性。
+- 规避：调用会写 stderr 的原生命令（ffmpeg/ffprobe/scp/ssh/gradle）前把 EAP 收窄为 Continue（用完恢复），stderr 用 `2> 文件` 承接（PS 5.1 产出 UTF-16，Get-Content 自动识别），成败只认 `$LASTEXITCODE`。另：给原生命令传"一组选项"必须数组展开 `@("-map_metadata","-1")`，单个字符串 `"-map_metadata -1"` 会被当成一个参数名（同 2.7E 参数形态坑）；ffmpeg 真因元数据 fatal 时用 `-map_metadata -1` 去元数据重转，曲库标题来自 catalog.json 不受影响。
 
 ## 2. 真机与 adb
 
@@ -66,12 +71,24 @@
 - 坑 E：**`powershell -File` 传数组参数会被拼接**。`-Port 3000,3001` 实测变成 `30003001`，报 `adb.exe: error: cannot bind listener: bad port number '30003001'`。规避：connect-wireless.ps1 的 `-Port` 声明为字符串并按 `[,\s]+` 拆分；新脚本凡"逗号分隔多值"参数都按这条处理。数组参数只在交互式 PowerShell 提示符下直接调用时才正常。**同类**：`-PairCode 028776` 在提示符下会被当成数字丢掉前导 0（实际发出去的配对码变成 `28776`，配对必然失败），必须写成 `-PairCode '028776'`；connect-wireless.ps1 已做"不足 6 位左侧补 0"的兜底，但不要依赖它。
 - 坑 F：无线链路**同样受 2.4 约束**——adb 不掉线，但 OPPO 息屏照旧挂起业务网络；长时测试仍需 `svc power stayon true` 或电池优化白名单。
 - 存储注意事项：无线调试的配对记录保存在电脑 `%USERPROFILE%\.android`（adbkey），不要提交或外传；手机侧可在"无线调试 → 已配对设备"里撤销。
+- **2026-09-23 补充（坑 G）**：用户只报"配对端口+配对码"时（本次 172.19.0.1:43419 + 658177），配对端口本身不能 connect（10060 超时）。用 `adb mdns services` 一次拿到两个端口：`_adb-tls-pairing` 是配对端口（与用户报的一致），`_adb-tls-connect` 才是调试端口（本次 39805）。手机"无线调试"页显示的 IP（172.19.0.1）与 mDNS 解析出的地址（192.168.43.15）可以不同，connect 用 mDNS 给的地址即可；已有配对记录时 daemon 启动后约 10 秒内会自动重连到 device 态（先 `start-server` + sleep 再 devices，别急着判失败）。
+- **Toast 不进 uiautomator dump**（2026-09-23）：返回键 Toast"仍在后台播放，可在通知栏停止"在 dump 中不存在但截图清晰可见——Toast 类反馈的自动化验证只能靠 screencap 目视，dump 断言会误报为失败。
 
 ### 2.8 OPPO 息屏冻结无线 adbd：TCP 端口在、握手永远 offline（2026-09-22 实测）
 - 现象：无线连接成功后数分钟内 `adb devices` 变 `offline`；重连报 10060/10061；端口扫描发现旧端口仍 TCP 可达，但 `adb connect` 永远停在 `offline`（20:46 连通 → 20:50 失联 → 21:01 后 30000-60000 扫描逐步无监听）。ICMP ping 一直通，说明 Wi-Fi 未断。当晚端口轮换实录：41559 → 39731 → 46888 →（人工亮屏）41145。
 - 根因：与 2.4 同源——OPPO 息屏挂起后台。TCP 监听队列由内核维持（`accept` 还能完成），但 adbd 用户态进程被冻结，TLS/adb 握手无响应 → 永远 offline。端口还会随 adbd 重启轮换（41559 → 39731 → 46888），不能写死。
 - 规避：**先让手机亮屏再连**（亮屏后 adbd 解冻，旧端口可能直接恢复，也可能换新端口，先扫一遍）。跑复验类长测试时脚本开头就要 `svc power stayon true`（m3-auth-recheck.sh 在链路建立后才设，链路建立前这一窗口同样会被冻结——亮屏是人工步骤，脚本救不了）。无 USB 备份通道时无法远程唤醒，只能人工解锁。
 - 排查顺序：ping 不通 = Wi-Fi 断；ping 通 + 扫描无端口 = adbd 未监听（无线调试被关）或全冻结；端口通但 offline = adbd 冻结，亮屏重试。
+
+### 2.9 shell 写不了系统设置：`settings put` 被拒，改用 `cmd power` / `cmd uimode`（2026-09-23）
+- 现象：`adb shell settings put system screen_off_timeout 1800000` 报 `SecurityException: com.android.shell was not granted this permission: android.permission.WRITE_SETTINGS`；`settings put global low_power 1` 报 `SecurityException: Permission denial, must have one of: [WRITE_SECURE_SETTINGS]`，且**读回来仍是 0**（不报错时更危险，容易误判"已开启省电"）。
+- 根因：`settings put` 的 `system`/`global` 命名空间分别要求 WRITE_SETTINGS / WRITE_SECURE_SETTINGS，本机 shell 两个都没有；`settings get` 不受影响（所以"能读不能写"）。
+- 规避：需要状态切换时走对应子系统命令——省电用 **`cmd power set-mode 1`（1=on，0=off）**，改完必须 `settings get global low_power` 复核（应为 1、sticky 通常也为 1）；夜间模式用 `cmd uimode night yes|no|auto`（先 `cmd uimode night` 读原值，测完复原）；被改过电池状态用 `dumpsys battery reset` 收尾。屏幕超时等其他 system 设置只能人工在设置界面改。
+
+### 2.10 `screenrecord` 在 PHQ110 段错误，录屏不可用（2026-09-23 实测）
+- 现象：`adb shell screenrecord --time-limit 3 /sdcard/rec.mp4` 返回 **rc=139**（128+11=SIGSEGV）、stdout/stderr 全空、文件不存在；`--size 480x800`、换 `/data/local/tmp` 同样失败。
+- 根因：本机 ColorOS 的 screenrecord 二进制/编解码路径崩溃，非参数问题；不要反复换参数试。
+- 规避：需要逐帧/过程证据时改用**连续 screencap 连拍**（设备端落盘、最后批量 pull，间隔约 0.55s），事后用 ffmpeg `scale=1:1 -pix_fmt gray` 逐帧取均值做亮度判据（示例见 docs/test-results/2026-09-23-w1-recheck/tools/coldstart_flash_probe.py）。连拍分辨率受 screencap 编码耗时限制，比 flash 更短的现象可能漏采，报告里要如实标注。
 
 ## 3. UI 自动化（uiautomator/input）
 
@@ -96,6 +113,18 @@
   - 播放验证以 `dumpsys media_session` 的 PlaybackState 位置推进为准；FAB content-desc="播放"，点曲目行只选曲不播。
   - `svc power stayon true` 每次会话开头设置；用户报的无线端口可能是已关闭的配对端口（connect 拒绝 10061 时先看 mDNS transport 是否已在 device 态，配对记录在则无需配对码）。
 - 状态：**未解决**，记录见 [test-results/2026-09-22-m4-public-test](test-results/2026-09-22-m4-public-test/README.md)。
+
+### 3.5 adb server 回收清掉 reverse → 应用掉线横幅把布局整体推下去，旧坐标必然点错控件（2026-09-23 实测）
+- 现象：一段"点曲目行 + 点播放"打完，`dumpsys media_session` 里状态纹丝不动（仍 PAUSED、pos=0、updated 不变），诊断随后刷出 `EOFException`。看上去像"播放按钮点了没反应"。
+- 根因：沙箱每次工具调用回收 adb server → `adb reverse` 规则随之消失 → 设备端 `127.0.0.1:3000` 没有转发者，应用立刻 EOF 进入"连接断开，正在重试"；**首页插入该横幅后整个内容区下移约 324px**，于是上一进程 dump 出来的坐标（曲目行 y≈1973、FAB y≈1181）在这一轮分别落到别的行和进度条上，等于点空/误点。同一进程内先 dump 再点则是准的。
+- 规避：**一个测试阶段一个进程**——`kill-server/start-server → 等设备就绪 → reverse → 设备端 curl health → force-stop/start 应用 → 建房 → dump 取坐标 → 操作 → 采样 → 导出诊断` 全部写在同一个脚本/同一次调用里；任何一步要用坐标都必须**在同一进程内、连接恢复成 Ready 之后**重新 dump。播放中不要 dump（SeekBar 动画会让 uiautomator 拿不到 idle，陷阱 3.1），改为在暂停态一次取齐坐标、播放中只用 media_session 判断。可复跑示例见 docs/test-results/2026-09-23-w1-recheck/w1_driver.py。
+
+### 3.6 Compose 输入框：`input text` 长串只落首字符；改地址一律走存储层（2026-09-23 实测，补充 3.4）
+- 现象：`adb shell input text "http://127.0.0.1:3000"` 之后应用报 `Expected URL scheme 'http' or 'https' but no scheme was found for h`——地址框里只有 `h`。两个字符的昵称（`W1`）则正常。
+- 根因：`input text` 以极快节奏注入按键事件，Compose 的 IME 连接丢事件，字符越长丢得越多（不是转义问题，空格/斜杠都不涉及）。
+- 规避：**地址这类长串不要用 UI 输入**。`ConnectionStore` 就是 SharedPreferences `connection.xml` 的 `baseUrl`，直接写存储层最稳：
+  `adb shell "run-as com.listentogether.app sh -c 'echo <base64(xml)> | base64 -d > shared_prefs/connection.xml'"`（写后 `cat` 复核；`rm` 该文件可让地址框恢复空值并自动展开）。
+  对比 3.4：`sed -i` 在 run-as 下静默失败，**重定向 `>` 可用**。昵称用短 ASCII 串 + `input keyevent 111` 收键盘即可。
 
 ## 4. Compose / Material3
 
@@ -151,6 +180,26 @@
 - **Windows 原生程序不识别 Git Bash 的 /d/ 路径（2026-09-22）**：ffmpeg/ffprobe 收到 `/d/ListenTogether/...` 报 `No such file or directory`，而同路径 `ls -l` 明明能看到文件（ls 是 MSYS 程序，会做路径转换）。规避：给 Windows 程序传参用 Windows 风格路径（`D:/ListenTogether/...`）或先 cd 进目录用相对路径；诊断"文件不存在"报错时先想路径转换，不要当成 FS 事实。
 - **`cmd //c` 在 Git Bash 中静默失效（2026-09-22）**：`cmd //c "gradlew.bat ..."` 只打印 cmd 横幅就退出，构建根本没跑，退出码却是 0。规避：构建/Lint 用 PowerShell 工具执行；会话内 PowerShell 工具 stdout 可能不回显，命令末尾重定向到日志文件（`*>&1 | Out-File -Encoding utf8 <路径>; exit $LASTEXITCODE`），以退出码判成败、用 Read 工具读日志。禁止从 Bash 调 powershell.exe（安全策略拦截）。
 - **演示后端曲库是启动时加载（2026-09-22）**：server 的 loadCatalog 只在启动读一次 catalog.json；往 demo-media 加测试音后必须重启演示后端才生效，不要误以为是文件没生成。
+- **非交互 PowerShell 5.1 的 Invoke-WebRequest 直接失败（2026-09-23）**：报"Windows PowerShell 处于非交互模式。朗读和提示功能不可用"，与目标 URL 无关。规避：HTTP 健康检查改用 `[System.Net.HttpWebRequest]::CreateHttp($u)` + GetResponse/StreamReader；会话内 PowerShell stdout 不回显时按 152 条惯例写日志文件再 Read。
+- **Git Bash 会把 adb shell 的 /sdcard/... 参数改写成 Windows 路径（2026-09-23）**：`adb shell uiautomator dump /sdcard/ui.xml` 实际收到 `C:/Users/.../PortableGit/.../sdcard/ui.xml`，dump "成功"却找不到文件，pull 报 failed to stat。规避：命令前加 `export MSYS2_ARG_CONV_EXCL="*" MSYS_NO_PATHCONV=1`，或改用 PowerShell 工具执行 adb。这是陷阱 7 "Windows 原生程序不识别 /d/ 路径"的镜像形态：MSYS 对**看起来像路径的参数**都会转换，进设备 shell 的参数同样中招。
+- **AI 会话中断/网络重试后，"失败"的编辑可能实际已应用（2026-09-23）**：一次会话中断续接后，同一批文件出现 import 重复、`SmoothRenderers` 类重复定义、"未找到匹配串"实为早已改过。规避：中断恢复后先 Read 关键文件再继续编辑；提交前跑一次构建，编译器的 Redeclaration 错误是重复编辑的最好探测器；见到"已在文件里"的修改不要慌，先核对内容是否正是意图所需。
+
+## 9. 音频链路与播放取证（2026-09-23）
+
+### 9.1 渲染欠载型漂移：省电降频让播放位置以 ~0.86x 落后（卡顿音的真正来源）
+- 现象：三个会话（diag-20260923-113108 / 013040 / 004645）完全一致——播放位置每 5 秒落后 670–740ms、期间零 BUFFERING 抖动、零暂停、零焦点事件；客户端按 500ms 阈值每 5 秒 seek 一次，贯穿全程（单会话 24 分钟 272 次慢恢复纠正）；切歌（自动/手动）初始缓冲 ~3 秒 + 1–3 次连环 seek 才出声。
+- 取证：拉设备 `files/diagnostics/diag-*.jsonl`，按"纠正事件→恢复耗时"统计定位风暴；对照 sync 样本 offset（±6ms/30 分钟，排除校时振荡）与 tgt 推进速率（1.001x，排除服务端）；`dumpsys media.audio_flinger` 显示混音器 `empty=491`、fifo underrun n=7647；`settings get global low_power` 返回 1（sticky=1，多日常开）。注意 `dumpsys media_session` 里的 PLAYING 可能是其他应用（当时是 B 站 tv.danmaku.bili），取证前先核对 package。
+- 根因：省电降频/后台负载使音频渲染线程周期性饿死（underrun）——load 侧有数据所以永不进 BUFFERING，但渲染头停顿、位置变慢；500ms 阈值把这种慢化变成 seek 风暴，seek 又丢缓冲+重新起流，叠加切歌初始缓冲即用户报告的"自动切换后卡住/进度条在动没声音"。
+- 规避：①分级纠正（500ms–2.5s 连续变速追赶，>2.5s 才 seek，见 modules/04）；②SmoothRenderers 把 AudioTrack 缓冲加大到 ~0.7 秒吸收调度抖动；③每秒一次漂移自检；④**做听感相关测试前先确认手机省电模式已关**（`adb shell settings get global low_power` 应为 0，充电可能自动退出省电使现场状态与预期不符）。
+
+### 9.2 播放类验收必须包含"听感连续性"，状态断言会漏掉卡顿
+- 现象：此前多轮真机验证（通知栏/焦点/UI 批次）都断言 PLAYING、进度走动、version 推进——全部"通过"，而进度走动恰是 seek 风暴造成的假象；用户实际听到的全程是每 5 秒一次的卡顿。
+- 规避：播放验收至少覆盖：①`dumpsys media_session` 连续两次采样位置推进速率 ≈1x；②diag 中 correction 分布（正常播放不应周期性出现 seek）；③真人听感抽查一段。进度"在动"不能作为播放健康的证据。
+
+### 9.3 采样"5 秒差值"不等于 5 秒：`sleep` + `dumpsys` 往返会把速率算成 1.2x（2026-09-23）
+- 现象：驱动里 `sleep(5)` 后连续打印 media_session 位置，差值约 6021ms、6055ms，比值 ≈1.2x，看着像"播放被加速了 20%"（甚至超出 ±12% 变速上限），容易误判成变速失控。
+- 根因：每次采样本身要跑一次 `dumpsys media_session`（无线 adb 下 0.5–1s），相邻两条记录的真实墙钟间隔是 6s 而不是 5s；用固定的 5 作分母必然偏大。
+- 规避：速率只能用**同源时间戳**算——①诊断 JSONL 的 `wallClockMs`/`playerPositionMs`（1s 粒度）；②采样循环里记录每条的 `time.time()` 差值。报告里不要直接引用"每 5 秒 6 秒位移"这类比值。
 
 ## 8. 云端部署（2026-09-22 首次部署实测）
 
@@ -182,3 +231,12 @@
 - 现象：真机公网建房 timeout、手机/电脑访问 8.166.126.136:3000 均超时、SSH banner 也超时，当轮记为“云端入口不可达、不归因于 UI”。数小时后复查 TCP/HTTP/SSH 全部恢复正常。
 - 根因：该 ECS 内存仅 1.7Gi。有人在同一台服务器上经 VS Code Remote-SSH 运行了 Cline 等 AI 代理（/root/.vscode-server、/root/.cline 时间戳 23:38-00:21，session-52.scope 22:37 建立且为常驻登录会话），Node 进程（内核 OOM 报告中 comm 名为 "MainThread"——**Node 主线程的 comm 名，后端 node 进程同样如此，不能按名字猜进程**）膨胀至 RSS ~1GB / VSZ ~19.6GB，于 23:57、00:11、01:13 三次触发内核全局 OOM；01:13:30 journald 看门狗超时，说明整机冻结——用户态不参与应答，外部表现即“全端口超时”。listen-together 全程 active、NRestarts=0，从未中断。
 - 规避：①1.7Gi 小机与重负载（VS Code Remote + AI 代理、并发构建）互相排斥，重负载请走本地 + `ssh aliyun` 执行单条命令，不要在服务器上挂常驻会话跑代理；②再遇“云端全端口超时”先 SSH 上去看 `journalctl -k | grep -i oom`、`free -h`，再查 `ls -lat /root`（.vscode-server/.cline 时间戳）与 session 来源，**不要先怀疑 listen-together 或安全组**；③判定“整机冻结”的旁证：TCP 三次握手能完成（内核收）但 HTTP/SSH banner 无响应（用户态冻）；④“服务恢复但原因不明”时核对 systemd NRestarts 与 ActiveEnterTimestamp，区分“服务死了重启”与“服务活着但整机不可达”。
+
+### 8.6 阿里云大陆机房未备案域名：按域名跨端口拦截，"服务器好的、外面不通"（2026-09-23 实测，含结论更正）
+
+- 现象：TLS 配置全部正确（nginx 443 ssl + LE 证书，服务器本机 `curl https://127.0.0.1` 与 `--resolve` 指定 SNI 均返回 200），但公网 HTTPS 握手失败（Windows curl 报 error 35 "failed to receive handshake"——TCP 能建立、TLS 握手被中断）；公网 HTTP 80 返回 403，且该 403 **不是 nginx 发的**（服务器本机带 Host 头复测同请求为 301）。
+- 根因：ECS 位于大陆地域（元数据 `100.100.100.200/latest/meta-data/instance/region-id` = cn-guangzhou），域名未做 ICP 备案，阿里云在机房入口做**域名级拦截：按 Host/SNI 判定、跨任意端口生效**。拦截页特征：80 明文响应头 `Server: Beaver`、标题 "Non-compliance ICP Filing"、正文含 `aliyun.com/beian/beian-block` 链接；TLS 连接（443/8443）表现为握手被中断。
+- **结论更正（同日晚对照实验）**：`http://域名:3000` → 403、`http://IP:3000` → 200、`https://IP:8443` → 200。即"非标端口不受影响"的说法**错误**——此前 3000 能通只是因为一直用 IP 访问；只要 URL 里出现未备案域名，任何端口都被拦。**诊断此问题必须做域名 vs IP 对照**（同端口各测一次），只看单一通路会得出错误结论。
+- **试用实例无法备案**：阿里云帮助中心原文"免费试用ECS服务器并不满足可备案服务器要求"（试用为按量付费形态；备案服务码要求包年包月 ≥3 个月 + 公网带宽）。**LE 也不给裸 IP 签证书**（certbot 4.0.0：*will not issue certificates for a bare IP address*）。故大陆试用机 + 自定义域名 = 无解，除非迁移或转正式实例。
+- 规避：①先拿 `Server: Beaver`/error 35 + 地域元数据定性，不要怀疑 nginx/证书/安全组；②可用路线：IP 明文直连（过渡）、私有 CA 自签 + App 内置信任（需改 App 重发 APK）、迁中国香港地域（免备案、域名+正式证书可用）、转正式包年包月实例后备案；③**备案拦截同样会挡 Let's Encrypt 的 HTTP-01 续期验证（80 被拦），证书续期会失败**——需改 DNS-01 或等备案；④大陆地域试用免费流量仅 20GB/月（192kbps 下 15 人 1 小时 ≈ 1.3GB），且试用额度按小时消耗，注意剩余额度与到期。
+- 本轮顺带修复（与备案无关、本就偏离模板）：conf.d/listen-together.conf 用 certbot 自动生成版，X-Forwarded-For 用了可伪造的 `$proxy_add_x_forwarded_for` 且缺 `proxy_buffering off`/`client_max_body_size 8k`；已按 deploy/nginx.conf 模板替换域名后重装（备份在服务器 /root/nginx-backup-<时间戳>/），并移除与 sites-enabled/api.example.com 重复的 server_name（"conflicting server name, ignored" 警告来源）。

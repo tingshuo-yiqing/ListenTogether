@@ -85,6 +85,7 @@ HTTP 会明文传输成员令牌，只用于受控 debug 环境；好友公网�
 ## 3. HTTPS/WSS
 
 准备一个指向云服务器的域名，并按实际地域及服务要求完成必要配置。
+**大陆地域的 ECS（实测 cn-guangzhou）自定义域名必须先完成 ICP 备案**：未备案时阿里云在机房入口对 80/443 做域名级拦截（HTTPS 握手被重置、HTTP 返回 `Server: Beaver` 的 "Non-compliance ICP Filing" 403），服务器本机测试全部正常、极易误判为 nginx/证书/安全组问题（见陷阱 8.6）；备案拦截也会挡 HTTP-01 证书续期。非标端口不受影响。
 安装 nginx、certbot；允许公网 TCP 80/443，SSH 仅向管理来源开放，3000 不对公网开放。
 首次申请证书时先建立仅监听 80 的临时 Nginx 站点，根目录设为 /var/www/html，然后运行：
 
@@ -163,3 +164,36 @@ scp deploy-artifacts\listen-together-*.tar.gz deploy-artifacts\SHA256SUMS-*.txt 
 服务器端校验：`sha256sum -c SHA256SUMS-*.txt`（tarball 行需在 /tmp 下手工比对）。
 已实跑验证（2026-09-22）：tsc 0 错误、tar.gz 20.5MB、含 demo-media 全部 7 个 mp3、
 SHA256 清单逐文件生成；制品 `deploy-artifacts/listen-together-0.1.0-20260922-2159.tar.gz`。
+
+## 6. 云端曲库管理：上传与转码（2026-09-23 新增）
+
+曲库文件在 `/opt/listen-together/media/`（跨版本持久层），`catalog.json` 条目为
+`{id, title, file}`，id 限 `[a-zA-Z0-9_-]{1,64}`；时长/大小由后端**启动时**用
+music-metadata 解析并缓存（audio 路由的 Range size 是每请求实时 stat，但时长缓存
+必须靠重启刷新）。**替换或新增音频后必须 `systemctl restart listen-together`，
+重启会清空内存房间。**
+
+工具（两个脚本配对使用，2026-09-23 首次实跑即完成 5 首 320k→192k 全量替换）：
+
+- `scripts/add-media.ps1`（本机驱动）：本地 ffmpeg 转码（默认 192k CBR、保留 ID3、
+  失败自动去元数据重转）→ ffprobe 校验时长 ±1.5s 与码率 → scp 以 ASCII 临时名
+  `/tmp/lt-up-<id>.mp3` 上传 → 调服务端脚本安装，可选 `-Restart` 顺带重启并验证。
+  新增歌曲加 `-Title "中文名"`（经 UTF-8 manifest 文件流转，不进命令行）。
+- `/opt/listen-together/bin/media-manage.sh`（服务端，源码在 scripts/media-manage.sh）：
+  `has|install|verify|list`。install 对已有 id 按 catalog 映射**原位替换**（先把原文件
+  备份到 `/opt/listen-together/media-originals/<时间戳>/`），对新 id 按 manifest 落盘
+  `<标题>.mp3` 并用 node 追加 catalog 条目；verify 用后端同款 music-metadata 输出
+  时长/大小/码率表。
+
+示例：
+```powershell
+# 替换已有歌曲（320k 重转 192k）
+.\scripts\add-media.ps1 -File "C:\path\单车.mp3" -Id dan-che
+# 新增歌曲（转码 + 上传 + 追加 catalog + 重启）
+.\scripts\add-media.ps1 -File "D:\新歌.mp3" -Id xin-ge -Title "新歌" -Restart
+```
+
+批量替换时只在最后一首加 `-Restart`；重启后验收：health 200、`media-manage.sh verify`
+码率/时长表、公网 catalog API 5 首时长不变、Range 0-1023 返回 206 且 total 为新文件
+大小、无令牌 401。设计约束：中文文件名/标题只在文件内容（脚本、manifest）里流转，
+绝不进 ssh/scp/ffmpeg 的命令行参数（Windows 侧代码页转换会乱码，见陷阱 1.6）。

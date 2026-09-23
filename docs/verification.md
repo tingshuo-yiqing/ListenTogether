@@ -185,6 +185,108 @@
 - 当前状态：内存恢复（available 1.2Gi、swap 0B），VS Code/Cline 进程已不在运行，仅剩后端 node（~53MB）。本轮未改服务器与项目代码。
 - 结论与边界：超时不是 listen-together、安全组或 UI 的问题；若服务器上再次运行重内存负载会复发。M4 公网 E2E（建房→播放）自本轮起具备重测条件，仍待执行（入口恢复 + 按陷阱清单 3.4 恢复路径操作）。
 
+## 本轮新增（UI 系统评审 + 优化批次，2026-09-23 凌晨）
+
+- 完成一次覆盖视觉一致性/信息层级/导航/交互反馈/适配与无障碍的系统 UI 评审，产出分级问题清单（2 致命 / 8 重要 / 7 建议），本轮落地其中可立即执行的 12 项（MainActivity.kt、ui/theme、Manifest，表现层；RoomClient 调用与行为约定不变）：
+  1. 服务器地址折叠为“高级设置：更换服务器地址”，默认收起；地址为空（首启）时自动展开（P0）；
+  2. 退出房间从列表底部移至顶栏图标并加确认弹窗（P1）；
+  3. 通知权限从冷启动改为入房成功后申请，每次安装只问一次（P1）；
+  4. 顶栏新增系统分享邀请码入口，房间码改等宽字体（P2）；
+  5. 非房主点击歌单不再静默，Snackbar 提示“只有房主可以切歌”（P1）；
+  6. 房间内按返回只退界面，Toast 提示“仍在后台播放，可在通知栏停止”（P1）；
+  7. 内容区 560dp 以上限宽居中，平板/横屏不再横向拉伸（P1）；
+  8. 暗色冷启动白闪修复：新增 values/themes.xml 与 values-night/themes.xml（Theme.ListenTogether），Manifest 切换引用（P1）；
+  9. 标题级字重在 Typography 统一为 SemiBold，移除全部调用处临时指定（P2）；
+  10. 新增 Shape.kt 按用途集中圆角 token（横幅/列表行/输入框/卡片/全宽按钮），替换全部裸数字（P2）；
+  11. 图标统一 Material Outlined 族（播放/暂停/复制/分享/退出）（P2）；
+  12. 删除从未使用的 StatusGreen/StatusAmber 色板；formatTime 改用 Locale.ROOT 防数字本地化（P2）。
+- 评审中明确**本轮不做**的项及原因：strings.xml 文案抽取（PlaybackView 等纯函数返回中文文案且被单测断言，抽取需改架构为资源 id，单独立项）；明文 HTTP/networkSecurityConfig（属 M4 公网 E2E 工程范畴，随公网重测一并处理）。
+- 验证：`:app:testDebugUnitTest :app:assembleDebug :app:lintDebug` BUILD SUCCESSFUL；**42 项单测 / 0 失败**（无新增测试——改动集中在 Composable 表现层，纯函数逻辑未变）；**Lint 0 错误 0 警告**（仅 1 条既有 Information）。
+- 最新调试 APK SHA256：**169018AE746164D274E9C843AC8985A1DD27B647D6BF28DFA05110B705FB6845**。历史：59773A08…（简洁 UI）/ BE545EEF…（图标）/ 832FB65E…（校时修复，真机复验通过版）。
+- 边界：新交互（地址折叠、顶栏退出确认、分享、返回 Toast、非房主点歌提示、暗色启动）尚未真机目视验证，并入下一次真机批次；设备当前不可用。
+
+## 本轮新增（UI 优化真机验证通过，2026-09-23 上午）
+
+- 无线通道重连：用户仅提供配对端口+配对码（172.19.0.1:43419 / 658177），配对端口不能 connect；经 `adb mdns services` 取得真实调试端点 **192.168.43.15:39805**，已有配对记录自动重连 device 态。reverse 3000/3001 后设备端 curl `/health` 返回 `{"ok":true}`，本机演示后端正常。新坑回填陷阱 2.7（坑 G：mdns 区分配对/调试端口）与第 7 节（非交互 Invoke-WebRequest 失败改用 HttpWebRequest）。
+- **UI 优化批次（APK 169018AE…）真机验证通过**，证据截图见 [test-results/2026-09-23-ui-optimize](test-results/2026-09-23-ui-optimize/README.md)：
+  - 入房页地址已折叠为"高级设置：更换服务器地址"（ui-01）；
+  - 自动化建房成功（房间 57910E7D），顶栏分享/复制/退出三图标 + 等宽房间码 + 成员摘要 + 播放卡 + 当前曲目高亮（ui-02）；
+  - 点播放 →"播放中"、按钮切暂停、进度走动（ui-03，dump 断言通过）；
+  - 顶栏退出 → 确认弹窗"退出房间？/取消/退出房间"（ui-04，dump 断言通过），取消后留在房间；
+  - 返回键 → App 退到后台，**Toast"仍在后台播放，可在通知栏停止"截图可见**（ui-05；Toast 不进 uiautomator dump，已回填陷阱 2.7）。
+- 未覆盖（如实标注）：分享面板实际弹出、非房主点歌 Snackbar、通知权限延迟申请（设备已授权不重弹）、暗色冷启动/大字体/平板限宽、M2 双机仍挂起。
+
+## 本轮新增（曲库上传/转码工具链 + 5 首全量 320k→192k，2026-09-23 中午）
+
+- 新增曲库管理工具链（配对使用，中文只经文件内容流转、绝不进命令行参数）：
+  - `scripts/add-media.ps1`（本机驱动）：ffmpeg 本地转码（默认 192k CBR、保留 ID3、元数据 fatal 自动去元数据重转）→ ffprobe 校验时长 ±1.5s/码率 → scp ASCII 临时名上传 → 服务端安装；`-Restart` 顺带重启并轮询 health。BOM/PSParser 检查通过。
+  - `scripts/media-manage.sh` → `/opt/listen-together/bin/media-manage.sh`（持久层，升级不覆盖）：`has|install|verify|list`；install 已有 id 原位替换（先备份到 `media-originals/<时间戳>/`）、新 id 按 UTF-8 manifest 落盘并 node 追加 catalog；verify 用后端同款 music-metadata 输出码率表。
+- **云端 5 首全量 320k→192k 完成**（源文件与云端逐字节同源，单车/富士山下/痴心绝对/句号本地原件 + 有何不可从云端拉取），时长零漂移（241.9/262.4/208.5/259.2/235.7s），总量 47.2MiB→约 31.6MiB（-33%），单路持续带宽需求 0.32→0.19 Mbps，弱网抗抖动更强。原 320k 文件全部备份在服务器 `media-originals/`。
+- 重启 listen-together 后公网验证通过：health 200；catalog API 5 首、标题与时长不变；Range 0-1023 → 206 `bytes 0-1023/5805496`（新文件大小）；无令牌 401；测试房间已清理。
+- 修复两个脚本缺陷并回填 [陷阱 1.6](development-pitfalls.md)：EAP=Stop 把 ffmpeg 的 stderr **警告**（exit 0）转成终止异常、误导为转码失败（收窄 EAP 后同文件一次通过）；多选项参数须数组展开。
+- 文档同步：[deployment.md 第 6 节](deployment.md)新增"云端曲库管理：上传与转码"（用法、验收要点、备份与重启语义）。
+- 本轮未改产品代码；APK hash 不变（59773A08…）。注意：曲库已变，verification 此前记录的"云端曲库全部 320kbps"以本节为准。
+
+## 本轮新增（自动切歌卡顿修复 + 进度条端点样式，2026-09-23 傍晚）
+
+- **根因定位（诊断驱动）**：用户报告"播完自动切换后卡住、进度条在动没声音（卡顿音）"。拉取 3 个会话的设备诊断 JSONL 分析发现"渲染欠载型漂移"：手机（省电模式多日常开 + 后台负载）使音频渲染线程周期性 underrun，播放位置以 ~0.86x 落后服务端（每 5 秒落后 ~700ms，期间无缓冲无暂停）；原">500ms 即 seek"策略形成每 5 秒一次的 seek 风暴（单会话 24 分钟 272 次），seek 丢缓冲+重新起流即可闻断裂；切歌初始 ~3 秒缓冲 + 连环 seek 即"切歌后长时间无声"。完整证据链与因果分析见 [交接单](handover-2026-09-23.md)、[陷阱清单 9.1](development-pitfalls.md)、[同步模块 04](modules/04-synchronization.md)。
+- **修复（客户端播放层，行为约定不变）**：
+  1. SyncMath 新增分级纠正：500ms 仍是纠正触发线（needsSeek/协议验收目标不变），500ms–2.5s 连续变速追赶（catchupSpeed = 漂移/25 秒，±4%~±12%，Sonic 变速不变调，不丢缓冲不出缺口），>2.5s 才 seek；暂停/装载/大漂移 seek 时倍速复位 1.0；
+  2. PlaybackService 新增 SmoothRenderers：AudioTrack 缓冲加大到 ~0.7 秒（120KB），吸收调度抖动减少 underrun；
+  3. applyState 自检从"每 5 秒校时回调"提升为"每秒一次"；诊断 correction 字段新增 "speed"。
+  4. **推翻首版决策**："不引入变速播放"（modules/04 原文）经真机数据支持后改为分级纠正，决策依据已写入模块文档。
+- **进度条端点样式**：material3 1.3 默认手柄是 4×44dp 竖长条（用户报告"很长的竖线"），MainActivity 改为自定义 14dp 圆点手柄 + 5dp 细轨道（thumb/track 自绘），禁用态取 SliderDefaults 色，拖动与乐观预览不变；NowPlayingCard 加 @OptIn(ExperimentalMaterial3Api)。
+- **验证**：`:app:testDebugUnitTest :app:assembleDebug :app:lintDebug` BUILD SUCCESSFUL（2m7s）；**单测 45 项 / 0 失败 / 0 错误**（42 + SyncMathTest 新增 3 组）；**Lint 0 错误 0 警告**（仅 1 条既有 Information：AutoboxingStateCreation）；**本轮 APK SHA256：36BD3A5B3ACA74EE45CCEE952F6EB8C042BB0A18D40123601398ADF626DD0CCE**。真机验收（关省电听感复测、切歌复测、端点目视）未做，清单见 [交接单](handover-2026-09-23.md) 第五节。
+- **过程坑回填**：MSYS 路径转换吞 /sdcard 参数、会话中断导致编辑重复应用（类重定义/import 重复）见 [陷阱清单 7](development-pitfalls.md)；新设第 9 节"音频链路与播放取证"。
+
+## 本轮新增（TLS/域名配置检查：未达标，卡在 ICP 备案，2026-09-23 傍晚）
+
+- 用户在服务器配置了域名 api.tingshuoyiqing.top + TLS（nginx + Let's Encrypt）。逐项核对 deployment.md 第 3 节要求的结论：**未达到要求，公网 HTTPS 不可用**。
+- 已达标项：DNS 解析正确（→ 8.166.126.136）；证书已签发（LE ECDSA，至 2026-12-22）且 certbot 定时续期已排（authenticator=nginx）；nginx 443 ssl + 反代配置正确（**服务器本机** curl HTTPS /health = 200，HTTP→HTTPS 301，WS Upgrade 升级请求透传后端返回 404=链路通）。
+- 未达标项：**公网 80/443 被阿里云机房入口的 ICP 备案拦截**（ECS 地域 cn-guangzhou，域名未备案；拦截页 `Server: Beaver`/"Non-compliance ICP Filing"）——HTTPS 公网握手失败、HTTP 80 返回拦截页 403。**唯一解除方式是完成 ICP 备案（用户在阿里云控制台操作，本侧无法代办）**。另：后端仍绑定 0.0.0.0:3000（违反"3000 不对公网开放、后端绑 127.0.0.1"），**有意暂不切换**——备案放行前 3000 明文直连是唯一可用通路，切换会立即断掉现有 APP 入口。
+- 本轮已修复（服务器侧，与备案无关）：nginx 反代配置按 [deploy/nginx.conf](../deploy/nginx.conf) 模板重装（补 WS 升级头 ✓ 原有、X-Forwarded-For 改为不可伪造的 `$remote_addr`、补 `proxy_buffering off` 与 `client_max_body_size 8k`、80→301 重定向）；移除与 conf.d 重复的 sites-enabled/api.example.com（消除 "conflicting server name" 警告）。原配置备份在服务器 /root/nginx-backup-20260923-*/。完整坑位记录见 [陷阱 8.6](development-pitfalls.md)。
+- 备案完成后的收尾清单（届时执行并更新本文件）：①安全组确认 443 放行后公网复测 HTTPS/WSS；②`/etc/listen-together.env` HOST 改 127.0.0.1 并重启（清空房间）；③APP 地址切换 https://api.tingshuoyiqing.top 真机复验；④注意续期：备案拦截会挡 HTTP-01 续期，若备案先于证书到期（2026-12-22）完成则无碍，否则改 DNS-01。
+- 本轮未改产品代码与 APK；服务器 nginx 配置变更已备份可回滚。
+
+## 本轮新增（TLS 过渡入口 8443：试用 ECS 无法备案，2026-09-23 晚）
+
+- 用户确认实例为**阿里云三个月免费试用 ECS**。查证官方文档：**免费试用 ECS 不满足备案服务器要求，无法申请备案服务码**（试用为按量付费形态；备案服务码要求包年包月 ≥3 个月 + 公网带宽 + 中国内地节点）——即试用期备案这条路走不通，443 拦截无法解除。试用到期转正式包年包月后可申请备案。
+- 过渡方案已配置：nginx TLS server 块（443 同款证书与反代）追加 `listen 8443 ssl`，非标端口不受备案拦截。服务器本机验证：HTTPS /health 200、WS 升级透传 404（链路通）。原配置备份 /root/nginx-backup-8443。
+- **待用户操作一步：阿里云安全组放行 TCP 8443**（放行前公网 8443 TCP 超时，已实测）。放行后 APP 地址填 `https://api.tingshuoyiqing.top:8443`（https + 有效证书 + wss 全可用）；后端 127.0.0.1 迁移与文档达标记录随其后执行。
+- 合规边界：非标端口 + 未备案域名属过渡形态，试用个人场景可接受；长期应转包年包月备案（或迁中国香港地域免备案）。
+
+## 本轮新增（TLS 过渡入口 8443 结论更正：拦截按域名跨端口生效，2026-09-23 晚）
+
+- 用户放行安全组 TCP 8443 后复测，**推翻上一节的“非标端口不受影响”判断**。对照实验（公网，2026-09-23 19:5x）：
+  - `https://8.166.126.136:8443/health`（IP）→ **200**（TLS 可用，但域名证书与 IP 不匹配）
+  - `http://api.tingshuoyiqing.top:3000/health`（域名）→ **403**（被拦）
+  - `http://8.166.126.136:3000/health`（IP）→ **200**
+  → **备案拦截按域名（Host/SNI）在任意端口生效**；3000 此前“不受影响”只是因为一直用 IP 访问。域名路径在未备案状态下彻底不可用，与端口和安全组无关（8443 放行属无效操作）。
+- IP 证书路线不通：certbot 4.0.0 `certonly -d 8.166.126.136 --dry-run` 明确报 *"The Let's Encrypt certificate authority will not issue certificates for a bare IP address"*。
+- 现状（可用入口）：`http://8.166.126.136:3000` 明文直连，功能完整（health/建房/曲库/Range 均 200/206）；`https://8.166.126.136:8443` 端口与 TLS 可用但证书域名不匹配，**App 不可用**（会被 Android 拒绝）。
+- 可选路线（待用户决策，见陷阱 8.6 更正条目）：A 维持 IP 明文；B 私有 CA 自签证书 + App 内置信任（需改 App 重发 APK）；C 迁中国香港地域试用机（免备案，域名+正式证书可用，需重新部署）；D 转正式包年包月实例后备案（最正规，需付费+备案周期）。**注意试用额度按小时消耗、大陆地域免费流量仅 20GB/月**，路线 C/D 与额度约束一并考虑。
+- **用户决策（2026-09-23 晚）：选路线 A——维持 IP 明文直连**（`http://8.166.126.136:3000`），TLS/域名达标留待正式部署（转正式实例备案或迁香港）时一并解决。决策依据：试用机无法备案 + 拦截按域名跨端口 + LE 不支持裸 IP；朋友小范围试用场景明文风险可控。
+- 随之核对：后端直连公网时 `TRUST_PROXY=true` 是否可被伪造——`app.ts` 实现为 `trustProxy: '127.0.0.1'`（仅信任回环来源的 X-Forwarded-For），**直连客户端无法伪造，无需改动**。nginx 的 80/443/8443 配置与证书保留备用（不影响 3000 通路）；8443 安全组规则可自行关闭，关闭不影响任何功能。
+- nginx 8443 监听与 80/443 配置保留（迁香港或备案后可复用），配置备份 /root/nginx-backup-8443 等可回滚。
+
+## 本轮新增（并行开发推进方案，2026-09-23 晚）
+
+- 新增 [并行开发推进方案](parallel-development-plan.md)：通读 verification/主计划/执行单/交接单/deployment/陷阱清单/模块索引后，把当前待办（T1 卡顿修复真机验收 → T2 公网 E2E → T3 升级/回滚演练 → T4 15 路云端重测，及 T5/T6 挂起项）组织为 7 条工作流 W1–W7。
+- 核心结论：真机轨道（W1→W2）与云端轨道（W3→W4）可并行，唯一耦合是云端服务稳定性；**串行关键路径 = W1 真机验收 → W2 公网 E2E → W3 演练 → W4 15 路重测**，完成后 M4 四项门槛全部关闭。并列出 8 条冲突协调规则（云端服务所有权时间片、APK hash 锚定 36BD3A5B、verification 单写者、流量预算 C6、OOM 纪律 C7 等）。
+- W3 拆分两段式：本地打包段可与真机任务零冲突并行；云端段（升级+真实回滚到 20260922-2159）须独占服务时间片。W4 前置 = demo-load.mp3 上传云端曲库（重启清房间，并入同一时间片）。
+- 本轮为纯文档交付，未改产品代码、未执行构建/真机/云端操作；APK hash（36BD3A5B…）与全部既有验收结论不变。
+- 文档检查：`scripts\check-doc-links.mjs` 通过（含新增链接）。
+
+## 本轮新增（W1+W2 真机轨道，2026-09-23 晚）
+
+> 本轮只做真机验收，**未改任何产品代码、未重建 APK**（hash 仍 36BD3A5B…）。详细证据见两份 test-results 记录。
+
+- **W1 卡顿修复真机验收：通过**（[记录](test-results/2026-09-23-w1-recheck/README.md)）。**先纠正了一个前置偏差**：交接单称 36BD3A5B… 已装机，实测设备上是 169018AE746164D274E9C843AC8985A1DD27B647D6BF28DFA05110B705FB6845（安装于 2026-09-23 11:31），36BD3A5B 仅存在于本机产物目录；已 `adb install -r` 装机并回拉设备端 base.apk 复算 SHA256 锚定，否则本轮结论会挂错版本。
+- W1 数据（PHQ110 / Android 14 / 本地演示后端 / 无线 adb）：① **关省电**（`low_power=0`）播放 40 分钟测试音 180s，media_session 位置推进 **1.001x**，诊断 300 条播放记录中 **`correction="seek"` = 0**（修复前为每 5 秒一次）、speed 0、buffering 仅起播 6 条、`|drift|` 中位 415ms、audio_flinger `empty=` 205s 内仅 +2；② **开省电**（`cmd power set-mode 1` → `low_power=1 sticky=1`）同曲 180s，**`speed` 变速追赶 9 条、`seek` 仍为 0**，media_session `speed` 字段实测 1.04 后回 1.00（变速生效直证），位置推进 1.004x——即"变速追赶替代 seek 风暴"在真机成立；③ **自动切歌**：30s→45s→40min 两次自然切歌，全段 `seek=0`、media_session 状态始终 PLAYING（无 BUFFERING），切歌后推进位置在同一个 5s 采样窗口内出现；④ **进度条端点**：像素实测手柄 **42px=14.0dp 圆点**、轨道 **15px=5.0dp**（density 480dpi，亮/暗两套一致），拖动落点比例与滑条 x 一致（11.8s → 1891.9s，恰一次合法 seek）；⑤ **暗色冷启动无白闪**：启动首帧即深色启动窗口（`values-night` 覆写为 `Theme.Material.NoActionBar`），连拍 9 帧无高亮帧；⑥ 听感由**用户本人确认"三轮都连续、无卡顿"**。
+- **W2 M4 真机公网 E2E：通过**（[记录](test-results/2026-09-23-m4-public-e2e/README.md)），使用**同一 APK** 锚定版本。入口 `http://8.166.126.136:3000`（云端 release 20260922-2159、active、NRestarts=0、轻载 533/1735MB），PC 侧与**设备侧** curl health 均 `{"ok":true}`；全链路 建房(83888A9C)→选歌→播放→暂停→拖动→切歌→退出 全部命中，命令时间线 join/select/play/pause/seek/select/play/leave 对应房间 version 2→9；**公网校时 RTT 中位 65ms**（本地 18ms）、offset 极差 27ms、位置推进中位 998.9ms/s；诊断 `seek` 仅 2 条（大跨度拖动 + 切歌归零，非周期性）、`speed` 3 条、切歌后新段 `seek=0`；第二房间复测单曲（4EC9D5D1、"单车"）`seek=0`、RTT 中位 53ms；两房间均显式退出。执行期间**声明占用云服务时间片，未重启/升级/改曲库**，仅一次只读 SSH 查询。
+- 新增开发陷阱回填：**2.9** shell 无法 `settings put`（system 要 WRITE_SETTINGS、global 要 WRITE_SECURE_SETTINGS，且失败时不报错只不生效→改 `cmd power set-mode`/`cmd uimode night` 并复核）、**2.10** `screenrecord` 在 PHQ110 段错误 rc=139 无文件（改连拍+ffmpeg 均值判据）、**3.5** 沙箱回收 adb server 会清掉 `reverse`，应用掉线横幅把布局下移约 324px 导致旧坐标必然点错（一次测试阶段必须同进程内完成、坐标必须当轮重 dump）、**3.6** Compose `input text` 长串只落首字符（地址一律写 `connection.xml`；`run-as` 下重定向 `>` 可用而 `sed -i` 静默失败）、**9.3** 采样"5 秒"实际间隔约 6s，速率只能取同源时间戳。
+- 本轮边界（不得据此宣布通过）：**M2 双机**（缺第二台手机，未做）、**M3-LONG**（未做）、**第二种公网网络**（蜂窝未测：无线调试依赖 Wi-Fi，切蜂窝即断 adb）、TLS/域名（路线 A 明文）、真实令牌作废（无入口）、云端 15 路与升级/回滚（W3/W4，需各自独占服务时间片）、长播放用合成测试音（220Hz tone）、白闪取证为连拍（非逐帧）。云端轨道（W3/W4）已具备开始条件。
+
 ## 最近代码交付的验证结果（沿用既有记录）
 - 本轮（RoomClient 暂停提示修复 + LOAD-15 脚本）完整构建：BUILD SUCCESSFUL，安卓单元测试 26 项通过，Android Lint 0 个问题。
 - 本轮 APK SHA256：832FB65EA4B606EB1C3EBFCE0EEAA887C585097D30219C1B11ED3884F907D09B（含校时不覆盖暂停提示修复；真机复验待设备重连）
@@ -237,7 +339,9 @@ cd D:\ListenTogether
 - [ ] LOAD-15 完成（本地）；15 路真实音频带宽在云端 TLS/公网条件下重测归入 M4 部署后验证。
 - [ ] 成员端本地暂停不影响其他人、房主转移、中途加入（需第二台手机）。
 - [x] 云端首次部署 + health/鉴权音频/Range/WS 服务端验证 + SSH 隧道受控联调（2026-09-22，13/13 + 9/9，见 test-results/2026-09-22-m4-first-deploy；后端保持 127.0.0.1 绑定，未暴露公网）。
-- [ ] 公网验证：0.0.0.0 绑定 + 安全组放行（或 TLS 反代）后，从两种公网网络真机播放验证；域名/TLS 未盘（用户未提供域名）。
+- [x] 公网验证：绑定 0.0.0.0 + 安全组放行后，真机经 `http://8.166.126.136:3000` 完成建房→选歌→播放→暂停→拖动→切歌→退出全链路（2026-09-23 晚，APK 36BD3A5B…，见 [test-results/2026-09-23-m4-public-e2e](test-results/2026-09-23-m4-public-e2e/README.md)）。**部分覆盖**：只测了 Wi-Fi 出口这一种公网网络；第二种（蜂窝）未测——无线调试本身依赖 Wi-Fi，切蜂窝会断 adb 链路，需 USB 有线调试或第二台手机才能补。TLS/域名按路线 A 维持明文（见上文 TLS 结论）。
+- [x] W1 卡顿修复真机验收（APK 36BD3A5B…，2026-09-23 晚，无线 adb）：关省电 180s 位置推进 1.001x 且诊断 `seek=0`；开省电出现 `speed` 变速追赶 9 条、`seek` 仍 0；自动切歌两段零 seek、无连环 seek；进度条端点像素实测 14dp 圆点/5dp 轨道（亮暗一致）、拖动恰一次合法 seek；暗色冷启动首帧即暗色启动窗口无白闪；听感由用户确认连续。见 [test-results/2026-09-23-w1-recheck](test-results/2026-09-23-w1-recheck/README.md)。
+- [ ] 公网弱网/丢包/抖动条件下的真机表现（未测；fault-proxy 注入此前只在本地用过）。
 - [ ] 15 路实际音频带宽在云端重测（LOAD-15 云端部分，归 M4）；版本回滚演练（首次部署无上一版，当前仅具备停用/恢复候选条件）。
 
 ## 测试记录入口
@@ -245,5 +349,9 @@ cd D:\ListenTogether
 - [2026-09-21 PHQ110 真机播放测试](playback-test-2026-09-21.md)：含完整操作过程、状态采样、问题处理和结论边界。
 
 - [2026-09-22 M4 首次部署与隧道联调](test-results/2026-09-22-m4-first-deploy/README.md)：服务端 13/13 + 隧道 9/9，含部署后基线、SHA256 校验、纠偏与清理记录。
+
+- [2026-09-23 W1 卡顿修复真机验收](test-results/2026-09-23-w1-recheck/README.md)：关/开省电各 180s 采样与诊断 seek/speed 分布、自动切歌、进度条端点像素实测、暗色冷启动与听感确认。
+
+- [2026-09-23 W2 M4 公网 E2E](test-results/2026-09-23-m4-public-e2e/README.md)：公网全链路七步 + 命令时间线、RTT/校时/version 实测、云端只读状态、第二房间复测。
 
 下一批任务的执行步骤与报告字段见 [执行单](execution-plan.md)。

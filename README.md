@@ -88,6 +88,7 @@ cd D:\ListenTogether
 ## 文档
 
 - [系统架构设计](docs/architecture.md)：分层结构、模块职责与依赖、端到端数据流。
+- [并行开发推进方案](docs/parallel-development-plan.md)：工作流划分、串行关键路径、冲突协调与优先级排序。
 - [下一批推进与验收执行单](docs/execution-plan.md)：任务顺序、开始条件、操作与证据要求。
 - [下一阶段开发方案](docs/next-development-plan.md)：先完善双机同步和稳定性，再部署云端。
 - [模块文档索引](docs/modules/README.md)：10 个模块的职责、流程、接口、异常、验收和注释清单。
