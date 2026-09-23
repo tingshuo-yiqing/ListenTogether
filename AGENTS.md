@@ -11,18 +11,11 @@
 
 历史证据按需查：`docs/test-results/<日期-场景>/README.md`、`docs/playback-test-2026-09-21.md`。
 
-## 当前进度快照（2026-09-22，以 verification.md 为准）
+## 当前进度快照（2026-09-23 晚，以 verification.md 为准）
 
-- 已完成：M0 诊断 + M1 主体（SessionContext、ConnectionStatus 状态机、会话边界可测试化、ClockEstimator、JSONL 诊断）；真机复测通过；M1 收尾故障注入完成（fault-proxy.mjs + 自测 + 真机延迟/断线/宽限过期场景，见 docs/test-results/2026-09-21-m1-*）。安卓单测 25 项；M3 通知栏、短时息屏、蓝牙断开与音频 404 恢复已有真机证据。
-- 挂起：M2 双机同步（缺第二台手机，明确挂起，不得用观察客户端代替）。
-- 已完成：M3-FOCUS 音频焦点（其他媒体抢占 + 真实来电）真机通过；M3-AUTH 注入代理 + 真机 401 路径通过；LOAD-15 本地 10 分钟记录通过（15 路、2.873Mbps、零失败）。记录见 docs/test-results/2026-09-22-m3-focus、-m3-auth、-load15。
-- 修复：localPause 诊断盲区（边沿记录）、周期校时覆盖暂停提示（RoomClient + 回归测试）；单测 26 项、Lint 0。最新 APK 832FB65E…——**401 横幅持久性复验已通过**（2026-09-22 晚，无线通道，401 文案 5/5、已同步 0/5、续播恢复；见 docs/test-results/2026-09-22-m3-auth-recheck）。
-- 无线调试通道已打通（2026-09-22 晚，`scripts/connect-wireless.ps1`）：无线 adb 下 `adb reverse` 可用，实测设备端 `curl http://127.0.0.1:3000/health` 返回 `{"ok":true}`，可绕开抖动的 USB 链路；832FB65E 横幅复验自此具备执行条件（尚未执行）。手机当前地址 192.168.43.15（2026-09-22 20:46 无线重连成功，配对记录已在，后续重连无需配对码）。**端口极不稳定且 OPPO 息屏会冻结 adbd**（端口通但握手 offline，陷阱清单 2.8）：先人工亮屏，再 `adb mdns services` 或扫描 30000-60000 找当前端口，随后重跑 connect-wireless.ps1。详见陷阱清单 2.7。
-- 挂起：M2 双机（缺第二台手机）；M3-LONG 长时/息屏（按用户指示，另见陷阱清单 2.4–2.6）；真实令牌作废（后端无入口）。
-- 已完成：**M4 首次部署（2026-09-22 深夜）**——2G swap + Node v24.9.0（二进制 /opt/node24→/usr/bin）+ listen 账号 + releases/20260922-2159（tarball 与 35 文件 SHA256 全校验）+ systemd 服务 active+enabled（绑定 127.0.0.1:3000）；服务端验证 13/13（scripts/m4-deploy-verify.sh）+ SSH 隧道受控联调 9/9（scripts/tunnel-verify.mjs，本机 13000→云端 3000）。记录见 docs/test-results/2026-09-22-m4-first-deploy。M4 只读盘点见 -m4-inventory。
-- 最小可用已开启（2026-09-22 深夜，用户确认）：后端绑定 **0.0.0.0:3000**，云端曲库 5 首真实 MP3（有何不可/痴心绝对/单车/富士山下/句号；《目及皆是你》用户指示放弃）。**安全组 3000 已放行**——真机设备端 curl 公网 health 通过（见 test-results/2026-09-22-m4-public-test）。
-- 图标已更换（APK **BE545EEF…**，紫→Google 蓝双音符）：已装机，桌面目视确认并入下次真机批次。**真机公网 E2E（建房→播放）暂停**（用户指示）：Compose 输入框自动化问题链见陷阱清单 3.4，恢复入口=run-as 删 connection.xml 或手机手动填地址。
-- 下一步（M4 剩余）：真机公网建房播放（顺带 M2 双机数据点）→ 15 路云端重测 → TLS/域名（待用户提供）→ 升级/回滚演练。UI BE545EEF 目视验证与 M3-LONG 仍挂起。
+- **M4 四项部署门槛已全部关闭（2026-09-23 晚）**：①首次部署+13 项服务端验证+隧道联调（09-22）；②真机公网 E2E 建房→播放全链路（W2，APK 36BD3A5B…）；③升级/回滚演练双向通过（W3，13 项抽查三次各 13/0）；④LOAD-15 云端公网重测通过（W4：15 路×600s 全 206 零失败、2.847Mbps=本地基线 99.1%，见 docs/test-results/2026-09-23-load15-cloud）。云端曲库现为 6 首（5 首真实 192k + demo-load 负载测试音）。入口维持 `http://8.166.126.136:3000` 明文 IP 直连（路线 A，试用机无法备案）。
+- 其余此前完成项（M0/M1/M3 各项、W1 卡顿修复真机验收等）见 verification.md 各节。
+- 挂起：M2 双机同步（缺第二台手机，明确挂起）；M3-LONG 长时/息屏（用户指示挂起）；真实令牌作废（后端无入口）；TLS/域名正式化（转正式实例或迁香港时一并解决，用户已决策路线 A）。
 
 ## 常用命令（Windows PowerShell）
 

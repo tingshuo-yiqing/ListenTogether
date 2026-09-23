@@ -183,6 +183,7 @@
 - **非交互 PowerShell 5.1 的 Invoke-WebRequest 直接失败（2026-09-23）**：报"Windows PowerShell 处于非交互模式。朗读和提示功能不可用"，与目标 URL 无关。规避：HTTP 健康检查改用 `[System.Net.HttpWebRequest]::CreateHttp($u)` + GetResponse/StreamReader；会话内 PowerShell stdout 不回显时按 152 条惯例写日志文件再 Read。
 - **Git Bash 会把 adb shell 的 /sdcard/... 参数改写成 Windows 路径（2026-09-23）**：`adb shell uiautomator dump /sdcard/ui.xml` 实际收到 `C:/Users/.../PortableGit/.../sdcard/ui.xml`，dump "成功"却找不到文件，pull 报 failed to stat。规避：命令前加 `export MSYS2_ARG_CONV_EXCL="*" MSYS_NO_PATHCONV=1`，或改用 PowerShell 工具执行 adb。这是陷阱 7 "Windows 原生程序不识别 /d/ 路径"的镜像形态：MSYS 对**看起来像路径的参数**都会转换，进设备 shell 的参数同样中招。
 - **AI 会话中断/网络重试后，"失败"的编辑可能实际已应用（2026-09-23）**：一次会话中断续接后，同一批文件出现 import 重复、`SmoothRenderers` 类重复定义、"未找到匹配串"实为早已改过。规避：中断恢复后先 Read 关键文件再继续编辑；提交前跑一次构建，编译器的 Redeclaration 错误是重复编辑的最好探测器；见到"已在文件里"的修改不要慌，先核对内容是否正是意图所需。
+- **会话沙箱内 scp 被拦：`scp: pipe: Unknown error` exit 255（2026-09-23 LOAD-15 云端轮实测）**：PowerShell 工具沙箱内运行 `add-media.ps1`，转码/ffprobe/scp 前置全过，唯独 scp 上传报 `pipe: Unknown error`（exit 255）；同一会话中 Bash 通道（沙箱外执行）的 scp/ssh 全部正常。规避：①在此环境跑涉及 scp 的脚本前，先用最小 scp 命令探通道，失败即换 Bash 通道；②`add-media.ps1` 中断后的**续传路径**：转码产物在 `%TEMP%\lt-media\up-<id>.mp3`，手动完成 `scp 上传 → manifest（UTF-8 无 BOM，`id\t标题`）→ `media-manage.sh install <id> <临时名> <manifest>` → `-Restart` 段的 systemctl restart + health 轮询 → `media-manage.sh verify`；不要从头重跑浪费一轮转码。属陷阱 7"沙箱辅助进程初始化"的同族形态。
 
 ## 9. 音频链路与播放取证（2026-09-23）
 

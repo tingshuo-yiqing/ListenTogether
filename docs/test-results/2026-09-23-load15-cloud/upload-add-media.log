@@ -1,0 +1,20 @@
+﻿[1/4] ffmpeg 转码 -> 192k CBR（保留元数据）...
+[2/4] ffprobe 校验时长与码率...
+      源 660.0s -> 输出 660.0s | 192 kbps | 15.11 MiB
+[3/4] scp 上传 -> /tmp/lt-up-demo-load.mp3 ...
+powershell : C:\Windows\System32\OpenSSH\scp.exe: pipe: Unknown error
+所在位置 行:445 字符: 23
++ ... enTogether; powershell -NoProfile -ExecutionPolicy Bypass -File scrip ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (C:\Windows\Syst...: Unknown error 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+scp 上传失败（exit=255）
+所在位置 D:\ListenTogether\scripts\add-media.ps1:98 字符: 28
++ if ($LASTEXITCODE -ne 0) { throw "scp 上传失败（exit=$LASTEXITCODE）" }
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (scp 上传失败（exit=255）:Strin
+g) []    , RuntimeException
+    + FullyQualifiedErrorId : scp 上传失败（exit=255）
+ 
