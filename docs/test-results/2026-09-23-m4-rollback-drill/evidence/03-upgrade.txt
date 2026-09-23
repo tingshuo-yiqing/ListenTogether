@@ -1,0 +1,120 @@
+# 证据 03 · 升级段（切链接 → restart → health → 内存房间丢失实测）
+#
+# 时间：2026-09-23 22:55:44 CST
+# 前置只读盘点见 03a，升级动作见 03b
+
+## 03a · restart 前只读盘点（22:52–22:53）
+
+$ curl -s -m 8 http://8.166.126.136:3000/health
+{"ok":true}
+
+$ ssh aliyun "free -m; df -h /opt | tail -1; readlink /opt/listen-together/server; cat /opt/listen-together/current-version.txt; ls -1 /opt/listen-together/releases/; systemctl show listen-together -p WorkingDirectory -p ExecStart -p ActiveState -p SubState -p NRestarts -p ActiveEnterTimestamp; ss -lntp | grep 3000"
+               total        used        free      shared  buff/cache   available
+Mem:            1735         521         130           4        1260        1214
+Swap:           2047           0        2047
+/dev/vda3        40G  6.6G   31G  18% /
+/opt/listen-together/releases/20260922-2159/server
+id=20260922-2159
+prev=(none, first deploy)
+20260922-2159
+ActiveState=active
+SubState=running
+ActiveEnterTimestamp=Wed 2026-09-23 12:05:26 CST
+NRestarts=0
+ExecStart={ path=/usr/bin/node ; argv[]=/usr/bin/node /opt/listen-together/server/dist/index.js ; ... }
+WorkingDirectory=/opt/listen-together/server
+LISTEN 0      511          0.0.0.0:3000      0.0.0.0:*    users:(("MainThread",pid=4191,fd:21))
+
+$ ssh aliyun "journalctl -u listen-together -n 20 --no-pager"
+Sep 22 23:26:42 ... Started / Server listening at http://127.0.0.1:3000
+Sep 23 02:19:35 ... Stopping / Stopped（Consumed 1min 12.935s CPU over 2h 52min）
+-- Boot 050af342f03748eb92a36e0ed1a6995c --
+Sep 23 11:17:26 ... Started / Server listening
+Sep 23 12:05:26 ... Stopping / Deactivated / Stopped（Consumed 2.648s CPU over 47min 59.871s，memory peak 195.7M）
+Sep 23 12:05:26 ... Started / node[4191] Server listening at http://127.0.0.1:3000
+> 日志中**无任何房间活动记录**；最近一次 restart 为 12:05:26，此后 10h50m 无重启。
+
+$ ssh aliyun "ss -tn state established '( sport = :3000 )' | tail -n +2 | wc -l"
+0
+> 端口 3000 上**零条 ESTABLISHED**（无任何 WS 成员在线）→ 确认无活跃房间。
+
+## 03b · 升级（22:55:44）
+
+=== [1] restart 前：建一个受控测试房间（用于客观验证内存房间被清空） ===
+受控房间 CODE=D611EE22 （非真实用户，仅在内存中存在）
+restart 前该房间 catalog 状态: 200
+
+=== [2] 收写权限（deployment.md 1.1：chown root:listen + g+rX） ===
+drwxrwxrwx 6 root listen 4096 Sep 23 22:54 /opt/listen-together/releases/20260923-2157/server
+-rw-rw-rw- 1 root listen 476 Sep 21 17:19 /opt/listen-together/releases/20260923-2157/server/package.json
+
+=== [3] 写 current-version.txt（必须在切链接之前取 prev） ===
+readlink 推导出的 prev=20260922-2159
+id=20260923-2157
+prev=20260922-2159
+
+=== [4] 切符号链接 ===
+/opt/listen-together/releases/20260923-2157/server
+
+=== [5] systemctl restart ===
+操作时间 2026-09-23 22:55:44 CST
+restart 命令退出码=0
+ActiveState=active
+SubState=running
+NRestarts=0
+ActiveEnterTimestamp=Wed 2026-09-23 22:55:44 CST
+ExecMainPID=14935
+ExecStart={ path=/usr/bin/node ; argv[]=/usr/bin/node /opt/listen-together/server/dist/index.js ; ignore_errors=no ; start_time=[Wed 2026-09-23 22:55:44 CST] ; stop_time=[n/a] ; pid=14935 ; code=(null) ; status=0/0 }
+WorkingDirectory=/opt/listen-together/server
+
+=== [6] health 轮询（最多 20 秒） ===
+第 2 秒 health={"ok":true}
+
+=== [7] 旧受控房间是否被清空（内存态房间丢失的直接证据） ===
+restart 后同一 CODE=D611EE22 的 catalog 状态: 404
+响应体: {"message":"房间不存在或已过期"}
+
+=== [8] 资源（升级后） ===
+               total        used        free      shared  buff/cache   available
+Mem:            1735         528         484          27         924        1207
+
+## 03c · 构建过程（npm ci / build / prune，22:54）
+
+=== [2] npm ci（以 listen 账号，HOME=/tmp） ===
+npm ci 退出码=0  日志尾:
+added 112 packages in 3s
+               total        used        free      shared  buff/cache   available
+Mem:            1735         541         255          27        1140        1194
+
+=== [3] npm run build（tsc） ===
+npm run build 退出码=0
+> listen-together-server@0.1.0 build
+> tsc
+               total        used        free      shared  buff/cache   available
+Mem:            1735         581         406          27         950        1154
+
+=== [4] npm prune --omit=dev ===
+npm prune 退出码=0
+found 0 vulnerabilities
+
+=== [5] 产物核对 ===
+dist/：app.js 2186B / index.js 462B / library / realtime / rooms / routes
+typescript 是否已移除: 已移除
+node_modules 大小: 18M
+               total        used        free      shared  buff/cache   available
+Mem:            1735         564         458          27         914        1171
+
+> 全过程 `available` 始终 ≥ 1154MB，**swap 用量始终 0**，无 OOM 迹象（对照陷阱 8.5 的判据：
+> 先看 `free -m` 再看 OOM 记录，而不是先怀疑服务或安全组）。
+
+## 关键判据
+
+| 判据 | 升级前 | 升级后 | 结论 |
+|---|---|---|---|
+| `readlink /opt/listen-together/server` | releases/20260922-2159/server | releases/20260923-2157/server | 链接已切 |
+| ExecMainPID | 4191 | 14935 | 进程确实换了 |
+| ActiveEnterTimestamp | 2026-09-23 12:05:26 | 2026-09-23 22:55:44 | 重启时刻吻合 |
+| NRestarts | 0 | 0 | 无异常自愈/崩溃 |
+| `WorkingDirectory` | /opt/listen-together/server | /opt/listen-together/server | 与模板一致（链接方案不改 systemd 路径） |
+| health | {"ok":true} | 第 2 秒 {"ok":true} | 200 |
+| 受控房间 D611EE22 | catalog 200 | **404 房间不存在或已过期** | **内存房间被清空** |

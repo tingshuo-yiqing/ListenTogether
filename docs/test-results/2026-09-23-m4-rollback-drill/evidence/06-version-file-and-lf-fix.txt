@@ -1,0 +1,69 @@
+# 证据 06 · 两处收尾修正（版本文件一致性 + 清单 LF）
+#
+# 均为演练过程中**发现并当场修正**的问题，记录原始现象与修正后的自检输出。
+
+## 6.1 `current-version.txt` 在回滚后与实际在产版本不一致
+
+§5 的回滚片段只做 `ln -sfn` + `restart`，**不改写 `current-version.txt`**；而 §5 的布局注释写的是
+"`current-version.txt` # 当前 release id 与上一版 id，**回滚时手工改写**"。照抄片段执行后立即出现：
+
+$ ssh aliyun "readlink /opt/listen-together/server; cat /opt/listen-together/current-version.txt"
+/opt/listen-together/releases/20260922-2159/server
+id=20260923-2157
+prev=20260922-2159
+
+→ **文件声称在产的是 20260923-2157，实际在产的是 20260922-2159**。危害有二：
+① 后续会话/人会读错"现在跑的是哪版"；② 若照 `id=` 去理解，可能误判升级已生效。
+（对回滚命令本身无害：`grep prev= … | cut -d= -f2` 仍读出 20260922-2159，是幂等的 no-op。）
+
+按布局注释手工改写为真实状态，并加一致性自检：
+
+$ printf 'id=20260922-2159\nprev=20260923-2157\n' > /opt/listen-together/current-version.txt
+id=20260922-2159
+prev=20260923-2157
+
+=== 一致性自检 ===
+实际在产=20260922-2159  id字段=20260922-2159  prev字段=20260923-2157
+PASS: id 与实际在产一致
+PASS: prev=20260923-2157 在 releases/ 下存在（回滚命令不会切出断链）
+
+=== 服务未受影响的复核 ===
+{"ok":true}
+ActiveState=active
+ActiveEnterTimestamp=Wed 2026-09-23 22:56:01 CST
+NRestarts=0
+ExecMainPID=15175
+
+**要点**：`prev=` 必须始终是 `releases/` 下**真实存在**的 id —— 若写成空值或不存在的 id，
+下次回滚会执行 `ln -sfn /opt/listen-together/releases//server /opt/listen-together/server` 切出**断链**，
+服务重启即起不来。已把该自检作为回滚后必做项写入 [deployment.md](../../../deployment.md) 5.1 第 2 条。
+
+## 6.2 `package-deploy.ps1` 改为输出 LF 清单（验证）
+
+修正后复跑打包脚本（产出 `listen-together-0.1.0-20260923-2258.tar.gz`，仅用于验证清单修正，
+**不是本次演练的升级锚点**；演练锚点仍是 20260923-2157）：
+
+$ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\package-deploy.ps1
+[1/4] server 构建通过（tsc 0 错误）
+      demo-media 按 catalog 引用打包 5 个音频
+[3/4] 打包完成：...listen-together-0.1.0-20260923-2258.tar.gz
+      大小 11.4 MB
+[4/4] SHA256 清单：...SHA256SUMS-20260923-2258.txt
+
+本机核对（Python 逐字节计数）：
+
+SHA256SUMS-20260923-2258.txt  CR 字节数: 0
+行尾样式（od 首行末）: ... g z \n
+行数: 35
+
+服务器端决定性验证（GNU grep，把新清单 scp 到 /tmp 后对比新旧）：
+
+CR 字节数（GNU 口径，新/旧）: 0 / 35
+grep 'tar\.gz$' 命中行数 → 旧清单: 0      ← 故障复现
+grep 'tar\.gz$' 命中行数 → 新清单: 1      ← 修正生效
+--- 新清单直接喂 sha256sum -c（tarball 本机未上传，预期仅 'No such file'） ---
+sha256sum: listen-together-0.1.0-20260923-2258.tar.gz: No such file or directory
+listen-together-0.1.0-20260923-2258.tar.gz: FAILED open or read
+（仅"文件不存在"，说明 grep 已正确筛出该行并传给 sha256sum，管道不再是空输入）
+
+静态检查：`package-deploy.ps1` BOM=True、PSParserErrors=0（UTF-8 BOM 由 PSParser 检查保持）。

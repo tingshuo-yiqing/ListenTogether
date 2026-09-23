@@ -1,0 +1,96 @@
+# 证据 02 · 服务端解包与 SHA256 校验（含 CRLF 口径不对称取证）
+#
+# 记录时间：2026-09-23 22:53–22:54 (GMT+8)
+# 方式：ssh aliyun（root），全部只读或 release 目录内操作，未触碰运行中的服务
+# 命令：ssh -o BatchMode=yes aliyun   （把 02-remote-verify.sh 内容经 stdin 送入远端的 bash -s）
+
+$ ssh -o BatchMode=yes -o ConnectTimeout=12 aliyun bash -s << 'REMOTE'
+ID=20260923-2157
+cd /tmp
+echo "=== [0] 清单行尾诊断 ==="
+printf '总行数: '; wc -l < SHA256SUMS-$ID.txt
+printf '含 CR 的行数: '; grep -c $'\r' SHA256SUMS-$ID.txt
+echo "首行末尾字节（od）:"; head -1 SHA256SUMS-$ID.txt | od -c | tail -2
+echo ""
+echo "=== [0b] 取证：原始清单直接 sha256sum -c ==="
+sha256sum -c SHA256SUMS-$ID.txt 2>&1 | head -4
+echo "退出码=${PIPESTATUS[0]}"
+echo ""
+echo "=== [0c] 转为 LF 后再试 ==="
+tr -d '\r' < SHA256SUMS-$ID.txt > SHA256SUMS-$ID.lf.txt
+printf 'LF 版含 CR 行数: '; grep -c $'\r' SHA256SUMS-$ID.lf.txt
+grep 'tar\.gz$' SHA256SUMS-$ID.lf.txt | sha256sum -c -
+echo ""
+echo "=== [1] 建 release 目录并解包 ==="
+mkdir -p /opt/listen-together/releases/$ID
+tar -xzf /tmp/listen-together-0.1.0-$ID.tar.gz -C /opt/listen-together/releases/$ID
+echo "解包完成"
+echo ""
+echo "=== [2] 包内 34 文件逐项校验 ==="
+cd /opt/listen-together/releases/$ID
+grep -v 'tar\.gz$' /tmp/SHA256SUMS-$ID.lf.txt | sha256sum -c - > /tmp/lt-verify-$ID.out 2>&1
+echo "检查行数: $(wc -l < /tmp/lt-verify-$ID.out)"
+echo "结果分布: $(awk '{print $NF}' /tmp/lt-verify-$ID.out | sort | uniq -c | tr '\n' ' ')"
+if grep -qv ': OK$' /tmp/lt-verify-$ID.out; then echo "!! 存在非 OK 行："; grep -v ': OK$' /tmp/lt-verify-$ID.out; else echo "全部 OK"; fi
+echo ""
+echo "=== [3] 目录内容 ==="
+ls -la /opt/listen-together/releases/$ID/
+cp /tmp/SHA256SUMS-$ID.lf.txt /opt/listen-together/releases/$ID/SHA256SUMS.txt
+echo ""
+echo "=== [4] 资源 ==="
+df -h /opt | tail -1; free -m | head -2
+REMOTE
+
+## 原始输出（逐字）
+
+=== [0] 清单行尾诊断 ===
+总行数: 35
+含 CR 的行数: 35
+首行末尾字节（od）:
+0000140   -   2   1   5   7   .   t   a   r   .   g   z  \r  \n
+0000156
+
+=== [0b] 取证：原始清单直接 sha256sum -c（预期命令行格式错误 / 文件名带 CR） ===
+listen-together-0.1.0-20260923-2157.tar.gz: OK
+sha256sum: demo-media/catalog.json: No such file or directory
+demo-media/catalog.json: FAILED open or read
+sha256sum: demo-media/demo-high.mp3: No such file or directory
+退出码=1
+
+=== [0c] 转为 LF 后再试 ===
+LF 版含 CR 行数: 0
+listen-together-0.1.0-20260923-2157.tar.gz: OK
+
+=== [1] 建 release 目录并解包 ===
+解包完成
+
+=== [2] 包内 34 文件逐项校验 ===
+检查行数: 34
+结果分布:      34 OK
+全部 OK
+
+=== [3] 目录内容 ===
+total 28
+drwxrwxrwx 7 root root   4096 Sep 23 21:57 .
+drwxr-xr-x 4 root listen 4096 Sep 23 22:54 ..
+drwxrwxrwx 2 root root   4096 Sep 23 22:54 demo-media
+drwxrwxrwx 2 root root   4096 Sep 23 22:54 deploy
+drwxrwxrwx 2 root root   4096 Sep 23 22:54 docs
+drwxrwxrwx 2 root root   4096 Sep 23 22:54 media
+drwxrwxrwx 5 root root   4096 Sep 23 21:57 server
+
+=== [4] 资源 ===
+/dev/vda3        40G  6.7G   31G  18% /
+               total        used        free      shared  buff/cache   available
+Mem:            1735         533         138          16        1252        1202
+
+## 分析（本节结论已回填 docs/development-pitfalls.md 8.7）
+
+1. **清单 35/35 行全部以 CRLF 结尾**（od 直证 `g z \r \n`）。
+2. **`sha256sum -c` 本身容忍 CRLF**：[0b] 中 tarball 行（同样带 CR）在 /tmp 下校验成功并打印 `OK`；
+   后续 FAILED 行的原因是 `demo-media/*` 当时确实不在 /tmp（尚未解包），与 CR 无关。
+3. **失败的真凶是 GNU grep 的 `$` 锚点**：`grep 'tar\.gz$'` 在 CRLF 文件上匹配 0 行 → 管道给
+   `sha256sum -c` 的是空输入 → 报 `no properly formatted checksum lines found`。
+   本机 MSYS grep 会自动吞掉行尾 CR，故同一条命令**本地通过、服务器静默返回空**。
+4. 处置：服务器侧 `tr -d '\r'` 生成 LF 副本后再按行过滤校验（本文件 [0c]/[2]）→ **34/34 OK**。
+   同时已修正 `scripts/package-deploy.ps1`，今后清单直接输出 LF，不再需要转换。

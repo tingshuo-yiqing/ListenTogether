@@ -1,0 +1,117 @@
+# 证据 05 · 13 项服务端功能抽查 · 三次运行
+#
+# 脚本：/tmp/m4-deploy-verify.sh（源 = scripts/m4-deploy-verify.sh，本轮已修正为自适应云端曲库）
+# 用法：ssh aliyun "cd /tmp && bash m4-deploy-verify.sh"
+#
+# 三次运行的目的：
+#   ① 基线（旧版本 20260922-2159，restart 之前）——**先验证仪器本身正确**，
+#      否则升级后失败将无法区分"新版本缺陷"与"脚本自身问题"；
+#   ② 升级后（20260923-2157）；
+#   ③ 回滚后（20260922-2159）。
+#
+# 脚本修正说明（2026-09-23）：
+#   原脚本第 4 节硬编码 `demo-soft` 与"catalog 恰好 5 首"。云端曲库在 2026-09-23 中午
+#   已换成 5 首**真实 MP3**（id: he-bu-ke / chi-xin-jue-dui / dan-che / fu-shi-shan-xia / ju-hao），
+#   media 目录下已无 demo-soft.mp3 → 原脚本必然在音频段 404/stat 失败。
+#   改为：从 /opt/listen-together/media/catalog.json 自动取第 1 条（可用 TRACK_ID 覆盖）解析 id/file，
+#   曲库条数也与 catalog.json 实际长度比对。仍为 13 项，语义不变。
+
+---
+
+## ① 基线运行（旧版本 20260922-2159，22:53:33 前后）
+
+抽查曲目: id=he-bu-ke file=有何不可.mp3（曲库共 5 条）
+== 1. health ==
+PASS: health={"ok":true}
+== 2. create room ==
+PASS: room=026863CC created, token length=64
+== 3. catalog ==
+PASS: catalog 200, 5 tracks
+PASS: catalog without token -> 401
+== 4. audio (he-bu-ke) ==
+PASS: full GET -> 200, size=5805496
+PASS: Range bytes=0-1023 -> 206 1024, Content-Range: bytes 0-1023/5805496
+PASS: suffix Range bytes=-500 -> 206 500
+PASS: open Range bytes=1024- -> 206, 5804472 bytes
+PASS: out-of-range -> 416
+PASS: audio without token -> 401
+== 5. websocket ==
+PASS: WS open + sync reply (clock+state): WS-OPEN|WS-MSG type=state {"type":"state","code":"026863CC",...}|WS-MSG type=clock {...}
+PASS: WS without token rejected: WS-REJECTED Unexpected server response: 401
+== 6. cleanup ==
+PASS: temporary member left
+RESULT pass=13 fail=0
+BASELINE_EXIT=0
+
+---
+
+## ② 升级后运行（20260923-2157，22:55:52 前后）
+
+抽查曲目: id=he-bu-ke file=有何不可.mp3（曲库共 5 条）
+== 1. health ==
+PASS: health={"ok":true}
+== 2. create room ==
+PASS: room=4090362A created, token length=64
+== 3. catalog ==
+PASS: catalog 200, 5 tracks
+PASS: catalog without token -> 401
+== 4. audio (he-bu-ke) ==
+PASS: full GET -> 200, size=5805496
+PASS: Range bytes=0-1023 -> 206 1024, Content-Range: bytes 0-1023/5805496
+PASS: suffix Range bytes=-500 -> 206 500
+PASS: open Range bytes=1024- -> 206, 5804472 bytes
+PASS: out-of-range -> 416
+PASS: audio without token -> 401
+== 5. websocket ==
+PASS: WS open + sync reply (clock+state): WS-OPEN|WS-MSG type=state {"type":"state","code":"4090362A",...}|WS-MSG type=clock {...}
+PASS: WS without token rejected: WS-REJECTED Unexpected server response: 401
+== 6. cleanup ==
+PASS: temporary member left
+== 7. journal (recent 6 lines) ==
+  Sep 23 22:55:44 iZ640bdwb4odxlZ systemd[1]: listen-together.service: Stopped listen-together.service（Consumed 15.108s CPU over 10h 50min, memory peak 72.6M）
+  Sep 23 22:55:44 iZ640bdwb4odxlZ systemd[1]: Started listen-together.service
+  Sep 23 22:55:45 iZ640bdwb4odxlZ node[14935]: {"level":30,...,"msg":"Server listening at http://127.0.0.1:3000"}
+RESULT pass=13 fail=0
+UPGRADE_VERIFY_EXIT=0
+--- 版本核对 ---
+id=20260923-2157
+prev=20260922-2159
+/opt/listen-together/releases/20260923-2157/server
+
+---
+
+## ③ 回滚后运行（20260922-2159，22:56:10 前后）
+
+抽查曲目: id=he-bu-ke file=有何不可.mp3（曲库共 5 条）
+== 3. catalog ==
+PASS: catalog 200, 5 tracks
+PASS: catalog without token -> 401
+== 4. audio (he-bu-ke) ==
+PASS: full GET -> 200, size=5805496
+PASS: Range bytes=0-1023 -> 206 1024, Content-Range: bytes 0-1023/5805496
+PASS: suffix Range bytes=-500 -> 206 500
+PASS: open Range bytes=1024- -> 206, 5804472 bytes
+== 5. websocket ==
+PASS: WS open + sync reply (clock+state): WS-OPEN|WS-MSG type=state {"type":"state","code":"920C2946",...}|WS-MSG type=clock {...}
+PASS: WS without token rejected: WS-REJECTED Unexpected server response: 401
+== 6. cleanup ==
+PASS: temporary member left
+== 7. journal (recent 6 lines) ==
+  Sep 23 22:56:01 iZ640bdwb4odxlZ systemd[1]: Stopping listen-together.service ...
+  Sep 23 22:56:01 iZ640bdwb4odxlZ systemd[1]: Stopped listen-together.service
+  Sep 23 22:56:02 iZ640bdwb4odxlZ node[15175]: {"level":30,...,"msg":"Server listening at http://127.0.0.1:3000"}
+RESULT pass=13 fail=0
+ROLLBACK_VERIFY_EXIT=0
+
+---
+
+## 汇总
+
+| 运行 | 版本 | RESULT | 临时房间 | 备注 |
+|---|---|---|---|---|
+| ① 基线 | 20260922-2159 | **13 / 0** | 026863CC（已退出） | 仪器自证可用 |
+| ② 升级后 | 20260923-2157 | **13 / 0** | 4090362A（已退出） | 新 release 功能无回归 |
+| ③ 回滚后 | 20260922-2159 | **13 / 0** | 920C2946（已退出） | 回滚目标版本功能正常 |
+
+三次运行的脚本第 6 项都会 `DELETE .../membership` 退出临时成员，房间在无在线成员 300 秒后
+由 `tick()` 自动删除（协议内行为），无需人工清理。

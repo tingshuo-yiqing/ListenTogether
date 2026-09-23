@@ -165,6 +165,27 @@ scp deploy-artifacts\listen-together-*.tar.gz deploy-artifacts\SHA256SUMS-*.txt 
 已实跑验证（2026-09-22）：tsc 0 错误、tar.gz 20.5MB、含 demo-media 全部 7 个 mp3、
 SHA256 清单逐文件生成；制品 `deploy-artifacts/listen-together-0.1.0-20260922-2159.tar.gz`。
 
+### 5.1 升级/回滚演练实测注记（2026-09-23，双向通过）
+
+首次部署只有"停用/恢复候选"，**本节起版本回滚已真实验证**：升级到 `20260923-2157` 再按上面的回滚命令切回
+`20260922-2159`，两次 health 200、`WorkingDirectory`/ExecStart 路径不变、13 项功能抽查各 13/0。
+完整记录与原始输出见 [test-results/2026-09-23-m4-rollback-drill](test-results/2026-09-23-m4-rollback-drill/README.md)。
+照抄本节命令时另注意四点：
+
+1. **SHA256SUMS 的行尾**：PowerShell 旧版脚本产出的清单是 CRLF，服务器上用 `grep '…$'` 过滤会命中 **0 行**并让
+   `sha256sum -c` 报 `no properly formatted checksum lines found`（`sha256sum -c` 本身能处理 CRLF）。脚本已修正为
+   输出 LF（复跑实测：服务器 GNU grep 由命中 0 行变为命中 1 行）；拿到旧清单先 `tr -d '\r'`。详见[陷阱 8.7](development-pitfalls.md)。
+2. **`current-version.txt` 要成对维护**：本节升级命令只写 `prev=`；实测写成 `id=<新ID>` + `prev=<旧ID>` 两行，
+   与首次部署的 schema 一致，回滚命令 `grep prev= … | cut -d= -f2` 行为不变。**注意回滚片段只切链接、不改写版本文件**
+   —— 回滚后必须按上面的布局注释手工把 `id=` 改为**实际在产**版本，并保证 `prev=` 是 `releases/` 下**真实存在**的 id
+   （写成空值或不存在的 id，下次回滚会执行 `ln -sfn /opt/listen-together/releases//server …` 切出**断链**，服务重启即起不来）。
+   回滚后自检：`readlink /opt/listen-together/server` 解出的版本 = `id=` 字段，且 `releases/$prev/server` 目录存在。
+3. **服务端自检脚本**：`scripts/m4-deploy-verify.sh` 会从云端 `media/catalog.json` 动态取抽查曲目（可用 `TRACK_ID=` 覆盖），
+   不再硬编码演示曲目（见[陷阱 8.8](development-pitfalls.md)）。**先在一份已知良好版本上跑基线**，再对被测版本跑。
+4. **两次 restart 各清空一次全部内存房间**：演练用受控房间实测 `catalog 200 → restart → 404「房间不存在或已过期」`。
+   执行前用 `ss -tn state established '( sport = :3000 )'` 确认零条 ESTABLISHED、并看 `journalctl -n 20` 无房间活动；
+   在有人使用期间执行会造成全员掉线（协议内行为，需重新建房）。
+
 ## 6. 云端曲库管理：上传与转码（2026-09-23 新增）
 
 曲库文件在 `/opt/listen-together/media/`（跨版本持久层），`catalog.json` 条目为

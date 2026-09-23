@@ -287,6 +287,21 @@
 - 新增开发陷阱回填：**2.9** shell 无法 `settings put`（system 要 WRITE_SETTINGS、global 要 WRITE_SECURE_SETTINGS，且失败时不报错只不生效→改 `cmd power set-mode`/`cmd uimode night` 并复核）、**2.10** `screenrecord` 在 PHQ110 段错误 rc=139 无文件（改连拍+ffmpeg 均值判据）、**3.5** 沙箱回收 adb server 会清掉 `reverse`，应用掉线横幅把布局下移约 324px 导致旧坐标必然点错（一次测试阶段必须同进程内完成、坐标必须当轮重 dump）、**3.6** Compose `input text` 长串只落首字符（地址一律写 `connection.xml`；`run-as` 下重定向 `>` 可用而 `sed -i` 静默失败）、**9.3** 采样"5 秒"实际间隔约 6s，速率只能取同源时间戳。
 - 本轮边界（不得据此宣布通过）：**M2 双机**（缺第二台手机，未做）、**M3-LONG**（未做）、**第二种公网网络**（蜂窝未测：无线调试依赖 Wi-Fi，切蜂窝即断 adb）、TLS/域名（路线 A 明文）、真实令牌作废（无入口）、云端 15 路与升级/回滚（W3/W4，需各自独占服务时间片）、长播放用合成测试音（220Hz tone）、白闪取证为连拍（非逐帧）。云端轨道（W3/W4）已具备开始条件。
 
+## 本轮新增（M4 升级/回滚演练，2026-09-23 晚）
+
+> W3 云端轨道（T3）。**未改任何产品代码、未重建 APK**（hash 仍 36BD3A5B…）。完整证据与原始输出见 [test-results/2026-09-23-m4-rollback-drill](test-results/2026-09-23-m4-rollback-drill/README.md)。
+
+- **两段式门禁**：等真机轨道报告 W2 通过（[记录](test-results/2026-09-23-m4-public-e2e/README.md)）后才启动段 2，并按协调规则 C1 声明/释放云端服务时间片（22:52 声明 → 22:57 释放）。段 1 本地打包在 21:57 与真机轨道并行完成，**全程未碰云端**（未上传、未重启、未改任何状态）。
+- **段 1 制品**：`listen-together-0.1.0-20260923-2157.tar.gz`（11.4MB，打包前 tsc 0 错误）+ `SHA256SUMS-20260923-2157.txt`（35 行 = tarball + 34 包内文件）；tarball SHA256 `61e7eeb99ab152114f3f15b9786c3ffc72d30142f31b6b9d9eb92421fca08ce2` 与清单首行一致，解包后 **34/34 OK**；与在产包 `20260922-2159` 的 `server/` **20 个文件哈希全等**——"同代码新 ID"，上一版/下一版对照成立。包体由 20.5MB 降至 11.4MB 是陷阱 8.1 的 catalog 过滤生效（个人音频不再进包）。
+- **升级成功**：scp 上传（7.7s）→ `releases/20260923-2157` 解包 + tarball/34 文件双层校验 → listen 账号 `npm ci`（112 包 3s）/ `npm run build`（tsc）/ `npm prune --omit=dev` **三关退出码全 0**（`available` 全程 ≥1154MB、**swap 用量 0**、无 OOM 迹象）→ 写 `current-version.txt`（`id=20260923-2157` + `prev=20260922-2159`）→ `ln -sfn` 切链接 → `systemctl restart`。22:55:44 **health 第 2 秒 200**，ExecMainPID 4191→**14935**，`WorkingDirectory=/opt/listen-together/server` 与 ExecStart 路径**保持不变**（符号链接方案的设计目标），NRestarts=0。
+- **回滚成功（真实版本回滚，非"停用/恢复候选"）**：照抄第 5 节 `PREV=$(grep prev= /opt/listen-together/current-version.txt | cut -d= -f2)` → `20260922-2159` → `ln -sfn` → `restart`。22:56:01 **health 第 2 秒 200**，PID 14935→**15175**，NRestarts=0；公网 `http://8.166.126.136:3000/health` = `{"ok":true}`。**回滚读数取自版本文件而非手敲版本号，覆盖了真实运维路径**——这正是首次部署时"无上一版"而无法验证的部分。
+- **13 项服务端抽查三次全过**：基线（切链接前，旧版本 20260922-2159）**13/0** → 升级后 **13/0** → 回滚后 **13/0**。覆盖 health / 建房取 64 位令牌 / catalog 200 与无令牌 401 / 音频全量 200（5,805,496B）/ `Range 0-1023`→206 `bytes 0-1023/5805496` / 后缀 Range→206 500 / 开区间→206 5,804,472 / 越界→416 / 音频无令牌 401 / WS 持令牌 open+sync 回 clock+state / WS 无令牌被拒 401 / 临时成员退出。**先跑基线的意义**：先证明"仪表"本身可用，升级后的失败才可归因。
+- **两次重启丢房间（如实标注）**：服务端房间为进程内存态，升级与回滚**各清空一次全部房间**。已用**受控测试房间客观证实**（不是引用协议描述）：D611EE22、9BA71413 均 `catalog 200 → restart → 404「房间不存在或已过期」`。执行前经 health 200 + `ss` 端口 3000 **零条 ESTABLISHED** + journal（最近重启 12:05:26、其后 10h50m 无重启、无房间活动）三重确认无活跃房间，**未牺牲任何真实用户会话**；但约束必须随结论携带：**有人使用期间执行升级/回滚会造成全员掉线，需重新建房**（协议内行为）。
+- **新 release 保留在服务器** `/opt/listen-together/releases/20260923-2157/`（含构建产物与清单副本 `SHA256SUMS.txt`）作为将来真实升级的候选；演练结束时 `server` 链接停在 **`20260922-2159`**（已知良好版本）。
+- **新坑回填**：**8.7** PowerShell 生成的 SHA256SUMS 是 CRLF 行尾，而 GNU grep 的 `$` 锚点不匹配 CR → `grep '…$' 清单 | sha256sum -c -` **本地（MSYS grep）通过、服务器静默拿到空输入**并报 `no properly formatted checksum lines found`（注意 `sha256sum -c` 本身容忍 CRLF）；`package-deploy.ps1` 已改为输出 LF 清单并复跑验证（服务器 `grep 'tar\.gz$'` 由命中 0 行变为命中 1 行）。**8.8** 验收脚本硬编码演示曲目 `demo-soft`，云端曲库换成 5 首真实 MP3 后必然失败；`m4-deploy-verify.sh` 已改为从云端 `catalog.json` 动态解析抽查曲目（`TRACK_ID=` 可覆盖）与条数，13 项语义不变。
+- **流量与纪律**：三次抽查全部走服务器本地回环（含两次各 5.8MB 音频），scp 为入向，**公网出网流量仅几 KB**；全程 ssh 只用 `free -m` / `journalctl -n` / `systemctl show` / `ss` 等轻量命令，**未在服务器跑任何重负载、未使用 VS Code Remote**（陷阱 8.5 的 1.7Gi OOM 教训）。
+- 本轮边界（不得据此宣布的）：新版本与在产版本**同源**（`server/` 20 文件哈希全等，刻意为之），故本轮**不能证明**"新代码有缺陷时回滚能恢复功能"这一更强命题，需要一次带**实质代码差异**的真实升级；**未做升级失败注入**（故意坏 dist / 缺依赖后 systemd 的行为未取证）；无零停机与健康门禁，升级窗口约 1–2 秒不可用（单实例内存态服务的既定形态）；`media/` 持久层与 `/etc/listen-together.env` 不随版本切换，其"数据/配置回滚"未演练；入口仍为 IP 明文（TLS 路线 A）；真实令牌作废仍无入口（后端无入口）。
+
 ## 最近代码交付的验证结果（沿用既有记录）
 - 本轮（RoomClient 暂停提示修复 + LOAD-15 脚本）完整构建：BUILD SUCCESSFUL，安卓单元测试 26 项通过，Android Lint 0 个问题。
 - 本轮 APK SHA256：832FB65EA4B606EB1C3EBFCE0EEAA887C585097D30219C1B11ED3884F907D09B（含校时不覆盖暂停提示修复；真机复验待设备重连）
@@ -342,7 +357,8 @@ cd D:\ListenTogether
 - [x] 公网验证：绑定 0.0.0.0 + 安全组放行后，真机经 `http://8.166.126.136:3000` 完成建房→选歌→播放→暂停→拖动→切歌→退出全链路（2026-09-23 晚，APK 36BD3A5B…，见 [test-results/2026-09-23-m4-public-e2e](test-results/2026-09-23-m4-public-e2e/README.md)）。**部分覆盖**：只测了 Wi-Fi 出口这一种公网网络；第二种（蜂窝）未测——无线调试本身依赖 Wi-Fi，切蜂窝会断 adb 链路，需 USB 有线调试或第二台手机才能补。TLS/域名按路线 A 维持明文（见上文 TLS 结论）。
 - [x] W1 卡顿修复真机验收（APK 36BD3A5B…，2026-09-23 晚，无线 adb）：关省电 180s 位置推进 1.001x 且诊断 `seek=0`；开省电出现 `speed` 变速追赶 9 条、`seek` 仍 0；自动切歌两段零 seek、无连环 seek；进度条端点像素实测 14dp 圆点/5dp 轨道（亮暗一致）、拖动恰一次合法 seek；暗色冷启动首帧即暗色启动窗口无白闪；听感由用户确认连续。见 [test-results/2026-09-23-w1-recheck](test-results/2026-09-23-w1-recheck/README.md)。
 - [ ] 公网弱网/丢包/抖动条件下的真机表现（未测；fault-proxy 注入此前只在本地用过）。
-- [ ] 15 路实际音频带宽在云端重测（LOAD-15 云端部分，归 M4）；版本回滚演练（首次部署无上一版，当前仅具备停用/恢复候选条件）。
+- [x] 版本回滚演练：首次部署时"仅具备停用/恢复候选条件"的缺口已关闭——升级到 `releases/20260923-2157` 后按 [deployment.md](deployment.md) 第 5 节回滚命令切回 `20260922-2159`，两次 health 第 2 秒 200、PID 4191→14935→15175、`WorkingDirectory`/ExecStart 路径不变、NRestarts=0，13 项抽查"基线/升级后/回滚后"均 **13/0**（2026-09-23 晚，见 [test-results/2026-09-23-m4-rollback-drill](test-results/2026-09-23-m4-rollback-drill/README.md)）。**两次 restart 各清空一次内存房间**，已用受控房间实测 `200 → 404`；执行前确认无活跃房间，未影响真实会话。新 release 保留在服务器作为将来真实升级候选。
+- [ ] 15 路实际音频带宽在云端重测（LOAD-15 云端部分，归 M4；云端时间片已由升级/回滚演练释放，具备开始条件）。
 
 ## 测试记录入口
 
@@ -353,5 +369,7 @@ cd D:\ListenTogether
 - [2026-09-23 W1 卡顿修复真机验收](test-results/2026-09-23-w1-recheck/README.md)：关/开省电各 180s 采样与诊断 seek/speed 分布、自动切歌、进度条端点像素实测、暗色冷启动与听感确认。
 
 - [2026-09-23 W2 M4 公网 E2E](test-results/2026-09-23-m4-public-e2e/README.md)：公网全链路七步 + 命令时间线、RTT/校时/version 实测、云端只读状态、第二房间复测。
+
+- [2026-09-23 M4 升级/回滚演练](test-results/2026-09-23-m4-rollback-drill/README.md)：两段式（本地打包 + 独占云端时间片）；升级/回滚双向证据、13 项抽查三次全过、受控房间实测"重启清空内存房间"、CRLF 清单与验收脚本两处新坑、原始输出归档。
 
 下一批任务的执行步骤与报告字段见 [执行单](execution-plan.md)。

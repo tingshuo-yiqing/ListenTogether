@@ -62,14 +62,18 @@ $tarball = Join-Path $outDir ("listen-together-0.1.0-" + $stamp + ".tar.gz")
 if ($LASTEXITCODE -ne 0) { throw "tar 打包失败" }
 
 # 4. SHA256 清单（tarball 本体 + 包内关键文件逐个校验值）
+# 行尾必须是 LF：GNU grep 的 `$` 锚点不匹配 CR，CRLF 清单在服务器侧用 `grep '…$' 清单 | sha256sum -c -`
+# 会静默拿到空输入并报 "no properly formatted checksum lines found"（本机 MSYS grep 会吞 CR，故本地看不出问题）。
+# 见 docs/development-pitfalls.md 8.7。
 $sumsFile = Join-Path $outDir ("SHA256SUMS-" + $stamp + ".txt")
 $tarHash = (Get-FileHash $tarball -Algorithm SHA256).Hash.ToLower()
-"$(($tarHash) + '  ' + (Split-Path -Leaf $tarball))" | Out-File -FilePath $sumsFile -Encoding ascii
+$lines = @("$tarHash  $(Split-Path -Leaf $tarball)")
 Get-ChildItem $stage -Recurse -File | ForEach-Object {
   $rel = $_.FullName.Substring($stage.Length + 1).Replace('\', '/')
   $h = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
-  Add-Content -Path $sumsFile -Value ($h + '  ' + $rel)
+  $lines += "$h  $rel"
 }
+[System.IO.File]::WriteAllText($sumsFile, (($lines -join "`n") + "`n"), [System.Text.Encoding]::ASCII)
 Write-Host "[3/4] 打包完成：$tarball"
 Write-Host ("      大小 {0:N1} MB" -f ((Get-Item $tarball).Length / 1MB))
 Write-Host "[4/4] SHA256 清单：$sumsFile"

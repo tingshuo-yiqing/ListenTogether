@@ -1,13 +1,30 @@
 #!/usr/bin/env bash
-# M4 部署服务端功能验证：health / 鉴权 / 音频 Range / WS 握手。
+# M4 部署服务端功能验证：health / 鉴权 / 音频 Range / WS 握手（共 13 项）。
 # 在云服务器上以 root 运行；仅创建一个临时成员并在收尾退出，不改任何配置。
 # 用法: bash scripts/m4-deploy-verify.sh
+# 音频抽查曲目默认取云端曲库 catalog.json 的第一条，可用 TRACK_ID=<id> 覆盖
+# （2026-09-23 升级/回滚演练修正：原脚本硬编码 demo-soft，云端换成真实曲库后必然 404）。
 set -uo pipefail
 BASE=http://127.0.0.1:3000
 MEDIA=/opt/listen-together/media
 pass=0; fail=0
 ok() { echo "PASS: $1"; pass=$((pass+1)); }
 bad() { echo "FAIL: $1"; fail=$((fail+1)); }
+
+media_field() { # $1=字段名：从云端 catalog.json 读第 1 条或指定 TRACK_ID 的字段
+  TRACK_FILTER="${TRACK_ID:-}" node -e '
+    const fs = require("fs");
+    const list = JSON.parse(fs.readFileSync("/opt/listen-together/media/catalog.json", "utf8"));
+    const want = process.env.TRACK_FILTER;
+    const t = want ? list.find(x => x.id === want) : list[0];
+    process.stdout.write(t ? String(t[process.argv[1]]) : "");
+  ' "$1"
+}
+TRACK_ID="${TRACK_ID:-$(media_field id)}"
+TRACK_FILE="$(media_field file)"
+TRACKS_EXPECT=$(node -e 'process.stdout.write(String(JSON.parse(require("fs").readFileSync("/opt/listen-together/media/catalog.json","utf8")).length))')
+if [ -z "$TRACK_ID" ] || [ -z "$TRACK_FILE" ]; then echo "无法解析云端曲库 catalog.json（TRACK_ID=$TRACK_ID）"; exit 1; fi
+echo "抽查曲目: id=$TRACK_ID file=$TRACK_FILE（曲库共 $TRACKS_EXPECT 条）"
 
 echo "== 1. health =="
 h=$(curl -s "$BASE/health")
@@ -23,13 +40,13 @@ AUTH="Authorization: Bearer $TOKEN"
 echo "== 3. catalog =="
 cstatus=$(curl -s -o /tmp/m4-catalog.json -w "%{http_code}" -H "$AUTH" "$BASE/api/rooms/$CODE/catalog")
 cnum=$(node -e 'try{console.log(JSON.parse(require("fs").readFileSync("/tmp/m4-catalog.json","utf8")).length)}catch(e){console.log(-1)}')
-[ "$cstatus" = 200 ] && [ "$cnum" = 5 ] && ok "catalog 200, 5 tracks" || bad "catalog status=$cnum tracks=$cnum"
+[ "$cstatus" = 200 ] && [ "$cnum" = "$TRACKS_EXPECT" ] && ok "catalog 200, $TRACKS_EXPECT tracks" || bad "catalog status=$cstatus tracks=$cnum expect=$TRACKS_EXPECT"
 un=$(curl -s -o /dev/null -w "%{http_code}" "$BASE/api/rooms/$CODE/catalog")
 [ "$un" = 401 ] && ok "catalog without token -> 401" || bad "catalog no-token status=$un"
 
-echo "== 4. audio =="
-A="$BASE/api/rooms/$CODE/audio/demo-soft"
-SIZE=$(stat -c %s "$MEDIA/demo-soft.mp3")
+echo "== 4. audio ($TRACK_ID) =="
+A="$BASE/api/rooms/$CODE/audio/$TRACK_ID"
+SIZE=$(stat -c %s "$MEDIA/$TRACK_FILE")
 r=$(curl -s -o /dev/null -w "%{http_code} %{size_download}" -H "$AUTH" "$A")
 [ "$r" = "200 $SIZE" ] && ok "full GET -> 200, size=$SIZE" || bad "full GET: [$r] expect [200 $SIZE]"
 curl -s -o /dev/null -D /tmp/m4-h1 -w "%{http_code} %{size_download}\n" -H "$AUTH" -H "Range: bytes=0-1023" "$A" > /tmp/m4-r1

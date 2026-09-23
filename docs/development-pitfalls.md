@@ -240,3 +240,16 @@
 - **试用实例无法备案**：阿里云帮助中心原文"免费试用ECS服务器并不满足可备案服务器要求"（试用为按量付费形态；备案服务码要求包年包月 ≥3 个月 + 公网带宽）。**LE 也不给裸 IP 签证书**（certbot 4.0.0：*will not issue certificates for a bare IP address*）。故大陆试用机 + 自定义域名 = 无解，除非迁移或转正式实例。
 - 规避：①先拿 `Server: Beaver`/error 35 + 地域元数据定性，不要怀疑 nginx/证书/安全组；②可用路线：IP 明文直连（过渡）、私有 CA 自签 + App 内置信任（需改 App 重发 APK）、迁中国香港地域（免备案、域名+正式证书可用）、转正式包年包月实例后备案；③**备案拦截同样会挡 Let's Encrypt 的 HTTP-01 续期验证（80 被拦），证书续期会失败**——需改 DNS-01 或等备案；④大陆地域试用免费流量仅 20GB/月（192kbps 下 15 人 1 小时 ≈ 1.3GB），且试用额度按小时消耗，注意剩余额度与到期。
 - 本轮顺带修复（与备案无关、本就偏离模板）：conf.d/listen-together.conf 用 certbot 自动生成版，X-Forwarded-For 用了可伪造的 `$proxy_add_x_forwarded_for` 且缺 `proxy_buffering off`/`client_max_body_size 8k`；已按 deploy/nginx.conf 模板替换域名后重装（备份在服务器 /root/nginx-backup-<时间戳>/），并移除与 sites-enabled/api.example.com 重复的 server_name（"conflicting server name, ignored" 警告来源）。
+
+### 8.7 PowerShell 生成的 SHA256SUMS 是 CRLF：`grep '$'` 本地通过、服务器静默返回空（2026-09-23 升级演练实测）
+
+- 现象：升级演练中，服务器执行 `grep 'tar\.gz$' SHA256SUMS-20260923-2157.txt | sha256sum -c -` 报 `sha256sum: 'standard input': no properly formatted checksum lines found`，看起来像清单本身坏了；而本机同一条命令（Git Bash / MSYS grep）正常筛出 1 行，本地核对显示"通过"——**同一条命令、同一份文件，本地通过、服务器失败**。
+- 根因：`Out-File` / `Add-Content` 写的是 **CRLF**（`od -c` 直证首行末尾 `g z \r \n`，35/35 行全带 CR）。**GNU grep 的 `$` 锚点只匹配 `\n` 之前，不匹配 CR**，故 `grep '…$'` 命中 0 行，管道交给 sha256sum 的是**空输入**；MSYS grep 会自动吞掉行尾 CR，所以本地永远看不出问题。**关键细节：`sha256sum -c` 本身容忍 CRLF**——同一份 CRLF 清单里，tarball 那一行在服务器上直接校验就报 `OK`；失败纯粹来自 grep 这一环，其余 `FAILED open or read` 只是因为文件当时还没解包。别把两者混为一谈，否则会误判成"下载损坏"（陷阱 8.2 的近亲）。
+- 规避：①**清单行尾固定 LF** —— `scripts/package-deploy.ps1` 已改为 `[System.IO.File]::WriteAllText($sumsFile, ($lines -join "`n") + "`n", [System.Text.Encoding]::ASCII)`（2026-09-23 修正；复跑实测 CR 字节数 0、服务器 `grep 'tar\.gz$'` 命中 1 行）；②拿到 CRLF 清单时先 `tr -d '\r' < 清单 > 清单.lf` 再按行过滤；③**尽量别用 `$` 锚点过滤清单**：不带锚点的 `grep 'tar\.gz'`、`sed -n '/tar\.gz$/p'`，或干脆在解包目录整份 `sha256sum -c SHA256SUMS-*.txt`（sha256sum 自己能处理 CR）都更稳。
+- 同类：这是陷阱 7「Windows 原生程序不认 /d/ 路径」「MSYS 改写 adb shell 的 /sdcard 参数」的又一形态——**同一命令在 MSYS 与 GNU 环境下对同一份文件的解释不同**。凡遇到"本地通过、服务器失败"的静默差异，先把文件字节（`od -c` / `xxd` / `grep -c $'\r'`）拉出来看，再怀疑逻辑。
+
+### 8.8 验收脚本硬编码演示曲库，曲库换成真实音频后必然失败（2026-09-23 升级演练实测）
+
+- 现象：`scripts/m4-deploy-verify.sh` 原第 4 节写死抽查曲目 `demo-soft`，并断言"catalog 恰好 5 首"。云端曲库在 2026-09-23 中午整体换成 5 首**真实 MP3**（`he-bu-ke` / `chi-xin-jue-dui` / `dan-che` / `fu-shi-shan-xia` / `ju-hao`，`media/` 下已无 `demo-soft.mp3`）之后，脚本会在音频段 `stat` 失败或 404——现象与"这次部署坏了"完全一样，极易误判。
+- 根因：验收脚本把**测试数据**（演示曲库的具体曲目）与**被测对象**（部署版本）耦合在一起；而曲库是跨版本持久层，会按业务需要独立更换（见 [deployment.md](deployment.md) 第 6 节），二者生命周期不同。
+- 规避：①脚本改为从 `/opt/listen-together/media/catalog.json` **动态解析**抽查曲目（`TRACK_ID=<id>` 可覆盖）与条数，13 项语义不变；②**先在一份已知良好的版本上跑一次基线**，再对被测版本跑——否则升级后的失败无法区分"新版本缺陷"与"仪器自身坏了"。本次升级/回滚演练正是按"基线(旧版本) 13/0 → 升级后 13/0 → 回滚后 13/0"三步执行的。

@@ -1,0 +1,68 @@
+# 证据 04 · 回滚段（照抄 deployment.md 第 5 节回滚命令）
+#
+# 时间：2026-09-23 22:56:01 CST
+
+=== [1] restart 前：再建一个受控测试房间 ===
+受控房间 CODE=9BA71413
+restart 前该房间 catalog 状态: 200
+
+=== [2] 回滚（照抄 deployment.md 第 5 节命令） ===
+PREV=$(grep prev= /opt/listen-together/current-version.txt | cut -d= -f2)
+echo "从 current-version.txt 读出的 PREV=$PREV"
+ln -sfn /opt/listen-together/releases/$PREV/server /opt/listen-together/server
+echo -n "切换后 readlink: "; readlink /opt/listen-together/server
+
+--- 实际输出 ---
+从 current-version.txt 读出的 PREV=20260922-2159
+切换后 readlink: /opt/listen-together/releases/20260922-2159/server
+
+=== [3] systemctl restart ===
+操作时间 2026-09-23 22:56:01 CST
+restart 命令退出码=0
+ActiveState=active
+SubState=running
+NRestarts=0
+ActiveEnterTimestamp=Wed 2026-09-23 22:56:01 CST
+ExecMainPID=15175
+ExecStart={ path=/usr/bin/node ; argv[]=/usr/bin/node /opt/listen-together/server/dist/index.js ; ignore_errors=no ; start_time=[Wed 2026-09-23 22:56:01 CST] ; stop_time=[n/a] ; pid=15175 ; code=(null) ; status=0/0 }
+WorkingDirectory=/opt/listen-together/server
+
+=== [4] health 轮询 ===
+第 2 秒 health={"ok":true}
+
+=== [5] 受控房间是否被清空 ===
+restart 后同一 CODE=9BA71413 的 catalog 状态: 404
+响应体: {"message":"房间不存在或已过期"}
+
+=== [6] 版本与资源 ===
+id=20260923-2157
+prev=20260922-2159
+20260922-2159
+20260923-2157
+               total        used        free      shared  buff/cache   available
+Mem:            1735         534         475          27         928        1201
+/dev/vda3        40G  6.7G   31G  18% /
+
+## 回滚后公网复核（本机侧，22:56）
+
+$ curl -s -m 8 http://8.166.126.136:3000/health
+{"ok":true}
+
+## 关键判据
+
+| 判据 | 升级态（20260923-2157） | 回滚后（20260922-2159） | 结论 |
+|---|---|---|---|
+| `readlink /opt/listen-together/server` | releases/20260923-2157/server | releases/20260922-2159/server | **链接已切回** |
+| ExecMainPID | 14935 | 15175 | 进程确实换了 |
+| ActiveEnterTimestamp | 2026-09-23 22:55:44 | 2026-09-23 22:56:01 | 两次重启相隔 17 秒 |
+| NRestarts | 0 | 0 | 无异常 |
+| health | {"ok":true}（第 2 秒） | {"ok":true}（第 2 秒） | 两次均 200 |
+| 受控房间 9BA71413 | catalog 200 | **404 房间不存在或已过期** | **内存房间被清空** |
+| 公网入口 health | — | {"ok":true} | 回滚后对外可用 |
+
+## 附注（观察，非缺陷、非本轮引入）
+
+对**不存在的房间号**携带任意令牌请求 catalog，返回 **404 `房间不存在或已过期`** 而非 401——
+因为 `store.ts` 的 `auth()` 先 `get(code)`（不存在即 404）再比对令牌。
+两个版本行为一致，非本轮回归；已由验收脚本第 3 项「真房间不带令牌 → 401」覆盖正确路径。
+（本轮此命令误用房间号 `00000000`，输出 404 属预期，不作为失败项。）
