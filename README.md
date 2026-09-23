@@ -88,18 +88,15 @@ cd D:\ListenTogether
 ## 文档
 
 - [系统架构设计](docs/architecture.md)：分层结构、模块职责与依赖、端到端数据流。
-- [并行开发推进方案](docs/parallel-development-plan.md)：工作流划分、串行关键路径、冲突协调与优先级排序。
-- [下一批推进与验收执行单](docs/execution-plan.md)：任务顺序、开始条件、操作与证据要求。
-- [下一阶段开发方案](docs/next-development-plan.md)：先完善双机同步和稳定性，再部署云端。
-- [模块文档索引](docs/modules/README.md)：10 个模块的职责、流程、接口、异常、验收和注释清单。
-- [开发与注释规范](docs/development-standards.md)：文档、核心注释与回归测试共同作为交付要求。
+- [验收记录](docs/verification.md)：进度唯一事实来源——当前状态、APK 版本历史、交付历史索引与待办清单。
+- [路线图与验收标准](docs/next-development-plan.md)：M0-M4 阶段定义、挂起项恢复条件、M2/M3-LONG 验收标准。
+- [并行开发推进方案](docs/parallel-development-plan.md)：工作流划分、冲突协调规则（多会话并行时必读）。
+- [模块文档索引](docs/modules/README.md)：10 个模块的职责、流程、接口、异常、验收、注释清单与关键代码阅读顺序。
+- [开发与注释规范](docs/development-standards.md)：文档、核心注释、回归测试与验收报告字段共同作为交付要求。
 - [开发陷阱清单](docs/development-pitfalls.md)：实际踩过的坑与规避方法，动手前通读，避免重复犯错。
-
-- docs/protocol.md：接口、消息、时间公式及权限
-- docs/deployment.md：Ubuntu / systemd / Nginx / TLS
-- docs/learning.md：关键代码阅读顺序与注释说明
-- docs/verification.md：已完成验证、环境阻塞和真机检查表
-- [真机播放测试过程与结果](docs/playback-test-2026-09-21.md)：操作步骤、实测证据、遇到的问题和未覆盖项
+- [协议规范](docs/protocol.md)：接口、消息、时间公式及权限。
+- [部署手册](docs/deployment.md)：Ubuntu / systemd / Nginx / TLS / 版本回滚 / 曲库管理。
+- 历史过程文档（使命完结的一次性记录）在 docs/archive/：播放测试（2026-09-21）、W1/W2 开发交接单（2026-09-23）。
 
 ## USB 一键联调
 

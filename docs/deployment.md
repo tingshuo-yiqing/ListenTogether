@@ -32,9 +32,9 @@ journalctl -u ssh -n 40 --no-pager 2>/dev/null | grep -Ei 'publickey|denied|owne
 ```powershell
 ssh -o BatchMode=yes aliyun "echo SSH-OK; whoami; node --version 2>/dev/null || echo no-node"
 ```
-登录打通后，先跑 `scripts/m4-inventory.sh`（只读盘点，见 execution-plan 第 5 节第 1 步），再按第 1 节继续部署。
+登录打通后，先跑 `scripts/m4-inventory.sh` 只读盘点基线（M4 首次部署时已执行，脚本可复用），再按第 1 节继续部署。
 
-部署阶段顺序、版本目录与回滚验收见 [推进执行单](execution-plan.md)。本文件保留操作模板；模板存在不代表云端已部署或回滚已验证。
+首次部署与回滚演练均已完成（2026-09-23 晚，见 [验收记录](verification.md)）；本文件保留操作模板供后续升级/迁移复用。
 
 ## 1. 准备目录和账号
 
@@ -117,8 +117,8 @@ TRUST_PROXY=true 只信任回环代理。保持后端绑定 127.0.0.1，防止�
 
 ## 5. 版本目录与回滚（M4，2026-09-22 准备）
 
-对应 execution-plan 第 5 节第 2/4 步。现状：systemd 模板固定指向 `/opt/listen-together/server`；
-execution-plan 明确"不能直接套用未实现的 current 目录方案"，因此用**符号链接切换**：systemd 的
+设计约定：systemd 模板固定指向 `/opt/listen-together/server`；
+不直接套用未实现的 current 目录方案，因此用**符号链接切换**：systemd 的
 `WorkingDirectory` 与 `ExecStart` 路径保持不变，`/opt/listen-together/server` 本身是指向当前版本的链接。
 
 布局：

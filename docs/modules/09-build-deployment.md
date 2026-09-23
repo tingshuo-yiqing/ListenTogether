@@ -37,5 +37,5 @@ TLS与WS升级、Range响应、进程异常恢复和回滚分别检查。
 2026-09-21：本地构建/USB安装已通过；云端与停止脚本改进待实施。
 2026-09-22：统一检查入口补齐后端构建/测试、安卓单测/Debug/Lint 和 Markdown 本地链接检查；默认 -Scope all，三类检查可独立运行。
 
-## 2026-09-22 当前阻塞与推进
-SSH 公钥被拒，尚无云部署成功证据；排查见 [部署第 0 节](../deployment.md)。部署准备与验收步骤见 [执行单](../execution-plan.md)。现有 systemd 固定工作目录和入口路径，版本目录切换方案需同步配置后验证，尚未完成回滚演练。
+## 部署状态（2026-09-24 更新）
+**云端已部署且升级/回滚演练双向通过**（2026-09-23 晚，见 [m4-rollback-drill](../test-results/2026-09-23-m4-rollback-drill/README.md)），早期 SSH 公钥阻塞已关闭（见 [部署第 0 节](../deployment.md)）。版本目录方案 = `releases/<id>` + `server` 符号链接，升级/回滚命令与验收见 [deployment.md 第 5 节](../deployment.md)。

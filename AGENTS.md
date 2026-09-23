@@ -9,12 +9,13 @@
 3. `docs/modules/README.md` —— 模块索引；改动哪个模块就读对应 `docs/modules/<编号>.md`（含已实现/待开发分界）。
 4. `docs/development-pitfalls.md` —— **开发陷阱清单**：实际踩过的坑与规避方法（编码、adb、UI 自动化、Compose、协程测试）。动手前通读，踩到新坑必须回填。
 
-历史证据按需查：`docs/test-results/<日期-场景>/README.md`、`docs/playback-test-2026-09-21.md`。
+历史证据按需查：`docs/test-results/<日期-场景>/README.md`（17 个场景目录，完整索引见 verification.md「测试记录入口」）；使命完结的一次性历史文档在 `docs/archive/`（播放测试 2026-09-21、W1/W2 交接单 2026-09-23）。
 
 ## 当前进度快照（2026-09-24 收尾确认，以 verification.md 为准）
 
 - **M4 四项部署门槛已全部关闭（2026-09-23 晚）**：①首次部署+13 项服务端验证+隧道联调（09-22）；②真机公网 E2E 建房→播放全链路（W2，APK 36BD3A5B…）；③升级/回滚演练双向通过（W3，13 项抽查三次各 13/0）；④LOAD-15 云端公网重测通过（W4：15 路×600s 全 206 零失败、2.847Mbps=本地基线 99.1%，见 docs/test-results/2026-09-23-load15-cloud）。云端曲库现为 6 首（5 首真实 192k + demo-load 负载测试音）。入口维持 `http://8.166.126.136:3000` 明文 IP 直连（路线 A，试用机无法备案）。
 - **收尾汇总（2026-09-24）**：scripts/check.ps1 -Scope all 全过（后端 tsc 0 错误 + 7/7 测试；安卓单测 45 项 UP-TO-DATE + assembleDebug + Lint 0；文档链接检查通过）；APK 锚定 **36BD3A5B…** 不变（本轮未改产品代码、未重建 APK，文档内无新 hash）；并行开发方案 W1–W4 已全部标注完成（T1–T4 清零）。
+- **文档结构优化（2026-09-24）**：verification.md 重建为"当前状态+索引"结构（33 个历史小节压缩为交付历史索引与 APK 版本历史两张表）；execution-plan.md 并入主计划与开发规范后删除、learning.md 并入模块索引后删除；handover-2026-09-23.md 与 playback-test-2026-09-21.md 归档至 docs/archive/；并行方案压缩已完成工作流。
 - 其余此前完成项（M0/M1/M3 各项、W1 卡顿修复真机验收等）见 verification.md 各节。
 - **下一步（剩余待办全部为外部条件触发或用户决策项）**：
   - M2 双机同步——缺第二台手机，设备到位后按主计划验收（W5）；

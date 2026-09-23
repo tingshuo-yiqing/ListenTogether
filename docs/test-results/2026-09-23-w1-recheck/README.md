@@ -8,7 +8,7 @@
 | 日期 | 2026-09-23 22:00–22:35（GMT+8） |
 | 操作者 | AI 会话执行全部 adb/UI 操作与数据采集；**听感一项由用户本人确认** |
 | 结论 | **通过**（5 项清单全部覆盖；边界见第五节） |
-| 上游依据 | [交接单第五节](../../handover-2026-09-23.md)、[并行方案 W1](../../parallel-development-plan.md)、[陷阱 9.1/9.2](../../development-pitfalls.md) |
+| 上游依据 | [交接单第五节](../../archive/handover-2026-09-23.md)、[并行方案 W1](../../parallel-development-plan.md)、[陷阱 9.1/9.2](../../development-pitfalls.md) |
 
 本轮**未改动任何产品代码**，也未重新构建 APK；全部证据来自对既有制品的真机驱动与采集。
 

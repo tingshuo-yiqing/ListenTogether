@@ -130,7 +130,7 @@ $adb = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
 2. 搜索 `FATAL EXCEPTION`、`PlaybackException`、`ExoPlaybackException`，未命中。
 3. 关闭观察端 WebSocket 并退出其房间成员身份。
 4. 保留用户手机应用和本机演示后端，停止测试声音。
-5. 将结果更新至 [验收总表](verification.md)。
+5. 将结果更新至 [验收总表](../verification.md)。
 
 ## 复测方法与证据边界
 

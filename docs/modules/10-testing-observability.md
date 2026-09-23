@@ -9,7 +9,7 @@ check-doc-links.mjs：扫描项目 Markdown 的本地链接；跳过外部 URL�
 fault-proxy.mjs / fault-proxy-selftest.mjs：故障注入代理与其自测（延迟、断线、恢复、音频 401 注入，共 10 项）。
 load15.mjs：15 路负载脚本（playback 码率模型 + throughput 容量模型），见 [LOAD-15 记录](../test-results/2026-09-22-load15/README.md)。
 demo 曲库：demo-soft/demo-high/demo-long（40 分钟）+ demo-load（11 分钟 192kbps，负载与码率模型专用）。
-PHQ110真机报告覆盖单机出声、暂停/跳转/切歌、后台、短时息屏和媒体会话暂停。完整证据见 [记录](../playback-test-2026-09-21.md)。
+PHQ110真机报告覆盖单机出声、暂停/跳转/切歌、后台、短时息屏和媒体会话暂停。完整证据见 [记录](../archive/playback-test-2026-09-21.md)。
 2026-09-22 补：通知栏播放/暂停按钮真实点击（点后服务端 command pause）与 Dozing 息屏播放，见 [M3 记录](../test-results/2026-09-22-m3-notification-device/README.md)。
 2026-09-22 补：蓝牙耳机断开→本机暂停、重连不自动恢复、明确播放后追赶；音频 404（改名长测试音并拖到未缓冲区）→ERROR_CODE_IO_BAD_HTTP_STATUS→暂停→恢复文件后手动重试续播，见 [M3 记录](../test-results/2026-09-22-m3-bluetooth-audio-error/README.md)。新增 demo-long（40 分钟）测试音用于长时播放与错误注入。
 
@@ -53,6 +53,6 @@ Debug诊断JSONL已实现（限60分钟或20MB，用户主动测试时采集）�
 2026-09-21：建档；ClockEstimator 单测、debug 诊断日志与会话竞态假传输层回归已实现；第二设备、双机采集和故障矩阵尚待执行。
 
 ## 2026-09-22 推进补充
-待执行工作包与报告模板见 [执行单](../execution-plan.md)。60 分钟播放前需替换为至少 65 分钟测试音，并全程外部采样，覆盖诊断窗口截止后的时段；不能中途重启拼接连续播放结论。15 路音频脚本与音频 401 注入已交付（见上），云端 TLS/公网重测与 60 分钟息屏记录仍待执行。
+**2026-09-24 更新**：验收报告字段规范见 [开发规范](../development-standards.md)；M3-LONG 执行要点见 [路线图第 4 节](../next-development-plan.md)（60 分钟播放需 ≥65 分钟测试音、全程外部采样、不能中途重启拼接连续播放结论——demo-hour 70 分钟已备）。15 路云端公网重测已通过（2026-09-23 晚，见 [load15-cloud](../test-results/2026-09-23-load15-cloud/README.md)）；M3-LONG 真机执行仍挂起。
 
 2026-09-23：新增 PlaybackViewTest，覆盖播放意图与实际播放区分、音频错误可见性、本机暂停、旧曲目隔离及入房错误；UI 目视场景见 [UI 交付记录](../test-results/2026-09-23-ui-refresh/README.md)，当前无连接设备，待执行。
