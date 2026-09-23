@@ -118,7 +118,7 @@ adb -s <serial> shell run-as com.listentogether.app cat files/diagnostics/diag-*
 
 ## 七、证据文件
 
-- `run.log`：W2 阶段的驱动日志（22:28–22:35 全量，含每步采样与失败信息）
+- ~~`run.log`~~：W2 阶段驱动日志（22:28–22:35）**未随记录归档**（核查修正 2026-09-23 晚：该文件未提交进库，结论数据以下列诊断 JSONL 与截图为准；过程命令已完整收录于本文第三节）
 - `diag/diag-public-fullchain.jsonl`：全链路会话（147s、234 条播放记录、命令时间线）
 - `diag/diag-public-single-song.jsonl`：第二个公网房间（40s、71 条，`seek=0`）
 - `screenshots/public-playing.png`：公网房间真实歌曲播放现场

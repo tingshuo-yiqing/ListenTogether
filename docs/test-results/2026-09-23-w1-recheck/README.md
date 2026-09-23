@@ -202,7 +202,7 @@ adb -s <serial> shell am force-stop com.listentogether.app; am start -n com.list
 
 ## 七、证据文件
 
-- `run.log`：全部阶段的驱动日志（含每条采样、每次命令与失败信息）
+- ~~`run.log`~~：驱动过程日志**未随记录归档**（核查修正 2026-09-23 晚：该文件未提交进库，结论数据以下列诊断 JSONL 与截图为准；过程命令已完整收录于本文第三节）
 - `diag/diag-close-lowpower-off.jsonl`（关省电，205s）、`diag/diag-open-lowpower-on.jsonl`（开省电，205s）、
   `diag/diag-autoadvance.jsonl`（自动切歌，157s）、`diag/diag-uitheme-drag.jsonl`（亮/暗拖动，41s）
 - `screenshots/`：亮/暗播放与拖动后截图、进度条放大图、暗色冷启动两帧
