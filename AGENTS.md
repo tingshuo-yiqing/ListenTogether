@@ -15,13 +15,13 @@
 
 - **M4 四项部署门槛已全部关闭（2026-09-23 晚）**：①首次部署+13 项服务端验证+隧道联调（09-22）；②真机公网 E2E 建房→播放全链路（W2，APK 36BD3A5B…）；③升级/回滚演练双向通过（W3，13 项抽查三次各 13/0）；④LOAD-15 云端公网重测通过（W4：15 路×600s 全 206 零失败、2.847Mbps=本地基线 99.1%，见 docs/test-results/2026-09-23-load15-cloud）。云端曲库现为 6 首（5 首真实 192k + demo-load 负载测试音）。入口维持 `http://8.166.126.136:3000` 明文 IP 直连（路线 A，试用机无法备案）。
 - **本轮工具与文档轮（2026-09-24，纯工具/文档、无新 hash）**：Q-2 `scripts/check.ps1` 安卓段改为 `:app:cleanTestDebugUnitTest :app:testDebugUnitTest`（Gradle 会把输入未变的测试判 UP-TO-DATE 跳过实跑，门禁"通过"其实是上一轮结论），并顺带按陷阱 1.5/1.6 在脚本内收窄 EAP、只认 `$LASTEXITCODE`；E-06 README「行为约定」新增明文边界（IP 明文 HTTP、令牌可被窃听、无撤销机制、正式使用须 TLS/域名）；A-02 轻量版 docs/protocol.md 追加 JSON Schema + `server/test/protocol.test.ts`（从文档提取 schema 校验真实消息，`additionalProperties:false` 抓实现漂移，最小校验器无运行时依赖）。后端测试 **18→20 项**；`-Scope all` 全过（后端 20/20、安卓 53 项本轮实跑、Lint 0、链接通过）；APK 锚 **E814F90E…** 不变。
-- **后端防线修复（2026-09-24，仅本地验证）**：E-05 `/ws/:code` 握手限连（令牌+来源 IP，10 秒 5 次，超出 429 拒绝升级；阈值高于 1/2/4/8/16 秒退避）；E-09 建房存量配额（Room 记 creatorIp，同 IP 活跃房间 ≤3，超出 429，空房 5 分钟回收即释放）；Q-3 结构化排障事件（room/member/host/ws 事件，无令牌与昵称）+ `/health` 追加 rooms/onlineMembers/wsConnections；Q-4/Q-5 后端测试 7→18 项。**未改 Android、APK 锚 E814F90E… 不变；未部署上云**——上云需独占时间片且 restart 清空内存房间。`m4-deploy-verify.sh` 同步升到 14 项（health 改字段解析 + 建房配额预检）。
+- **后端防线已上云（2026-09-24 上午，release 20260924-0937）**：E-05 `/ws/:code` 握手限连（令牌+来源 IP，10 秒 5 次，超出 429 拒绝升级；阈值高于 1/2/4/8/16 秒退避）；E-09 建房存量配额（Room 记 creatorIp，同 IP 活跃房间 ≤3，超出 429，空房 5 分钟回收即释放）；Q-3 结构化排障事件（room/member/host/ws 事件，无令牌与昵称）+ `/health` 返回 `{ok,rooms,onlineMembers,wsConnections}`；Q-4/Q-5 后端测试 7→18 项。部署证据：解包 42/42 校验、基线 13+SKIP → 新版 **14/14**、E-05 `open×5→429`、E-09 `200,200,429,429` 终态 rooms=3、journal 事件与 `ws.handshake_rejected` 实证、error 计数 0；prev=20260922-2159 未动用。APK 锚 E814F90E… 不变（本轮未改 Android）。`m4-deploy-verify.sh` 14 项（health 字段解析 + 建房配额预检，连续重跑看陷阱 8.9）。
 - **客户端缺陷修复（2026-09-24）**：A-01 PlaybackService 会话代次守卫（applyState/onPlayerError/循环/焦点四处加代次检查）；E-07 seek 乐观预览确认条件过松修复（改用相对推进量确认）；Q-1 新增 DiagnosticsLogTest 8 项 JVM 单测。53 项单测 + assembleDebug + Lint 0 通过；APK **E814F90E…**。真机验收待设备在线。
 - **收尾汇总（2026-09-24）**：scripts/check.ps1 -Scope all 全过（后端 tsc 0 错误 + 7/7 测试；安卓单测 45 项 UP-TO-DATE + assembleDebug + Lint 0；文档链接检查通过）；APK 锚定 **36BD3A5B…** 不变（该轮未改产品代码、未重建 APK）；并行开发方案 W1–W4 已全部标注完成（T1–T4 清零）。
 - **文档结构优化（2026-09-24）**：verification.md 重建为"当前状态+索引"结构（33 个历史小节压缩为交付历史索引与 APK 版本历史两张表）；execution-plan.md 并入主计划与开发规范后删除、learning.md 并入模块索引后删除；handover-2026-09-23.md 与 playback-test-2026-09-21.md 归档至 docs/archive/；并行方案压缩已完成工作流。
 - 其余此前完成项（M0/M1/M3 各项、W1 卡顿修复真机验收等）见 verification.md 各节。
 - **下一步**：
-  - 后端防线 E-05/E-09/Q-3 上云（新 release + 14 项验证 + 升级/回滚演练；restart 清空内存房间，先确认无活跃房间）；
+  - APK E814F90E 真机验收（A-01/E-07 修复回归 + "拖回开头" seek 确认场景）——设备在线后执行；
   - M2 双机同步——缺第二台手机，设备到位后按主计划验收（W5）；
   - M3-LONG 长时/息屏——用户指示挂起，需 ≥70 分钟连续测试窗口（W6）；
   - TLS/域名正式化——用户已决策路线 A（试用期维持 IP 明文），转正式实例备案或迁香港时一并解决（W7）；
