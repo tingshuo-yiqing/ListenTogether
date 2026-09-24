@@ -39,6 +39,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ExitToApp
 import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.MusicNote
@@ -67,6 +68,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -127,6 +129,15 @@ private class JoinInput {
     var code by mutableStateOf("")
     var dragged by mutableStateOf<Float?>(null)
     var joining by mutableStateOf(false)
+    /** 粘贴/识别出的邀请确认卡；null 为手填模式。手动编辑输入框即拆卡回手填。 */
+    var invite by mutableStateOf<InviteCode.Invite?>(null)
+
+    /** 识别成功后接管表单：房间码与地址取自口令（口令无地址时沿用当前已填/已存值），并展开确认卡。 */
+    fun accept(invite: InviteCode.Invite) {
+        code = invite.code
+        invite.server?.let { address = it }
+        this.invite = invite
+    }
 }
 
 @UnstableApi
@@ -196,7 +207,7 @@ class MainActivity : ComponentActivity() {
                 val scope = rememberCoroutineScope()
                 var showLeaveConfirm by rememberSaveable { mutableStateOf(false) }
                 Scaffold(
-                    topBar = { TopBar(ui, snackbar, onLeaveRequest = { showLeaveConfirm = true }) },
+                    topBar = { TopBar(ui, client.baseUrl, snackbar, onLeaveRequest = { showLeaveConfirm = true }) },
                     snackbarHost = { SnackbarHost(snackbar) },
                     containerColor = MaterialTheme.colorScheme.background
                 ) { padding ->
@@ -212,7 +223,7 @@ class MainActivity : ComponentActivity() {
                             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Content(client, ui, input, playback, onLockedTap = {
+                            Content(client, ui, input, playback, snackbar, onLockedTap = {
                                 scope.launch { snackbar.showSnackbar("只有房主可以切歌") }
                             })
                         }
@@ -234,10 +245,10 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** 顶栏：入房页显示应用名；房间页显示房间码与角色，附分享/复制邀请码与退出房间入口（退出走确认弹窗）。 */
+/** 顶栏：入房页显示应用名；房间页显示房间码与角色，附分享/复制邀请口令与退出房间入口（退出走确认弹窗）。 */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TopBar(ui: UiState, snackbar: SnackbarHostState, onLeaveRequest: () -> Unit) {
+private fun TopBar(ui: UiState, baseUrl: String, snackbar: SnackbarHostState, onLeaveRequest: () -> Unit) {
     CenterAlignedTopAppBar(
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.background),
         title = {
@@ -260,22 +271,25 @@ private fun TopBar(ui: UiState, snackbar: SnackbarHostState, onLeaveRequest: () 
                 val context = LocalContext.current
                 val clipboard = LocalClipboard.current
                 val scope = rememberCoroutineScope()
+                // 口令唯一来源：复制与分享共用同一份 encode 产物，避免两处硬编码漂移；
+                // 口令只含房间码与服务器地址（公开信息），绝不包含成员令牌。
+                val inviteText = InviteCode.encode(ui.credentials.code, baseUrl)
                 IconButton(onClick = {
                     val send = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, "来一起听歌，房间邀请码 ${ui.credentials.code}")
+                        putExtra(Intent.EXTRA_TEXT, inviteText)
                     }
-                    context.startActivity(Intent.createChooser(send, "分享邀请码"))
+                    context.startActivity(Intent.createChooser(send, "分享邀请"))
                 }) {
-                    Icon(Icons.Outlined.Share, contentDescription = "分享邀请码", tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Outlined.Share, contentDescription = "分享邀请口令", tint = MaterialTheme.colorScheme.primary)
                 }
                 IconButton(onClick = {
                     scope.launch {
-                        clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("code", ui.credentials.code)))
-                        snackbar.showSnackbar("邀请码已复制")
+                        clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("invite", inviteText)))
+                        snackbar.showSnackbar("邀请已复制，发给朋友即可")
                     }
                 }) {
-                    Icon(Icons.Outlined.ContentCopy, contentDescription = "复制邀请码", tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Outlined.ContentCopy, contentDescription = "复制邀请口令", tint = MaterialTheme.colorScheme.primary)
                 }
                 IconButton(onClick = onLeaveRequest) {
                     Icon(Icons.AutoMirrored.Outlined.ExitToApp, contentDescription = "退出房间", tint = MaterialTheme.colorScheme.primary)
@@ -286,11 +300,11 @@ private fun TopBar(ui: UiState, snackbar: SnackbarHostState, onLeaveRequest: () 
 }
 
 /** 内容主体：按是否在房间切换入房表单与房间内容；退出房间统一走顶栏确认弹窗。 */
-private fun LazyListScope.Content(client: RoomClient, ui: UiState, input: JoinInput, playback: PlaybackView, onLockedTap: () -> Unit) {
+private fun LazyListScope.Content(client: RoomClient, ui: UiState, input: JoinInput, playback: PlaybackView, snackbar: SnackbarHostState, onLockedTap: () -> Unit) {
     val room = ui.room
     val track = ui.tracks.find { it.id == room?.trackId }
     if (ui.credentials == null) {
-        JoinForm(client, ui, input)
+        JoinForm(client, ui, input, snackbar)
     } else {
         if (showStatusNotice(ui, playback)) item { StatusBanner(ui, playback, onRetry = { client.retry() }, onLeave = { client.leave() }) }
         item { MembersSection(ui) }
@@ -300,7 +314,7 @@ private fun LazyListScope.Content(client: RoomClient, ui: UiState, input: JoinIn
 }
 
 /** 创建和加入分为两条路径，错误留在表单内；切换路径保留已填信息。 */
-private fun LazyListScope.JoinForm(client: RoomClient, ui: UiState, input: JoinInput) {
+private fun LazyListScope.JoinForm(client: RoomClient, ui: UiState, input: JoinInput, snackbar: SnackbarHostState) {
     item {
         Column(Modifier.padding(vertical = 12.dp)) {
             Text("此刻，一起听", style = MaterialTheme.typography.headlineMedium)
@@ -322,12 +336,59 @@ private fun LazyListScope.JoinForm(client: RoomClient, ui: UiState, input: JoinI
         )
     }
     if (input.joining) item {
-        OutlinedTextField(
-            value = input.code, onValueChange = { input.code = it.trim().uppercase().take(8) },
-            label = { Text("8 位邀请码") }, singleLine = true, enabled = !ui.busy,
-            supportingText = { Text("向房主获取邀请码") },
-            shape = FieldShape, modifier = Modifier.fillMaxWidth()
-        )
+        val clipboard = LocalClipboard.current
+        val scope = rememberCoroutineScope()
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilledTonalButton(
+                onClick = {
+                    scope.launch {
+                        // 只读一次剪贴板；Android 13+ 粘贴后系统会自行提示，成功不再额外弹告知。
+                        val text = clipboard.getClipEntry()?.clipData?.let { data ->
+                            (0 until data.itemCount).asSequence()
+                                .mapNotNull { data.getItemAt(it).text?.toString() }
+                                .firstOrNull { it.isNotBlank() }
+                        } ?: ""
+                        val parsed = InviteCode.decode(text)
+                        if (parsed == null) snackbar.showSnackbar("未识别到有效邀请，请复制完整邀请后重试")
+                        else input.accept(parsed)
+                    }
+                },
+                enabled = !ui.busy,
+                shape = PillShape,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp)
+            ) {
+                Icon(Icons.Outlined.ContentPaste, contentDescription = null, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("粘贴邀请")
+            }
+            // 解析成功用确认卡替换手填输入框；与下方错误横幅互斥展示——入房失败时优先显示横幅，
+            // 确认卡数据保留（不销毁已填昵称），横幅消失（重新入房）后恢复显示。
+            val invite = input.invite
+            if (invite != null && joinError(ui) == null) {
+                InviteConfirmCard(
+                    invite = invite,
+                    rememberedAddress = client.baseUrl,
+                    busy = ui.busy,
+                    onReset = { input.invite = null }
+                )
+            } else {
+                OutlinedTextField(
+                    value = input.code,
+                    onValueChange = { raw ->
+                        if (raw.length > 8 && raw.contains("房间码")) {
+                            // 智能识别兜底：整段口令可能被直接粘进邀请码框；解析失败保留用户输入不动。
+                            InviteCode.decode(raw)?.let { input.accept(it) }
+                        } else {
+                            input.code = raw.trim().uppercase().take(8)
+                            input.invite = null
+                        }
+                    },
+                    label = { Text("8 位邀请码") }, singleLine = true, enabled = !ui.busy,
+                    supportingText = { Text("向房主获取邀请码") },
+                    shape = FieldShape, modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
     }
     item {
         // 服务器地址属基础设施细节，默认收起以保持主路径干净；
@@ -349,6 +410,7 @@ private fun LazyListScope.JoinForm(client: RoomClient, ui: UiState, input: JoinI
             }
         }
     }
+    // 入房错误横幅沿用既有位置；与确认卡互斥展示（确认卡侧在 joinError 存在时回退为输入框）。
     joinError(ui)?.let { message ->
         item {
             Surface(color = MaterialTheme.colorScheme.errorContainer, shape = BannerShape) {
@@ -370,6 +432,40 @@ private fun LazyListScope.JoinForm(client: RoomClient, ui: UiState, input: JoinI
         ) { Text(if (ui.busy) "正在连接…" else if (input.joining) "加入，一起听" else "创建房间") }
     }
     if (ui.busy) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
+}
+
+/**
+ * 邀请确认卡：粘贴/识别成功后替代邀请码输入框，展示将用于本次入房的房间码与服务器地址。
+ * 容器 liveRegion=Polite 供读屏在内容出现时播报；「重新输入」拆卡回手填，已填昵称与地址保留。
+ */
+@Composable
+private fun InviteConfirmCard(invite: InviteCode.Invite, rememberedAddress: String, busy: Boolean, onReset: () -> Unit) {
+    val fromInvite = invite.server != null && invite.server != rememberedAddress
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = BannerShape,
+        modifier = Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }
+    ) {
+        Column(Modifier.padding(14.dp)) {
+            // 房间码等宽显示，与顶栏一致，降低 0/O、B/8 误读。
+            Text(invite.code, style = MaterialTheme.typography.titleMedium, fontFamily = FontFamily.Monospace)
+            if (invite.server != null) {
+                Spacer(Modifier.height(2.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // 地址与已记住地址不同时给提示（不阻断，入房以口令地址为准）；图标旁有同义文字，读屏不重复播报。
+                    if (fromInvite) {
+                        Icon(Icons.Outlined.Info, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(6.dp))
+                    }
+                    Text(invite.server, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (fromInvite) {
+                    Text("将使用邀请中的服务器地址", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            TextButton(onClick = onReset, enabled = !busy) { Text("重新输入") }
+        }
+    }
 }
 
 /** 正常连接收进成员摘要；异常和本机中断保留文字及操作。 */

@@ -24,11 +24,23 @@ M4 四项部署门槛（2026-09-23 晚全部关闭）：
 
 关键锚点：
 
-- 当前 APK 锚 **E814F90E1982936947218EA8917745B889A1430287F490A8E0FF5CB55B425FA7**（53 项单测；A-01/E-07 修复 + Q-1 测试；真机验收待设备在线，不得记为通过；2026-09-24 后端轮次未改 Android，锚不变）。
+- 当前 APK 锚 **BF393FB4801BF907E390A6694E3FE56D9BE54A326E7E0E9176F9141738D5A967**（61 项单测；批次 1 邀请口令闭环；真机验收待设备在线，不得记为通过；上一锚 E814F90E… 随本轮重构建被覆盖）。
 - 云端：release **20260924-0937** 在产（prev=20260922-2159，20260923-2157 保留）；入口 `http://8.166.126.136:3000`。TLS 路线 A 已决策：**维持 IP 明文**（试用 ECS 无法备案、备案拦截按域名跨任意端口生效、Let's Encrypt 不签裸 IP），正式化留待转包年包月备案或迁香港。
 - 云端曲库 6 首 = 5 首真实 MP3（192k）+ demo-load 负载测试音（有意保留）。
 - 后端防线 E-05（WS 握手限连）/E-09（同 IP 建房配额 ≤3）/Q-3（事件日志 + health 计数）**已于 2026-09-24 上午上云并通过 14 项验证与新防线专项验证**；升级失败注入仍未做。
 - 剩余待办与恢复条件：M2 双机（缺设备）/ M3-LONG（≥70 分钟窗口）/ TLS 正式化（用户决策）/ 补测项（蜂窝公网、弱网注入、真实令牌作废、升级失败注入），详见 [路线图与验收标准](next-development-plan.md)。
+
+## 本轮新增（批次 1：邀请口令闭环，2026-09-24）
+
+> Android 客户端轮：只改 `android/app` 与文档，未动 server/、未部署、未做 git 提交。**真机验收待设备在线（复制→粘贴闭环/分享文本/智能识别/失败路径/地址不一致提示），不得记为通过。**
+
+- **InviteCode 编解码（新增 `app/src/main/java/com/listentogether/app/InviteCode.kt`）**：encode 产出四行纯文本口令（来一起听歌 / 房间码 X / 服务器 URL / 复制整段，打开 App 即可加入），地址为空时省略服务器行；decode 用锚点正则（`(?:房间码|邀请码)[^0-9A-Za-z]*([0-9A-Fa-f]{8})` 与 `(https?://…)`）容错解析，容忍微信/QQ 加引号、前后闲聊行、全角冒号、hex 大小写混用，两行均在全文任意位置匹配、不做宽松匹配；房间码必得（大写归一），服务器可空=缺地址降级沿用已存地址；失败返回 null 不抛异常。口令只含房间码与服务器地址（公开信息），**绝不包含成员令牌**。
+- **顶栏复制/分享改造（MainActivity.kt）**：复制改为完整口令，Snackbar「邀请已复制，发给朋友即可」；分享 EXTRA_TEXT 与复制共用同一 encode 来源（`inviteText` 单点生成，无两处硬编码）；chooser 标题「分享邀请」。
+- **加入 Tab（MainActivity.kt）**：邀请码输入框上方新增「粘贴邀请」FilledTonalButton（ContentPaste 20dp + 文字、高 40dp、PillShape、fillMaxWidth、与输入框间距 8dp）；onClick 只读一次剪贴板并 decode（Android 13+ 系统自带"已粘贴"提示，App 不重复告知）；解析成功 → 表单被口令接管（房间码替换为 8 位码、地址字段填入口令值）并显示邀请确认卡——Surface surfaceVariant + BannerShape、padding 14dp，房间码 titleMedium 等宽、地址 bodySmall 次级色、「重新输入」TextButton 拆卡回手填；口令地址≠已记住地址时 Info 图标 20dp + 「将使用邀请中的服务器地址」（不阻断，入房以口令地址为准）；确认卡容器 liveRegion=Polite。解析失败 → Snackbar「未识别到有效邀请，请复制完整邀请后重试」，表单不动。智能识别兜底：邀请码框文本 >8 字符且含「房间码」锚点时尝试 decode，成功接管表单、失败保留用户输入。确认卡与 join 错误横幅互斥展示（失败优先横幅，确认卡数据与已填昵称保留）；busy 时粘贴/重新输入禁用。
+- **InviteCodeTest（新增，8 项 JVM 单测）**：encode 四行格式、无地址省略服务器行、encode/decode 往返、引号+闲聊行容错、全角冒号+大小写混用、仅房间码 server=null、无锚点失败（含裸 8 位码不认）、不足 8 位失败。
+- **构建验收**：`.\gradlew.bat :app:cleanTestDebugUnitTest :app:testDebugUnitTest :app:assembleDebug :app:lintDebug --console=plain` → **BUILD SUCCESSFUL in 3m 49s**；单测实跑 **61 项（53+8），0 失败 0 错误 0 跳过**（`build/test-results/testDebugUnitTest/*.xml` mtime 为本轮 14:51，合计 `tests=61 skipped=0 failures=0 errors=0`，其中 InviteCodeTest 8/8；`> Task :app:testDebugUnitTest` 不带 UP-TO-DATE）；Lint **0 错误 0 警告**（仅既有的 Information 级 AutoboxingStateCreation 提示，非本轮引入）。
+- **APK SHA256**：**BF393FB4801BF907E390A6694E3FE56D9BE54A326E7E0E9176F9141738D5A967**（app-debug.apk，本轮 14:51 重建）。
+- **边界与自查修正**：定稿方案写的 TonalButton 在项目锁定的 material3 1.3.x 稳定版不存在（该 API 1.4-alpha 才引入，首轮编译即失败并暴露），改用同语义稳定版 **FilledTonalButton**，无新依赖；「确认卡与错误横幅互斥」落地为错误横幅优先、确认卡在其存在期间回退为手填输入框（数据保留、手动编辑即拆卡）。emoji 扫描 `grep -rP '[\x{1F300}-\x{1F9FF}…]'` 零匹配；未改 server/、未部署、设备离线未做真机操作、未做 git 提交。
 
 ## 本轮新增（长时 + 多人组合真机测试：M3-LONG 复活，2026-09-24）
 
@@ -140,7 +152,8 @@ M4 四项部署门槛（2026-09-23 晚全部关闭）：
 
 | SHA256 | 日期 | 内容 | 单测 | 真机状态 |
 |---|---|---|---|---|
-| E814F90E1982936947218EA8917745B889A1430287F490A8E0FF5CB55B425FA7 | 09-24 | A-01 代次守卫 + E-07 seek 确认 + Q-1 诊断测试 | 53 | 待真机验收（设备离线） |
+| BF393FB4801BF907E390A6694E3FE56D9BE54A326E7E0E9176F9141738D5A967 | 09-24 | 批次 1 邀请口令闭环（InviteCode + 粘贴邀请/确认卡/智能识别 + 顶栏口令化） | 61 | 待真机验收（设备离线） |
+| E814F90E1982936947218EA8917745B889A1430287F490A8E0FF5CB55B425FA7 | 09-24 | A-01 代次守卫 + E-07 seek 确认 + Q-1 诊断测试 | 53 | 待真机验收（设备离线，已被上锚覆盖） |
 | 36BD3A5B3ACA74EE45CCEE952F6EB8C042BB0A18D40123601398ADF626DD0CCE | 09-23 | 分级纠正+SmoothRenderers+进度条圆点 | 45 | W1 验收+W2 公网 E2E 通过 |
 | 169018AE746164D274E9C843AC8985A1DD27B647D6BF28DFA05110B705FB6845 | 09-23 | UI 评审优化 12 项 | 42 | UI 优化真机验证通过（后被覆盖） |
 | 59773A08ACB9A4FBFF815C8FEDF3680B55FC7FA4EDA992FC6DC664EFB7119EED | 09-23 | 简洁 UI 重构 | 42 | 无线本地 reverse 目视通过 |
@@ -176,6 +189,7 @@ M4 四项部署门槛（2026-09-23 晚全部关闭）：
 - [x] 版本回滚演练：升级 + 真实回滚双向通过（2026-09-23 晚，13 项抽查三次各 13/0）；两次 restart 各清空一次内存房间已实证。升级失败注入未做（如实标注）。
 - [x] 15 路实际音频带宽云端重测（2026-09-23 晚）。**M4 四项部署门槛至此全部关闭**。
 - [ ] 后端防线 E-05/E-09/Q-3 上云：需独占云端时间片部署新 release + 复跑 14 项服务端验证 + 升级/回滚演练；`restart` 会清空全部内存房间，执行前确认无活跃房间（`/health` 计数 + [deployment.md 第 5 节](deployment.md)）。**本地通过，未部署**。
+- [ ] 批次 1 邀请口令真机闭环（2026-09-24，BF393FB4…）：房主/成员复制口令→Snackbar 文案、系统分享面板口令文本、对方复制→「粘贴邀请」确认卡、邀请码框整段粘贴智能识别、解析失败 Snackbar、join 失败横幅与确认卡互斥且不销毁已填昵称、口令地址与已记住地址不同提示、busy 禁用——设备离线，不得记为通过。
 
 ## 环境与联调速查
 
