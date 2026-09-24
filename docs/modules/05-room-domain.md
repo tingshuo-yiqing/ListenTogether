@@ -2,21 +2,26 @@
 
 ## 职责与入口
 rooms/store.ts 中的 Rooms 管理所有共享房间状态，保持单进程内存模型。
-Room 保存 code、hostId、members、trackId、playing、positionMs、timestampMs、version。
+Room 保存 code、creatorIp、hostId、members、trackId、playing、positionMs、timestampMs、version。
 Member 保存身份、令牌、加入/离线时间及当前连接回调；snapshot 只发布公开成员信息。
+创建者 IP 只用于存量配额与排障事件，不参与鉴权；snapshot 不下发该字段。
 
 ## 当前领域操作
-create/add 校验昵称和容量，最多100房间、每房间15个成员。
+create/add 校验昵称和容量，最多100房间、每房间15个成员；另按创建者 IP 限存量：同 IP 活跃房间 ≤3（IP_ROOM_QUOTA，超出 Fault 429）。
+roomsOf(ip) 遍历内存房间表计数，房间被空房回收后自然释放配额；onlineMembers() 汇总持有 WS 的成员数供 /health 使用。
 auth 根据房间和成员令牌鉴权；command 再检查房主权限并验证操作。
 connect 替换同一成员旧连接，关闭回调用引用比较保护新连接。
 command 先结算现有进度，再应用操作和时间基准，最后递增version并广播。
 leave 主动移除成员；tick 每250ms处理曲终推进、离线成员和空房清理。
+领域事件（events.ts 的 ServerEvent/EventSink）覆盖 room.created/room.deleted、host.transferred、
+member.joined/online/offline/left/removed；只带房间码与成员 ID，禁止令牌与昵称。
 
 ## 生命周期
 主动退出房主立即转给最早在线成员；网络断开以服务器close检测时刻记录offlineAt。
 60秒宽限到期后离线成员被移除；房主转移给最早加入的在线成员。
-无人在线后5分钟删除房间。没有在线成员时不选离线房主；后续有人在线再决定。
+无人在线后5分钟删除房间（同时释放该 IP 的存量配额）。没有在线成员时不选离线房主；后续有人在线再决定。
 宽限中的成员仍占容量。最后一首播完停止；中途选歌保留播放/暂停状态。
+存量配额只算"当前在内存里的活跃房间"：创建者本人退房、房间空置到回收，配额随之释放。
 
 ## 下一阶段
 把时间读取抽为可注入时钟，领域期限不受系统日期调整影响。
@@ -33,8 +38,10 @@ position计算必须限制在duration范围。
 ## 验收
 通过可控时钟验证每个边界，不通过sleep几十秒等待单元测试。
 15席、退出后补位、重连不重复占席、旧连接close不踢掉新连接、连续房主转移均有回归。
-真实双机再验证用户体验：另一台显示新房主且权限随之更新。
+同 IP 存量配额（第 4 间被拒、被拒不占额度、换 IP 不受影响、空房回收后释放）与事件日志红线
+（覆盖全生命周期且不含令牌/昵称）见 [10 测试](10-testing-observability.md)；真实双机再验证用户体验：另一台显示新房主且权限随之更新。
 
 ## 核心注释与记录
 Room/Member字段写所有权和单位；command写“先验证再结算”；tick说明检测时间与实际断网时间的区别；connect写旧连接竞态。
 2026-09-21：领域实现已存在；补边界测试和时钟抽象为下一阶段任务。
+2026-09-24：新增创建者 IP 存量配额与结构化领域事件；事件红线（无令牌/昵称）用单测钉住。

@@ -126,17 +126,19 @@ flowchart TB
 | 模块 | 入口 | 职责 | 关键约束 |
 |---|---|---|---|
 | 进程入口 | `src/index.ts` | 解析 `MEDIA_DIR` 加载曲库、`buildApp`、`listen`、`SIGINT/SIGTERM` 优雅关闭 | `MEDIA_DIR` 默认上级 `media` |
-| 应用装配 | `src/app.ts` (25 行) | 注册 rate-limit/websocket/错误处理器、6 条 HTTP 路由、WS 路由、250ms `tick` | bodyLimit 4KiB；关闭原始请求日志以免泄漏 Authorization |
-| 房间领域 | `src/rooms/store.ts` (84 行) | `create/add/auth/connect/command/leave/tick/broadcast/position/snapshot` | 单进程内存 `Map`；≤100 房间、≤15 成员 |
-| 实时通道 | `src/realtime/socket.ts` (26 行) | WS 握手鉴权、`sync`/`command` 分发、15 秒 ping、20 msg/s 限流、慢客户端关闭 | maxPayload 4KiB；写缓冲 >128KiB 关闭（1013 slow client） |
+| 应用装配 | `src/app.ts` | 注册 rate-limit/websocket/错误处理器、HTTP 路由、WS 路由、`/health` 计数、250ms `tick` | bodyLimit 4KiB；关闭原始请求日志以免泄漏 Authorization；事件经 `EventSink` 注入 |
+| 房间领域 | `src/rooms/store.ts` | `create/add/auth/connect/command/leave/tick/broadcast/position/snapshot/roomsOf/onlineMembers` | 单进程内存 `Map`；≤100 房间、≤15 成员、同 IP 活跃房间 ≤3 |
+| 实时通道 | `src/realtime/socket.ts` | WS 握手鉴权与握手限连、`sync`/`command` 分发、15 秒 ping、20 msg/s 限流、慢客户端关闭、连接计数 | maxPayload 4KiB；写缓冲 >128KiB 关闭（1013 slow client）；握手同令牌+IP 10 秒 5 次 |
+| 限流器 | `src/realtime/limits.ts` | 单进程固定窗口计数器（内存 Map，键数上限 4096） | 供握手限连使用；无外部依赖 |
+| 事件出口 | `src/events.ts` | `ServerEvent`/`EventSink` 类型与安全红线 | 只带房间码/成员 ID/来源 IP，禁止令牌与昵称 |
 | 音频传输 | `src/routes/audio.ts` (25 行) | Bearer 鉴权后按 Range 返回 200/206，非法范围 416 | `Cache-Control: private, no-store`；不接受客户端路径 |
 | 曲库加载 | `src/library/catalog.ts` | 校验 `catalog.json`、过滤非法 ID、`realpath` 阻断目录穿越、读取 MP3 时长 | 只允许曲库目录内的 `.mp3` |
 
 ### 2.3 服务端合法性常量（唯一出处）
 
-- 房间上限 100、成员上限 15（含重连宽限中的成员）。
+- 房间上限 100、成员上限 15（含重连宽限中的成员）、**同一来源 IP 活跃房间上限 3**（空房回收即释放）。
 - 房主离线 **60 秒** 后转移给最早在线成员；成员离线 **60 秒** 剔除；全员离线 **300 秒** 删除房间。
-- 创建/加入按路由限流 30 次/分钟；WS 消息 20 条/秒。
+- 创建/加入按路由限流 30 次/分钟；WS 消息 20 条/秒；**WS 握手同令牌+来源 IP 10 秒 5 次**（超出 429 拒绝升级）。
 - `tick` 每 250ms 结算一次进度，负责自动切歌（固定歌单顺序，最后一首结束停止）。
 
 ---
@@ -391,6 +393,8 @@ flowchart LR
 | 后端装配与路由 | `server/src/app.ts`、`server/src/index.ts` |
 | 房间领域 | `server/src/rooms/store.ts` |
 | 实时通道 | `server/src/realtime/socket.ts` |
+| 握手限流器 | `server/src/realtime/limits.ts` |
+| 排障事件与安全红线 | `server/src/events.ts` |
 | 音频 Range | `server/src/routes/audio.ts` |
 | 曲库加载与校验 | `server/src/library/catalog.ts` |
 | 协议定义 | `docs/protocol.md` |

@@ -26,7 +26,7 @@ npm.cmd start
 ```
 
 开发模式可用 npm.cmd run dev。默认不开 HOST 时只监听 127.0.0.1。
-浏览器打开 http://127.0.0.1:3000/health 应得到 {"ok":true}。
+浏览器打开 http://127.0.0.1:3000/health，应返回 `{"ok":true,...}`——除 ok 外还有 rooms/onlineMembers/wsConnections 三个只读排障计数（不要对响应体做字符串全等断言，见开发陷阱 8.9）。
 服务器必须从 server 目录启动，或用 MEDIA_DIR 明确指定曲库路径。
 
 空曲库可以测试入房；播放前按 media/README.md 添加自有或获授权的歌曲并重启后端。
@@ -44,7 +44,7 @@ npm.cmd start
 
 ### 无线连接真机（免 USB）
 
-USB 口或线材不稳、设备在 device/offline 间抖动时，改用无线 adb。项目靠 `adb reverse` 把手机的 `127.0.0.1:3000` 转发到电脑后端，**这一机制在无线下同样有效**（已实测：手机端 `curl http://127.0.0.1:3000/health` 返回 `{"ok":true}`），APP 内地址仍填 `http://127.0.0.1:3000`，无需改后端 `HOST` 或防火墙。
+USB 口或线材不稳、设备在 device/offline 间抖动时，改用无线 adb。项目靠 `adb reverse` 把手机的 `127.0.0.1:3000` 转发到电脑后端，**这一机制在无线下同样有效**（已实测：手机端 `curl http://127.0.0.1:3000/health` 返回 ok:true），APP 内地址仍填 `http://127.0.0.1:3000`，无需改后端 `HOST` 或防火墙。
 
 ```powershell
 # 首次：手机「开发者选项 → 无线调试 → 使用配对码配对设备」，记下弹窗的配对端口与 6 位配对码
@@ -83,6 +83,7 @@ cd D:\ListenTogether
 - 使用服务端时间校准；目标约 500ms，不用于同室多音箱无回声播放。
 - 固定歌单顺序播放，最后一首结束停止；切歌保留当前播放/暂停状态。
 - HTTP 仅 debug 允许。正式部署见 docs/deployment.md，使用 HTTPS/WSS。
+- **试用期内入口是 `http://8.166.126.136:3000` 明文 HTTP**（路线 A：试用 ECS 无法备案、Let's Encrypt 不签裸 IP）：Bearer 令牌在链路上可被窃听，服务端也没有令牌撤销机制——令牌只在内存里，重新入房会换新令牌，旧令牌随成员离线 60 秒被清理或房间空置 5 分钟被删除而失效。**正式使用必须先换 TLS + 域名**，见 [部署手册](docs/deployment.md) 与[验收记录](docs/verification.md) 的路线 A 决策。
 - 不包含账号、聊天、APP 上传、音乐搜索或第三方音乐平台接口。
 
 ## 文档

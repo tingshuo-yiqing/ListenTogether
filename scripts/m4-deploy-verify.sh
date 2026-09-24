@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# M4 部署服务端功能验证：health / 鉴权 / 音频 Range / WS 握手（共 13 项）。
+# M4 部署服务端功能验证：health / 鉴权 / 音频 Range / WS 握手（共 14 项）。
 # 在云服务器上以 root 运行；仅创建一个临时成员并在收尾退出，不改任何配置。
 # 用法: bash scripts/m4-deploy-verify.sh
 # 音频抽查曲目默认取云端曲库 catalog.json 的第一条，可用 TRACK_ID=<id> 覆盖
 # （2026-09-23 升级/回滚演练修正：原脚本硬编码 demo-soft，云端换成真实曲库后必然 404）。
+# 2026-09-24 追加：health 改为字段解析（不再字符串全等，现返回 rooms/onlineMembers/wsConnections），
+# 并在建房前做存量配额预检（同 IP 最多 3 个活跃房间），故项目数由 13 增至 14。
 set -uo pipefail
 BASE=http://127.0.0.1:3000
 MEDIA=/opt/listen-together/media
@@ -28,7 +30,20 @@ echo "抽查曲目: id=$TRACK_ID file=$TRACK_FILE（曲库共 $TRACKS_EXPECT 条
 
 echo "== 1. health =="
 h=$(curl -s "$BASE/health")
-[ "$h" = '{"ok":true}' ] && ok "health=$h" || bad "health=$h"
+HOK=$(node -e 'try{console.log(JSON.parse(process.argv[1]).ok===true?"true":"false")}catch(e){console.log("false")}' "$h")
+[ "$HOK" = 'true' ] && ok "health ok=true, counters=$h" || bad "health=$h"
+# 建房前置：POST /api/rooms 有"同一来源最多 3 个活跃房间"的存量配额（2026-09-24 新增），
+# 空房 5 分钟后才回收。连续重跑本脚本（如基线→升级→回滚三段演练）时若不看这一步，
+# 第 4 次会拿到 429 并被误判成"新版本建房坏了"。这里提前失败并给出可执行提示。
+ROOMS_N=$(node -e 'try{const n=JSON.parse(process.argv[1]).rooms;console.log(typeof n==="number"?n:"-1")}catch(e){console.log("-1")}' "$h")
+if [ "$ROOMS_N" = "-1" ]; then
+  echo "SKIP: health 未返回 rooms 计数（该版本无计数），跳过存量配额预检"
+elif [ "$ROOMS_N" -ge 3 ]; then
+  bad "建房前置：同 IP 活跃房间 $ROOMS_N >= 3（存量配额），等空房 5 分钟回收或重启服务后再跑"
+  echo "RESULT pass=$pass fail=$fail"; exit 1
+else
+  ok "建房前置：同 IP 活跃房间 $ROOMS_N < 3"
+fi
 
 echo "== 2. create room =="
 R=$(curl -s -X POST "$BASE/api/rooms" -H 'Content-Type: application/json' -d '{"nickname":"deploy-check"}')
@@ -95,6 +110,7 @@ echo "== 6. cleanup =="
 l=$(curl -s -X DELETE -H "$AUTH" "$BASE/api/rooms/$CODE/membership")
 [ "$l" = '{"ok":true}' ] && ok "temporary member left" || bad "leave: $l"
 rm -f /tmp/m4-catalog.json /tmp/m4-h1 /tmp/m4-r1
+echo "  注：房间 $CODE 成员已退出，但房间本身仍占该 IP 的存量配额约 5 分钟（空房回收后释放）。"
 
 echo "== 7. journal (recent 6 lines) =="
 journalctl -u listen-together -n 6 --no-pager 2>/dev/null | sed "s/^/  /"

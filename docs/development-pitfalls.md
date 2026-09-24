@@ -1,6 +1,6 @@
 # 开发陷阱与规避清单
 
-本文记录项目中**实际踩过**的问题（非理论风险），按"现象 → 根因 → 规避"组织。任何新会话开工前应通读一遍；踩到新坑必须回填本文，防止重复犯错。最近更新：2026-09-23（新增 2.9 shell 写不了系统设置、2.10 screenrecord 段错误、3.5 adb 回收导致坐标错位、3.6 Compose 长串输入丢字符、9.3 采样间隔口径）。
+本文记录项目中**实际踩过**的问题（非理论风险），按"现象 → 根因 → 规避"组织。任何新会话开工前应通读一遍；踩到新坑必须回填本文，防止重复犯错。最近更新：2026-09-24（新增 5.5 Gradle 增量构建让门禁"测试通过"变成上一轮结论、7 Windows 下 fs.symlink 静默退化为普通文件、8.9 验收脚本字符串全等断言与存量配额；1.6 补充 check.ps1 的 EAP 收窄）。
 
 ## 1. Windows / PowerShell
 
@@ -31,6 +31,7 @@
 - 现象：add-media.ps1 首跑《单车》时报 `Invalid UTF8 sequence in avio_put_str16le` 判为"转码失败"；实际 ffmpeg **转码成功（exit 0）**——那只是复制 ID3 元数据时的警告（老文件 GBK 字节被标成 UTF-16，ffmpeg 跳过该标签继续）。脚本内 `$ErrorActionPreference='Stop'` 把这行 stderr 转成 NativeCommandError 直接抛出，显式的 `$LASTEXITCODE` 检查和兜底重试永远执行不到；修 EAP 后同文件一次通过。
 - 根因：PS 5.1 下原生命令**任何** stderr 输出（警告、进度行）在 EAP=Stop 时都会变终止错误；陷阱 1.5 的机制在"命令其实成功"的场景再现，且失败信息具有误导性。
 - 规避：调用会写 stderr 的原生命令（ffmpeg/ffprobe/scp/ssh/gradle）前把 EAP 收窄为 Continue（用完恢复），stderr 用 `2> 文件` 承接（PS 5.1 产出 UTF-16，Get-Content 自动识别），成败只认 `$LASTEXITCODE`。另：给原生命令传"一组选项"必须数组展开 `@("-map_metadata","-1")`，单个字符串 `"-map_metadata -1"` 会被当成一个参数名（同 2.7E 参数形态坑）；ffmpeg 真因元数据 fatal 时用 `-map_metadata -1` 去元数据重转，曲库标题来自 catalog.json 不受影响。
+- **2026-09-24 补充**：`scripts/check.ps1` 的 `Invoke-CheckedCommand` 已按本条改造——调用原生命令期间把 EAP 收窄为 Continue，`finally` 恢复，成败只认 `$LASTEXITCODE`（此前的写法在 EAP=Stop 下会把 gradle/npm 的任意一行 stderr 变成终止错误，退出码 0 也中招）。脚本外部仍**不要**对外层做 `*>&1` 合并重定向（陷阱 1.5）。
 
 ## 2. 真机与 adb
 
@@ -160,6 +161,13 @@
 - okhttp WebSocket 假实现要同时覆写 `send(String)` 与 `send(ByteString)`。
 - coroutines-test 的 API 需要 `@OptIn(ExperimentalCoroutinesApi::class)`，不要留 opt-in 告警。
 
+### 5.5 Gradle 增量构建让门禁里的"测试通过"变成上一轮的结论（2026-09-24，Q-2）
+
+- 现象：`scripts/check.ps1 -Scope all` 报告安卓段通过，日志里却是 `> Task :app:testDebugUnitTest UP-TO-DATE`——测试**根本没跑**。上一次真正的执行结果被当成这一轮的验收结论，改测试代码以外的任何东西都发现不了（验收记录里已经出现过"45 项 UP-TO-DATE"这种写法）。
+- 根因：Gradle 的增量/构建缓存按输入输出判 up-to-date；测试任务的输入（源码、classpath、参数）没变时直接复用上次的输出，退出码 0、报告是旧的。这是构建系统的正常行为，不是故障——但它与"门禁必须给出本轮实测结论"的语义冲突。
+- 规避：**在测试任务之前清掉该任务的输出**。`gradlew :app:cleanTestDebugUnitTest :app:testDebugUnitTest`（Gradle 会为每个 Test 任务自动生成 `clean<任务名>`，删除 `build/test-results`、`build/reports` 下的对应目录）即可强制实跑，只影响测试结果目录，不触发重新编译与重新打包（APK hash 不变）。等价的强制手段：单独一次 `gradlew :app:testDebugUnitTest --rerun`（`--rerun` 只能用于命令行上只指定一个任务的场景，故不适合与 assemble/lint 串在一条命令里）。判断是否真跑过：日志里出现 `> Task :app:testDebugUnitTest` 而不是 `UP-TO-DATE`，且 `build/test-results/testDebugUnitTest/*.xml` 的 mtime 是本次。
+- 同类提醒：**任何"复用上次结论"的验收都要在本轮重新取证**（报告里的 UP-TO-DATE、缓存的 hash、上次的服务端响应）；写验收记录时不要照抄上一轮的"通过"字样。
+
 ## 6. 设计与流程纪律
 
 - **行为约定优先**：UI 优化不得违反"服务端为播放唯一来源、明确点击才能解除本机暂停"（README）。乐观预览只改显示，不提前改播放器/房间状态。
@@ -183,6 +191,7 @@
 - **非交互 PowerShell 5.1 的 Invoke-WebRequest 直接失败（2026-09-23）**：报"Windows PowerShell 处于非交互模式。朗读和提示功能不可用"，与目标 URL 无关。规避：HTTP 健康检查改用 `[System.Net.HttpWebRequest]::CreateHttp($u)` + GetResponse/StreamReader；会话内 PowerShell stdout 不回显时按 152 条惯例写日志文件再 Read。
 - **Git Bash 会把 adb shell 的 /sdcard/... 参数改写成 Windows 路径（2026-09-23）**：`adb shell uiautomator dump /sdcard/ui.xml` 实际收到 `C:/Users/.../PortableGit/.../sdcard/ui.xml`，dump "成功"却找不到文件，pull 报 failed to stat。规避：命令前加 `export MSYS2_ARG_CONV_EXCL="*" MSYS_NO_PATHCONV=1`，或改用 PowerShell 工具执行 adb。这是陷阱 7 "Windows 原生程序不识别 /d/ 路径"的镜像形态：MSYS 对**看起来像路径的参数**都会转换，进设备 shell 的参数同样中招。
 - **AI 会话中断/网络重试后，"失败"的编辑可能实际已应用（2026-09-23）**：一次会话中断续接后，同一批文件出现 import 重复、`SmoothRenderers` 类重复定义、"未找到匹配串"实为早已改过。规避：中断恢复后先 Read 关键文件再继续编辑；提交前跑一次构建，编译器的 Redeclaration 错误是重复编辑的最好探测器；见到"已在文件里"的修改不要慌，先核对内容是否正是意图所需。
+- **Windows 下 `fs.symlink` 的文件类型静默退化成普通文件（2026-09-24，本机实测）**：写"曲库拒绝库外符号链接"的回归用例时，`fs.symlinkSync(绝对目标, 链接路径)`（type 缺省或 `'file'`）**既没抛错也没建出链接**——`lstat().isSymbolicLink` 为 `false`、`isFile()` 为 `true`、`nlink=1`、`readlinkSync` 报 `EINVAL`，`realpathSync` 直接返回链接自己的路径（不解析目标）。后果具有欺骗性：被测的 `realpath + startsWith` 防护在本机会**放过**这类文件，看起来像"防线失效"，实际是链接压根没建出来（生产是 Linux，realpath 会正常解析）。规避：①需要符号链接证据时用**目录链接**——`fs.symlink(target, path, 'junction')`（Windows 走 junction 不需要管理员权限，POSIX 忽略 type，实为目录符号链接），实测 `realpathSync` 能解析到真实目标，逃逸用例据此编写；②判定"链接是否真的建立"必须看 `lstat().isSymbolicLink`，不要只看 `symlink()` 没报错；③这类"同一 API 跨平台语义不同且静默降级"的问题，最终结论要落在目标平台（Linux）上，本机只能证明"防护对已解析出的库外路径生效"。
 - **会话沙箱内 scp 被拦：`scp: pipe: Unknown error` exit 255（2026-09-23 LOAD-15 云端轮实测）**：PowerShell 工具沙箱内运行 `add-media.ps1`，转码/ffprobe/scp 前置全过，唯独 scp 上传报 `pipe: Unknown error`（exit 255）；同一会话中 Bash 通道（沙箱外执行）的 scp/ssh 全部正常。规避：①在此环境跑涉及 scp 的脚本前，先用最小 scp 命令探通道，失败即换 Bash 通道；②`add-media.ps1` 中断后的**续传路径**：转码产物在 `%TEMP%\lt-media\up-<id>.mp3`，手动完成 `scp 上传 → manifest（UTF-8 无 BOM，`id\t标题`）→ `media-manage.sh install <id> <临时名> <manifest>` → `-Restart` 段的 systemctl restart + health 轮询 → `media-manage.sh verify`；不要从头重跑浪费一轮转码。属陷阱 7"沙箱辅助进程初始化"的同族形态。
 
 ## 9. 音频链路与播放取证（2026-09-23）
@@ -254,3 +263,9 @@
 - 现象：`scripts/m4-deploy-verify.sh` 原第 4 节写死抽查曲目 `demo-soft`，并断言"catalog 恰好 5 首"。云端曲库在 2026-09-23 中午整体换成 5 首**真实 MP3**（`he-bu-ke` / `chi-xin-jue-dui` / `dan-che` / `fu-shi-shan-xia` / `ju-hao`，`media/` 下已无 `demo-soft.mp3`）之后，脚本会在音频段 `stat` 失败或 404——现象与"这次部署坏了"完全一样，极易误判。
 - 根因：验收脚本把**测试数据**（演示曲库的具体曲目）与**被测对象**（部署版本）耦合在一起；而曲库是跨版本持久层，会按业务需要独立更换（见 [deployment.md](deployment.md) 第 6 节），二者生命周期不同。
 - 规避：①脚本改为从 `/opt/listen-together/media/catalog.json` **动态解析**抽查曲目（`TRACK_ID=<id>` 可覆盖）与条数，13 项语义不变；②**先在一份已知良好的版本上跑一次基线**，再对被测版本跑——否则升级后的失败无法区分"新版本缺陷"与"仪器自身坏了"。本次升级/回滚演练正是按"基线(旧版本) 13/0 → 升级后 13/0 → 回滚后 13/0"三步执行的。
+
+### 8.9 探活字符串全等断言与新增字段耦合；新存量配额让连续重跑验收脚本第 4 次必失败（2026-09-24）
+
+- 现象：①给 `/health` 追加 `rooms/onlineMembers/wsConnections` 后，`scripts/m4-deploy-verify.sh` 的第 1 项（`[ "$h" = '{"ok":true}' ]`）会直接判 FAIL——服务其实完全正常，是断言自己过期了；②同日新增"同一来源最多 3 个活跃房间"的存量配额后，**连续重跑**该脚本（基线→升级→回滚三段演练的常规做法）第 4 次会在建房步拿到 429，现象与"新版本建房坏了"一模一样。
+- 根因：①断言把**协议的可扩展响应体**当成不可变字符串，任何字段追加都会误判；②配额按"内存里的活跃房间数"计，脚本收尾只让成员退出、房间要等 5 分钟空房回收才释放，而脚本本身不感知这个前置条件——典型的"被测对象演进后验收仪器未同步"（[陷阱 8.8](#88-验收脚本硬编码演示曲库曲库换成真实音频后必然失败2026-09-23-升级演练实测) 的同类）。
+- 规避：①探活/契约断言一律**按字段解析**（`node -e` 解析 JSON 后断言 `ok === true` 与各计数），不要字符串全等；②脚本在建房前先读 `/health` 的 `rooms` 做**前置检查**，达到 3 就带可执行提示提前失败（"等空房 5 分钟回收或重启服务后再跑"），而不是让 429 混进后面的功能抽查；③旧版本没有该字段时按 `SKIP` 处理、不计入 fail，保证"已知良好版本跑基线"仍然全绿，后续失败才能归因于被测版本；④脚本收尾要打印"房间仍占配额约 5 分钟"，提示操作者不要连续重跑。

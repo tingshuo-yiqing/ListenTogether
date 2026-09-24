@@ -12,8 +12,14 @@ PlaybackPolicy 判断共享播放与本地暂停；音频属性使用媒体用�
 
 ## 会话绑定与缓冲（2026-09-21 实现）
 - Service 创建时通过 attachStateObserver 捕获会话代次；onDestroy/onTaskRemoved 只在代次仍匹配时 detach 回调并退出房间，旧实例不再无条件清空 onState 或替新会话发退出。
-- 缓冲期间（STATE_BUFFERING）不做 seek/变速纠正；进入缓冲和回到 READY 都会触发一次 applyState，实现“缓冲完成后立即按最新快照校准”。
+- 缓冲期间（STATE_BUFFERING）不做 seek/变速纠正；进入缓冲和回到 READY 都会触发一次 applyState，实现"缓冲完成后立即按最新快照校准"。
 - 播放错误、校准（load/seek/speed）、缓冲进出、进入本地暂停的边沿写入诊断 JSONL（correction 字段），release 构建为空操作。本地暂停被快照周期反复触发，只在进入暂停沿记录一条 `correction:"localPause"`，避免刷屏（2026-09-22 补，此前暂停期间 JSONL 无条目）。
+
+## 会话代次守卫（2026-09-24 修复 A-01）
+- onDestroy 已有代次守卫，但 applyState 入口、onPlayerError 回调、500ms 位置上报循环、onPlayWhenReadyChanged（焦点/耳机）均直接操作 RoomClient 单例，未核对 boundGeneration。
+- 退出/换房间后旧 service 实例销毁前的窗口内，循环会把旧播放器位置经 client.updatePosition 写进新会话、applyState 会按新会话曲目 load/seek（双播放器竞态），onPlayerError/onPlayWhenReadyChanged 会把新会话误标 locallyPaused。
+- 修复：四处加 `client.sessionGeneration != boundGeneration` 守卫。applyState 入口守卫触发时 pause + stopSelf，不让服务僵住；循环守卫触发时 stopSelf + break，让系统销毁并重建实例。
+- 行为约定不变：服务端仍是播放唯一来源、明确点击播放才解除本机暂停。
 
 ## 漂移自检与渲染缓冲（2026-09-23 实现）
 - 位置上报仍为 500ms 一次；自检（applyState）从"仅 5 秒校时/状态变化时触发"改为每秒一次，欠载型漂移不再在 5 秒间隔内累积成风暴。
@@ -50,3 +56,4 @@ Activity 退出只释放 Controller；后台播放依靠媒体前台服务。
 2026-09-21：建档，已实现行为与后续生命周期加固分开说明。
 2026-09-22：新增 PlaybackFailure 失败提示分类；补通知栏按钮真实点击、蓝牙断开本机暂停、404 错误与恢复真机证据。
 2026-09-22：音频焦点抢占（其他媒体、真实来电）真机验证通过；补 localPause 边沿诊断并复验。
+2026-09-24：修复 A-01 会话代次守卫——applyState/onPlayerError/500ms循环/焦点回调四处加代次检查，旧实例不再影响新会话。

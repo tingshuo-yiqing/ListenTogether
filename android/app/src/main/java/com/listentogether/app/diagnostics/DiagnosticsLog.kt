@@ -9,6 +9,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 /**
@@ -29,15 +30,33 @@ interface Diagnostics {
  * - 每次进程启动写一个文件：filesDir/diagnostics/diag-<启动时刻>.jsonl。
  * - 限制：单文件 20MB、采集窗口 60 分钟，超限后停止写入；测试结束后由人工导出/删除。
  * - 写入在单线程后台执行，失败静默：诊断自身的问题不允许影响网络或播放。
+ *
+ * 可替换边界：[wallMs]/[monoMs]/[dir]/[executor] 可通过内部构造器注入，
+ * JVM 单测可控制时钟与文件系统，不依赖 Android 框架。
  */
-class DiagnosticsLog(context: Context) : Diagnostics {
-    private val enabled = BuildConfig.DEBUG
-    private val deviceLabel = Build.MANUFACTURER.trim() + " " + Build.MODEL
-    private val dir = File(context.filesDir, "diagnostics")
-    private val startedWallMs = System.currentTimeMillis()
-    private val executor = Executors.newSingleThreadExecutor { task -> Thread(task, "diagnostics").apply { isDaemon = true } }
+class DiagnosticsLog internal constructor(
+    private val enabled: Boolean,
+    private val deviceLabel: String,
+    private val dir: File,
+    private val wallMs: () -> Long,
+    private val monoMs: () -> Long,
+    private val executor: ExecutorService,
+    private val maxBytes: Long = MAX_BYTES,
+    private val maxWindowMs: Long = MAX_WINDOW_MS
+) : Diagnostics {
+    private val startedWallMs = wallMs()
     private var file: File? = null
     private var writtenBytes = 0L
+
+    /** 生产入口：SharedPreferences 存储、系统时钟、单线程守护线程执行器。 */
+    constructor(context: Context) : this(
+        BuildConfig.DEBUG,
+        Build.MANUFACTURER.trim() + " " + Build.MODEL,
+        File(context.filesDir, "diagnostics"),
+        System::currentTimeMillis,
+        SystemClock::elapsedRealtime,
+        Executors.newSingleThreadExecutor { task -> Thread(task, "diagnostics").apply { isDaemon = true } }
+    )
 
     /** 连接事件：入房、Socket 打开/断开、重连、指令等；detail 只含代次、错误类名等非敏感信息。 */
     override fun connection(event: String, roomCode: String?, detail: String) =
@@ -52,7 +71,7 @@ class DiagnosticsLog(context: Context) : Diagnostics {
         mapOf(
             "roomCode" to roomCode, "trackId" to trackId, "version" to version,
             "rttMs" to rttMs, "offsetMs" to offsetMs,
-            "estimatedServerMs" to SystemClock.elapsedRealtime() + offsetMs
+            "estimatedServerMs" to monoMs() + offsetMs
         )
     )
 
@@ -76,14 +95,14 @@ class DiagnosticsLog(context: Context) : Diagnostics {
         if (!enabled) return
         executor.execute {
             runCatching {
-                if (System.currentTimeMillis() - startedWallMs > MAX_WINDOW_MS) return@execute
-                if (writtenBytes > MAX_BYTES) return@execute
+                if (wallMs() - startedWallMs > maxWindowMs) return@execute
+                if (writtenBytes > maxBytes) return@execute
                 val target = file ?: newFile().also { file = it }
                 val line = JSONObject().apply {
                     put("type", type)
                     put("deviceLabel", deviceLabel)
-                    put("wallClockMs", System.currentTimeMillis())
-                    put("monotonicMs", SystemClock.elapsedRealtime())
+                    put("wallClockMs", wallMs())
+                    put("monotonicMs", monoMs())
                     fields.forEach { (key, value) -> if (value != null) put(key, value) }
                 }.toString() + "\n"
                 target.appendText(line)
@@ -97,7 +116,7 @@ class DiagnosticsLog(context: Context) : Diagnostics {
         return File(dir, "diag-" + SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date(startedWallMs)) + ".jsonl")
     }
 
-    private companion object {
+    companion object {
         const val MAX_BYTES = 20L * 1024 * 1024
         const val MAX_WINDOW_MS = 60L * 60 * 1000
     }

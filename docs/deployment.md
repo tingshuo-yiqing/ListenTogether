@@ -185,6 +185,11 @@ SHA256 清单逐文件生成；制品 `deploy-artifacts/listen-together-0.1.0-20
 4. **两次 restart 各清空一次全部内存房间**：演练用受控房间实测 `catalog 200 → restart → 404「房间不存在或已过期」`。
    执行前用 `ss -tn state established '( sport = :3000 )'` 确认零条 ESTABLISHED、并看 `journalctl -n 20` 无房间活动；
    在有人使用期间执行会造成全员掉线（协议内行为，需重新建房）。
+5. **自检脚本已升到 14 项（2026-09-24）**：`/health` 现返回 `{ok,rooms,onlineMembers,wsConnections}`，脚本第 1 项
+   改为按字段解析（旧版本没有计数时会打印 SKIP、不计失败）；并在建房前用 `rooms` 计数做**存量配额前置检查**——
+   `POST /api/rooms` 现在限制"同一来源最多 3 个活跃房间"，而脚本每次运行留下的房间要等 5 分钟空房回收才释放配额，
+   所以**连续重跑第 4 次**会在建房步拿到 429（不要误判成新版本缺陷，见[陷阱 8.9](development-pitfalls.md)）。
+   要在重启前确认无活跃房间，直接看 `/health` 的 `rooms/onlineMembers/wsConnections` 三个计数即可（比 `ss` 更直观）。
 
 ## 6. 云端曲库管理：上传与转码（2026-09-23 新增）
 

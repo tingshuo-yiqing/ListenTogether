@@ -418,15 +418,20 @@ private fun NowPlayingCard(client: RoomClient, ui: UiState, input: JoinInput, tr
     val playing = room?.playing == true && !ui.locallyPaused
     var pendingSeek by remember(ui.credentials?.token, track?.id) { mutableStateOf<Long?>(null) }
     var pendingSeekVersion by remember(ui.credentials?.token, track?.id) { mutableStateOf(-1L) }
+    /** 发起 seek 时刻的墙钟（毫秒），用于计算确认容忍窗口。 */
+    var pendingSeekTimeMs by remember(ui.credentials?.token, track?.id) { mutableStateOf(0L) }
 
     LaunchedEffect(track?.id) { input.dragged = null }
     // 快照确认：命令之后任何 version 更新的快照，其位置贴合目标即视为跳转已生效。
+    // 确认条件改用相对推进量：容忍窗口 = 确认以来经过的时长 + 固定余量（1500ms 含 RTT 补偿），
+    // 避免 target ≤ 1500ms 时原条件 `positionMs >= target - 1500` 对任意非负位置恒真。
     LaunchedEffect(ui.room) {
         val snapshot = ui.room ?: return@LaunchedEffect
         val target = pendingSeek ?: return@LaunchedEffect
-        val confirmed = snapshot.version > pendingSeekVersion &&
-            ((snapshot.playing && snapshot.positionMs >= target - 1500) ||
-                (!snapshot.playing && abs(snapshot.positionMs - target) <= 1500))
+        if (snapshot.version <= pendingSeekVersion) return@LaunchedEffect
+        val elapsed = System.currentTimeMillis() - pendingSeekTimeMs
+        val tolerance = elapsed + 1500
+        val confirmed = abs(snapshot.positionMs - target) <= tolerance
         if (confirmed) pendingSeek = null
     }
     // 兜底：5 秒未确认按约定提示"未确认，请重试"，不自动重发。
@@ -464,6 +469,7 @@ private fun NowPlayingCard(client: RoomClient, ui: UiState, input: JoinInput, tr
                         client.command("seek", positionMs = target)
                         pendingSeek = target
                         pendingSeekVersion = room?.version ?: -1L
+                        pendingSeekTimeMs = System.currentTimeMillis()
                     }
                     input.dragged = null
                 },

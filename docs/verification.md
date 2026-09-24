@@ -4,7 +4,7 @@
 更新日期：2026-09-24
 定位：**进度唯一事实来源**。当前状态看「状态一览」，待办看「尚待验收」；每轮交付以追加「本轮新增」小节的方式登记，测试细节由 docs/test-results/<日期-场景>/ 承载，更早的历史轮次已压缩为「交付历史索引」。
 
-## 当前状态一览（2026-09-24 收尾确认）
+## 当前状态一览（2026-09-24）
 
 | 阶段 | 状态 | 说明 |
 |---|---|---|
@@ -13,7 +13,7 @@
 | M2 双机同步 | ⏸ 挂起 | 缺第二台手机（外部条件触发，不能用观察客户端代替） |
 | M3 稳定性 | ✅ 基本完成 | 通知栏实际点击/短时息屏/蓝牙断开/音频焦点/401 全过；M3-LONG 按用户指示挂起 |
 | M4 云端部署 | ✅ 完成 | 四项部署门槛全部关闭（见下） |
-| 0.2.0 收尾 | 进行中 | 转入试用反馈驱动的修复循环 |
+| 0.2.0 收尾 | 进行中 | 转入试用反馈驱动的修复循环；2026-09-24 后端防线 E-05/E-09/Q-3 已本地完成，**待部署上云** |
 
 M4 四项部署门槛（2026-09-23 晚全部关闭）：
 
@@ -24,10 +24,42 @@ M4 四项部署门槛（2026-09-23 晚全部关闭）：
 
 关键锚点：
 
-- 当前 APK 锚 **36BD3A5B3ACA74EE45CCEE952F6EB8C042BB0A18D40123601398ADF626DD0CCE**（45 项单测；W1 真机验收与 W2 公网 E2E 均以此版本；真机验收前必须回拉 base.apk 复算）。
+- 当前 APK 锚 **E814F90E1982936947218EA8917745B889A1430287F490A8E0FF5CB55B425FA7**（53 项单测；A-01/E-07 修复 + Q-1 测试；真机验收待设备在线，不得记为通过；2026-09-24 后端轮次未改 Android，锚不变）。
 - 云端：release **20260922-2159** 在产（20260923-2157 留作升级候选）；入口 `http://8.166.126.136:3000`。TLS 路线 A 已决策：**维持 IP 明文**（试用 ECS 无法备案、备案拦截按域名跨任意端口生效、Let's Encrypt 不签裸 IP），正式化留待转包年包月备案或迁香港。
 - 云端曲库 6 首 = 5 首真实 MP3（192k）+ demo-load 负载测试音（有意保留）。
-- 剩余待办与恢复条件：M2 双机（缺设备）/ M3-LONG（≥70 分钟窗口）/ TLS 正式化（用户决策）/ 补测项（蜂窝公网、弱网注入、真实令牌作废、升级失败注入），详见 [路线图与验收标准](next-development-plan.md)。
+- 后端防线 E-05（WS 握手限连）/E-09（同 IP 建房配额 ≤3）/Q-3（事件日志 + health 计数）**仅本地验证通过，云端在产版本仍是旧行为**，部署前需独占时间片并确认无活跃房间。
+- 剩余待办与恢复条件：M2 双机（缺设备）/ M3-LONG（≥70 分钟窗口）/ TLS 正式化（用户决策）/ 后端防线上云 / 补测项（蜂窝公网、弱网注入、真实令牌作废、升级失败注入），详见 [路线图与验收标准](next-development-plan.md)。
+
+## 本轮新增（工具与文档轮：门禁强制实跑 Q-2 / 明文边界 E-06 / 协议契约 A-02 轻量版，2026-09-24）
+
+> **纯工具与文档轮**：只改 `scripts/check.ps1`、文档与一个测试文件，**未改任何产品代码、未部署、未重建 APK，无新 hash**（锚仍为 E814F90E…）。
+
+- **[Q-2] 门禁强制实跑**：`scripts/check.ps1` 安卓段由 `:app:testDebugUnitTest` 改为 `:app:cleanTestDebugUnitTest :app:testDebugUnitTest`。此前 Gradle 增量构建会把输入未变的测试任务判为 `UP-TO-DATE` **并跳过实跑**，门禁报"通过"其实只是上一轮的结论（历史记录里已出现过"45 项 UP-TO-DATE"这种写法）。清理该变体测试任务的输出后再执行，测试必然本轮重跑；只删 `build/test-results`、`build/reports` 对应目录，**不触发重新编译与重新打包**（APK 不变）。已在 AGENTS.md 的常用命令同步。顺带按[陷阱 1.5/1.6](development-pitfalls.md) 改造 `Invoke-CheckedCommand`：调用原生命令期间把 `$ErrorActionPreference` 收窄为 Continue 并在 `finally` 恢复，成败只认 `$LASTEXITCODE`（旧写法在 EAP=Stop 下会把 gradle/npm 的任意一行 stderr 变成终止错误）。
+- **[E-06] 明文边界写进 README「行为约定」**：新增一条——试用期内入口是 `http://8.166.126.136:3000` 明文 HTTP，Bearer 令牌在链路上可被窃听，服务端**没有令牌撤销机制**（令牌只在内存里，重新入房换新令牌，旧令牌随成员离线 60 秒清理 / 房间空置 5 分钟删除而失效），正式使用必须先换 TLS + 域名。措辞与既有路线 A 决策一致，未新增任何承诺。
+- **[A-02 轻量版] 协议单一出处可执行化**：`docs/protocol.md` 追加「JSON Schema（v1 消息契约）」小节，覆盖 `state` 快照与 `sync`/`command`/`clock`/`error` 五类消息；新增 `server/test/protocol.test.ts`（2 项）**直接从该文档提取 schema**，校验 `buildApp` 产出的真实消息（WS 收到的 state/clock/error、直接取样的快照、出站 sync/command）与 `members[]` 形态。`additionalProperties:false` 保证实现新增/改名字段而文档漏改也会失败；另有一项用构造性漂移（多字段/缺字段/类型错/未知 action/越界 status）证明校验器有牙，避免"schema 被掏空后测试恒绿"。校验器为 `server/test/mini-schema.ts` 的最小实现（约 80 行，支持 `$ref/type/const/enum/required/properties/additionalProperties/items/minLength/maxLength/minimum/maximum/maxItems/pattern/oneOf`）——**无 codegen、无运行时依赖**。
+- **本地验证结果**：后端 `npm run build`（tsc 0 错误）+ `npm test` **20/20 通过**（18 + 2）；反向确认——给 `snapshot()` 临时塞一个文档未定义字段，protocol.test.ts 立刻失败，撤回后恢复全绿；`scripts/check.ps1 -Scope all` 全过（后端 20/20；安卓 `:app:cleanTestDebugUnitTest :app:testDebugUnitTest` **本轮实跑 53 项**，`build/test-results/testDebugUnitTest/*.xml` 的 mtime 为本次、`tests=53 skipped=0 failures=0 errors=0`，日志中 test 任务不再是 UP-TO-DATE；assembleDebug/packageDebug 仍 UP-TO-DATE，**APK SHA256 与上轮一致 E814F90E…**；lintDebug 通过；Markdown 链接检查通过）。**实跑可重复**：紧接着单独复跑一次 `-Scope android`，两次都是 `3 executed, 51 up-to-date`（cleanTest / test / lint），结果 XML 时间戳随每次刷新——不是一次性的假象。外部日志用 `*>&1 | Out-File` 采集也不再触发[陷阱 1.5](development-pitfalls.md) 的空消息异常（EAP 已在脚本内收窄）；只有 node.exe 的中文输出在 PS 5.1 日志里仍会乱码（陷阱 1.3），判成败一律看退出码。
+- **边界**：本轮**未部署云端、未跑真机**；E-06 只是把既有的明文约束写进行为约定，不代表入口或 TLS 方案有任何变化。
+
+## 本轮新增（后端防线 E-05/E-09 + 排障通道 Q-3 + 防线回归 Q-4/Q-5，2026-09-24）
+
+> 本轮只动后端（server/src、server/test）、验收入口脚本与文档：**未改 Android 代码、未重建 APK**，APK 锚仍为 E814F90E…。
+
+- **[E-05] WS 握手限连**：`/ws/:code` 在鉴权通过后按"成员令牌 + 来源 IP"做固定窗口计数，10 秒内最多 5 次升级请求，超出返回 HTTP 429「连接过于频繁，请稍后重试」拒绝升级；无效令牌仍是 401 且不占额度。阈值 5 高于客户端 1/2/4/8/16 秒退避重连节奏（任一 10 秒窗口最多 4 次），正常断线重连不受影响；并已核对客户端侧行为——`RoomClient.onFailure` 只把 401/404 判为终态，**429 走非终态 → Reconnecting 退避重试**，不会误判成 Expired。实现为单进程内存 Map（`realtime/limits.ts`，无新依赖；键数上限 4096，超限淘汰最旧键，内存有界）。**消息级 20 条/秒限频未改动**。
+- **[E-09] 建房存量配额**：Room 新增 `creatorIp`（取 `req.ip`，trustProxy 仅信任回环、直连不可伪造），**同 IP 活跃房间 ≤3**，第 4 间返回 429「同一来源最多同时创建 3 个房间，请先使用已有房间」；空房 5 分钟回收的语义不变，回收即释放配额（不按历史累计）。与路由既有的每 IP 30 次/分钟限速是两道独立防线（限速不限量 → 现在也限量）。
+- **[Q-3] 排障通道**：结构化事件日志覆盖 `room.created`/`room.deleted`、`host.transferred`、`member.joined`/`online`/`offline`/`left`/`removed`、`ws.handshake_rejected`，字段只含房间码、成员 ID、来源 IP，**不含 Authorization、成员令牌与昵称**（有单测红线）；`/health` 追加 `rooms`/`onlineMembers`/`wsConnections` 只读计数，保留 `{ok:true}` 兼容现有探活。生产日志（logger=true）实测形如 `{"level":30,...,"event":"member.online","code":"39294E55","memberId":"...","msg":"member.online"}`。
+- **[Q-4/Q-5] 防线回归**：后端测试 **7 → 18 项**。新增：曲库拒绝 `../` 逃逸与指向库外的目录链接（含"库内链接仍可加载"对照）、WS 同连接第 21 条消息/秒收 429 error 帧、bufferedAmount 超 128KiB 时 `close(1013)`、15 秒无 pong 才 terminate（假 timer 注入）、握手限连 3 例（超限 429 / 换源 IP 不受影响 / 无效令牌仍 401）、建房配额 2 例（回收释放、按 IP 隔离）、事件红线与 health 计数。**既有 7 项全部未回归**。为可测性把发送与心跳抽成 `createSender`/`startHeartbeat`（socket 面与 timer 可注入），生产行为不变。
+- **本地验证结果**：`npm run build`（tsc 0 错误）+ `npm test` **18/18 通过**；`scripts/check.ps1 -Scope server` 全过；另起真实后端冒烟：同令牌连续握手 `open,open,open,open,429`、同 IP 第 4 次建房 429、`wsConnections` 随连接 0→1→0、事件日志中无令牌。限流用例做过反向确认（把限流阈值放大后该用例立刻失败），证明它真的钉住防线而不是恒真。
+- **⚠️ 本地通过 ≠ 云端生效**：以上三处修复要真正生效，必须把新版本部署到 8.166.126.136。**本轮未部署**——部署需要独占云端时间片，且 `systemctl restart` 会清空全部内存房间，执行前必须确认无活跃房间（[deployment.md 第 5 节](deployment.md)；现在可直接读 `/health` 的 `rooms/onlineMembers/wsConnections` 三个计数）。未做的还有：云端复跑 14 项服务端验证、升级/回滚演练、真机回归。
+- **验收入口同步**：`m4-deploy-verify.sh` 由 13 项增至 **14 项**——health 改为按字段解析（旧版本无计数时 SKIP、不计失败），并在建房前用 `rooms` 计数做存量配额预检，避免连续重跑第 4 次被 429 误判为新版本缺陷（见[陷阱 8.9](development-pitfalls.md)）。该脚本**未在云端执行**。
+
+## 本轮新增（客户端缺陷修复 A-01/E-07 + 诊断测试 Q-1，2026-09-24）
+
+
+- **[A-01] PlaybackService 会话代次守卫**：applyState 入口、onPlayerError、500ms 位置上报循环、onPlayWhenReadyChanged（焦点/耳机）四处加 `client.sessionGeneration != boundGeneration` 守卫。旧服务实例退出/换房间后不再向新会话上报位置、load/seek 播放器（双播放器竞态消除）、误标 locallyPaused。applyState 入口守卫触发时 pause + stopSelf，循环守卫触发时 stopSelf + break，不让服务僵住。行为约定不变。
+- **[E-07] seek 乐观预览确认条件过松**：播放中分支 `positionMs >= target - 1500` 在 `target ≤ 1500ms` 时对任意非负位置恒真（seek 指令丢失也显示成功）。改用相对推进量确认——记录发起 seek 时刻 `pendingSeekTimeMs`，容忍窗口 = 确认以来经过的时长 + 固定余量（1500ms 含 RTT 补偿），即 `abs(snapshot.positionMs - target) <= elapsed + 1500`。拖回开头等低 target 场景下，确认需快照位置确实接近 0。5 秒未确认提示兜底不变。
+- **[Q-1] DiagnosticsLogTest（8 项 JVM 单测）**：覆盖 20MB 轮转停止、60 分钟窗口停止、JSONL 行格式（type/wallClockMs/monotonicMs/deviceLabel 必有字段）、令牌不出现在输出（红线约束：无 Bearer/Authorization/token 文本与 JSON 键）、禁用时不创建文件。DiagnosticsLog 重构为内部构造器注入时钟/目录/执行器，生产入口不变。
+- **构建验收**：`gradlew :app:testDebugUnitTest :app:assembleDebug :app:lintDebug` 全过——53 项单测（+8 新增）、BUILD SUCCESSFUL、Lint 0 错误 0 警告。APK SHA256 **E814F90E…**。`check-doc-links.mjs` 通过。
+- **真机验收显式标注待设备在线**：分级纠正回归（A-01 代次守卫后旧实例 stopSelf，新实例由系统重建）+ "拖回开头" seek 确认场景（E-07 修复后 target=0 不再恒确认），不得记为通过。
 
 ## 本轮新增（文档结构优化，2026-09-24）
 
@@ -52,6 +84,8 @@ M4 四项部署门槛（2026-09-23 晚全部关闭）：
 
 | 日期 | 交付 | 结果 / 关键数据 | 详细记录 |
 |---|---|---|---|
+| 09-24 | 工具与文档轮 | Q-2 门禁强制实跑（cleanTest，可重复）+ E-06 明文边界入 README + A-02 协议 schema 契约；后端测试 20/20；纯工具/文档轮、**无新 hash** | 本轮（见上节） |
+| 09-24 | 后端防线本地交付 | E-05 握手限连 + E-09 同 IP 建房配额 + Q-3 事件日志/health 计数；测试 7→18 全过；**未部署上云** | 本轮（见上节） |
 | 09-24 | 文档结构优化 | 本轮（见上节） | — |
 | 09-24 | 收尾汇总 | check.ps1 全过（后端 7/7+安卓 45+Lint 0+链接）；W1–W4 标注完成；清理临时产物 | commit 0a8724a |
 | 09-23 晚 | W4 · LOAD-15 云端重测 | 15 路×600s 公网直连全 206 零失败、2.847Mbps=基线 99.1%；出网约 235MB/轮（旧估算 2.2GB 高一个数量级）；demo-load 上云保留 | [load15-cloud](test-results/2026-09-23-load15-cloud/README.md) |
@@ -85,7 +119,8 @@ M4 四项部署门槛（2026-09-23 晚全部关闭）：
 
 | SHA256 | 日期 | 内容 | 单测 | 真机状态 |
 |---|---|---|---|---|
-| 36BD3A5B3ACA74EE45CCEE952F6EB8C042BB0A18D40123601398ADF626DD0CCE | 09-23 | 分级纠正+SmoothRenderers+进度条圆点 | 45 | **当前锚**：W1 验收+W2 公网 E2E 通过 |
+| E814F90E1982936947218EA8917745B889A1430287F490A8E0FF5CB55B425FA7 | 09-24 | A-01 代次守卫 + E-07 seek 确认 + Q-1 诊断测试 | 53 | 待真机验收（设备离线） |
+| 36BD3A5B3ACA74EE45CCEE952F6EB8C042BB0A18D40123601398ADF626DD0CCE | 09-23 | 分级纠正+SmoothRenderers+进度条圆点 | 45 | W1 验收+W2 公网 E2E 通过 |
 | 169018AE746164D274E9C843AC8985A1DD27B647D6BF28DFA05110B705FB6845 | 09-23 | UI 评审优化 12 项 | 42 | UI 优化真机验证通过（后被覆盖） |
 | 59773A08ACB9A4FBFF815C8FEDF3680B55FC7FA4EDA992FC6DC664EFB7119EED | 09-23 | 简洁 UI 重构 | 42 | 无线本地 reverse 目视通过 |
 | BE545EEFE1C3260A8F4E00C88D8C4C14A62F1A442E7D717978107E79B4E60924 | 09-22 | 图标去紫→Google 蓝 | 36 | 装机 Success（桌面目视未做） |
@@ -119,6 +154,7 @@ M4 四项部署门槛（2026-09-23 晚全部关闭）：
 - [ ] 公网弱网/丢包/抖动条件下的真机表现（未测；fault-proxy 注入此前只在本地用过）。
 - [x] 版本回滚演练：升级 + 真实回滚双向通过（2026-09-23 晚，13 项抽查三次各 13/0）；两次 restart 各清空一次内存房间已实证。升级失败注入未做（如实标注）。
 - [x] 15 路实际音频带宽云端重测（2026-09-23 晚）。**M4 四项部署门槛至此全部关闭**。
+- [ ] 后端防线 E-05/E-09/Q-3 上云：需独占云端时间片部署新 release + 复跑 14 项服务端验证 + 升级/回滚演练；`restart` 会清空全部内存房间，执行前确认无活跃房间（`/health` 计数 + [deployment.md 第 5 节](deployment.md)）。**本地通过，未部署**。
 
 ## 环境与联调速查
 
@@ -127,7 +163,7 @@ M4 四项部署门槛（2026-09-23 晚全部关闭）：
 - 真机无线：`.\scripts\connect-wireless.ps1 -DebugHost <IP:调试端口> -Port 3000,3001 -Install -Verify`；配对端口≠调试端口且每次轮换；连接/reverse 必须单命令块完成（陷阱 2.7/2.8）。
 - 公网入口：手机直接填 `http://8.166.126.136:3000`，无需 adb。
 - 云端运维：`ssh aliyun`；升级/回滚见 [deployment.md 第 5 节](deployment.md)，曲库管理见第 6 节（替换音频后必须重启，重启清房间）；**严禁在服务器跑 VS Code Remote/重负载**（陷阱 8.5）。
-- 项目级检查：`.\scripts\check.ps1 -Scope all`（后端 tsc+测试、安卓单测+构建+Lint、文档链接）。
+- 项目级检查：`.\scripts\check.ps1 -Scope all`（后端 tsc+测试、安卓单测+构建+Lint、文档链接）。安卓段自带 `cleanTestDebugUnitTest`，**单测必然本轮实跑**（不加清理任务时 Gradle 会 UP-TO-DATE 跳过，见[陷阱 5.5](development-pitfalls.md)）；判读日志看 `> Task :app:testDebugUnitTest` 不带 UP-TO-DATE。
 - 动手前必读：[开发陷阱清单](development-pitfalls.md)。
 
 ## 测试记录入口（docs/test-results/）

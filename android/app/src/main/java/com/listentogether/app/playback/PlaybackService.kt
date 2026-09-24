@@ -58,6 +58,8 @@ class PlaybackService : MediaSessionService() {
         player.setWakeMode(C.WAKE_MODE_NETWORK)
         player.addListener(object : Player.Listener {
             override fun onPlayerError(error: PlaybackException) {
+                // 旧服务实例的播放错误不得标记新会话为本地暂停（代次守卫）。
+                if (boundGeneration != null && client.sessionGeneration != boundGeneration) return
                 diag.playback(null, player.currentMediaItem?.mediaId, client.state.value.room?.version ?: -1L,
                     player.currentPosition, player.currentPosition, 0, false, true, "error:" + error.errorCodeName, client.serverNow)
                 // 令牌失效(401)与文件缺失(404)给可操作提示，其余保留错误码并引导重试。
@@ -67,7 +69,9 @@ class PlaybackService : MediaSessionService() {
                 if (!playWhenReady && (reason == Player.PLAY_WHEN_READY_CHANGE_REASON_AUDIO_BECOMING_NOISY ||
                             reason == Player.PLAY_WHEN_READY_CHANGE_REASON_AUDIO_FOCUS_LOSS)) {
                     // 丢失焦点/拔出耳机只暂停本机，不让同步快照重新开启声音。
-                    client.pauseLocally("音频输出已中断，点击播放恢复跟听")
+                    // 代次守卫：旧服务实例不得替新会话触发本地暂停。
+                    if (boundGeneration == null || client.sessionGeneration == boundGeneration)
+                        client.pauseLocally("音频输出已中断，点击播放恢复跟听")
                 }
             }
             override fun onPlaybackStateChanged(playbackState: Int) {
@@ -98,6 +102,10 @@ class PlaybackService : MediaSessionService() {
         scope.launch {
             var tick = 0
             while (isActive) {
+                // 代次守卫：旧服务实例不得向新会话上报位置或触发校准。
+                if (boundGeneration != null && client.sessionGeneration != boundGeneration) {
+                    stopSelf(); break
+                }
                 client.updatePosition(player.currentPosition)
                 if (tick++ % 2 == 0) applyState()
                 delay(500)
@@ -107,6 +115,12 @@ class PlaybackService : MediaSessionService() {
     }
 
     private fun applyState() {
+        // 代次守卫：旧服务实例不得操作新会话的播放器（换曲/seek/变速/pause），
+        // 否则双播放器竞态——旧实例按旧曲目 load/seek，新实例也在操作同一 player。
+        // 守卫触发时 stopSelf 让系统销毁并重建实例，不让服务僵住。
+        if (boundGeneration != null && client.sessionGeneration != boundGeneration) {
+            player.pause(); stopSelf(); return
+        }
         val ui = client.state.value
         val room = ui.room
         val credentials = ui.credentials

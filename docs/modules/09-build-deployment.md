@@ -14,6 +14,9 @@ local.properties、私钥、令牌不进版本库。未来正式签名配置从�
 
 ## 下一阶段
 统一检查入口 scripts/check.ps1 支持后端、安卓和文档链接验证，保留按范围单独运行：-Scope server|android|docs。
+入口函数只在调用原生工具期间收窄 $ErrorActionPreference（见 [陷阱 1.5/1.6](../development-pitfalls.md)），成败只认 $LASTEXITCODE。
+安卓段固定 `:app:cleanTestDebugUnitTest :app:testDebugUnitTest`：Gradle 增量构建会把"输入未变"的测试任务判 UP-TO-DATE 并跳过实跑，
+加上清理任务后，门禁里的"测试通过"必然来自本轮执行（见 [陷阱 5.5](../development-pitfalls.md)）。
 将USB脚本的设备选择、端口冲突、未授权设备、安装失败变成明确提示；不自动修改用户防火墙。
 演示脚本记录自身启动进程，提供只停止该进程的方式，避免用户误杀别的Node服务。
 构建后输出版本/签名校验/hash和设备安装说明，避免多个同名APK混淆。
