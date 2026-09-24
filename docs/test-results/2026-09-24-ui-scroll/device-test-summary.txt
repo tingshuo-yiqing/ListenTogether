@@ -1,0 +1,16 @@
+PHQ110 public-catalog UI test (playback paused, power-save off)
+
+Fast gesture run: 10 alternating swipes, duration=350ms, delay=150ms.
+Total frames rendered: 290
+Janky frames: 69 (23.79%)
+50/90/95/99 percentile: 27/44/57/97 ms
+Number Missed Vsync: 9
+
+Natural interval run: 10 alternating swipes, duration=300ms, delay=900ms.
+Total frames rendered: 629
+Janky frames: 53 (8.43%)
+50/90/95/99 percentile: 15/29/34/44 ms
+Number Missed Vsync: 6
+
+Battery before natural run: 49%; temperature 338 tenths Celsius; low_power=0.
+No installed-old-APK comparison, no playback-audio measurement.

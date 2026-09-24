@@ -1,0 +1,13 @@
+TEST-com.listentogether.app.AvatarPaletteIndexTest.xml: tests=3 failures=0 errors=0 skipped=0
+TEST-com.listentogether.app.ClockEstimatorTest.xml: tests=6 failures=0 errors=0 skipped=0
+TEST-com.listentogether.app.diagnostics.DiagnosticsLogTest.xml: tests=8 failures=0 errors=0 skipped=0
+TEST-com.listentogether.app.FormatTimeTest.xml: tests=4 failures=0 errors=0 skipped=0
+TEST-com.listentogether.app.InviteCodeTest.xml: tests=8 failures=0 errors=0 skipped=0
+TEST-com.listentogether.app.PlaybackFailureTest.xml: tests=4 failures=0 errors=0 skipped=0
+TEST-com.listentogether.app.PlaybackPolicyTest.xml: tests=4 failures=0 errors=0 skipped=0
+TEST-com.listentogether.app.PlaybackViewTest.xml: tests=6 failures=0 errors=0 skipped=0
+TEST-com.listentogether.app.PlaylistFilterTest.xml: tests=6 failures=0 errors=0 skipped=0
+TEST-com.listentogether.app.RoomClientSessionTest.xml: tests=13 failures=0 errors=0 skipped=0
+TEST-com.listentogether.app.ScreenStateTest.xml: tests=3 failures=0 errors=0 skipped=0
+TEST-com.listentogether.app.SyncMathTest.xml: tests=8 failures=0 errors=0 skipped=0
+{'tests': 73, 'failures': 0, 'errors': 0, 'skipped': 0}

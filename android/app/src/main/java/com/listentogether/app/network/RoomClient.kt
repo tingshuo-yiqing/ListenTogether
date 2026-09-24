@@ -121,7 +121,10 @@ class RoomClient internal constructor(
                 val url = address.trim().trimEnd('/').toHttpUrl()
                 require(url.encodedPath == "/" && url.query == null && url.fragment == null && url.username.isEmpty() && url.password.isEmpty()) { "请输入服务器根地址，例如 https://music.example.com" }
                 require(BuildConfig.DEBUG || url.isHttps) { "发布版只支持 HTTPS" }
-                val root = url.toString().trimEnd('/')
+                // 未写端口（okhttp 回填成协议默认 80/443）按项目约定补 3000：
+                // 口令分享可省略 :3000，粘贴后仍加入同一服务器；显式非默认端口（如 :8080）原样保留。
+                val root = (if (url.port == HttpUrl.defaultPort(url.scheme)) url.newBuilder().port(3000).build() else url)
+                    .toString().trimEnd('/')
                 baseUrl = root
                 store.saveBaseUrl(root)
                 val route = if (code == null) "/api/rooms" else "/api/rooms/" + code.trim().uppercase().also { require(it.matches(Regex("[0-9A-F]{8}"))) { "邀请码为 8 位字符" } } + "/join"

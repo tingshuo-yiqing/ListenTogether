@@ -1,7 +1,6 @@
 package com.listentogether.app
 
 import android.Manifest
-import android.content.ClipData
 import android.content.ComponentName
 import android.content.Intent
 import android.os.Build
@@ -10,6 +9,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,12 +20,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -33,41 +33,31 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ExitToApp
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.MusicNote
-import androidx.compose.material.icons.outlined.Pause
-import androidx.compose.material.icons.outlined.PlayArrow
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.FilledTonalButton
@@ -80,6 +70,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.key
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -87,11 +78,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -105,16 +96,20 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.listentogether.app.network.ConnectionStatus
+import com.listentogether.app.network.Member
 import com.listentogether.app.network.RoomClient
 import com.listentogether.app.network.Track
 import com.listentogether.app.network.UiState
 import com.listentogether.app.playback.PlaybackService
 import com.listentogether.app.ui.MemberAvatar
+import com.listentogether.app.ui.MiniPlayer
 import com.listentogether.app.ui.PlaybackView
-import com.listentogether.app.ui.PlaylistFilter
+import com.listentogether.app.ui.PlayerSheet
+import com.listentogether.app.ui.PlayingIndicator
 import com.listentogether.app.ui.joinError
-import com.listentogether.app.ui.playbackLabel
+import com.listentogether.app.ui.rememberRoomPlayer
 import com.listentogether.app.ui.showStatusNotice
+import com.listentogether.app.ui.screenStates
 import com.listentogether.app.ui.theme.BannerShape
 import com.listentogether.app.ui.theme.CardShape
 import com.listentogether.app.ui.theme.FieldShape
@@ -122,8 +117,6 @@ import com.listentogether.app.ui.theme.ListenTogetherTheme
 import com.listentogether.app.ui.theme.PillShape
 import com.listentogether.app.ui.theme.RowShape
 import java.util.Locale
-import kotlin.math.abs
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** 入房表单的可变输入；进程重建后丢失属可接受（地址会从偏好重新预填）。 */
@@ -131,7 +124,6 @@ private class JoinInput {
     var address by mutableStateOf("")
     var name by mutableStateOf("")
     var code by mutableStateOf("")
-    var dragged by mutableStateOf<Float?>(null)
     var joining by mutableStateOf(false)
     /** 粘贴/识别出的邀请确认卡；null 为手填模式。手动编辑输入框即拆卡回手填。 */
     var invite by mutableStateOf<InviteCode.Invite?>(null)
@@ -144,20 +136,18 @@ private class JoinInput {
     }
 }
 
-/** 歌单搜索输入；只影响本地显示，退出房间随页面会话一起重置。 */
-private class PlaylistSearch {
-    var query by mutableStateOf("")
-}
-
 @UnstableApi
 class MainActivity : ComponentActivity() {
     private val permission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         val client = (application as ListenApplication).roomClient
         setContent {
             ListenTogetherTheme {
-                val ui by client.state.collectAsState()
+                val screenState = remember(client) { client.state.screenStates() }
+                val initialScreen = remember(client) { client.state.value.copy(positionMs = 0) }
+                val ui by screenState.collectAsState(initial = initialScreen)
                 // 通知权限延迟到有实际播放场景（入房成功）再申请，避免冷启动弹窗；每次安装只问一次。
                 var notificationAsked by rememberSaveable { mutableStateOf(false) }
                 LaunchedEffect(ui.credentials != null) {
@@ -209,16 +199,26 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 val input = remember(ui.credentials?.token) { JoinInput().apply { address = client.baseUrl } }
-                // 歌单搜索词：按房间会话隔离，退出重进自动清空，恢复完整列表。
-                val search = remember(ui.credentials?.token) { PlaylistSearch() }
                 // 软键盘弹出时给内容区加 IME 内边距，避免输入框与按钮被顶出视野；
                 // 点空白处收起键盘（实测该设备 ESC 无法关闭输入法）。
                 val focusManager = LocalFocusManager.current
                 val snackbar = remember { SnackbarHostState() }
                 val scope = rememberCoroutineScope()
+                // 非房主点切歌入口的统一提示；展开播放页与歌单共用同一份。
+                val onLockedTap: () -> Unit = { scope.launch { snackbar.showSnackbar("只有房主可以切歌") } }
                 var showLeaveConfirm by rememberSaveable { mutableStateOf(false) }
+                val room = ui.room
+                val track = ui.tracks.find { it.id == room?.trackId }
+                // 播放器状态挂在房间会话作用域：mini 条与展开 Sheet 共享，Sheet 关闭不中断 seek 确认。
+                val playerState = rememberRoomPlayer(client, ui, track)
+                var showPlayerSheet by rememberSaveable(ui.credentials?.token) { mutableStateOf(false) }
                 Scaffold(
-                    topBar = { TopBar(ui, client.baseUrl, snackbar, onLeaveRequest = { showLeaveConfirm = true }) },
+                    topBar = { TopBar(ui, client.baseUrl, onLeaveRequest = { showLeaveConfirm = true }) },
+                    bottomBar = {
+                        if (ui.credentials != null) {
+                            MiniPlayer(client, ui, playerState, track, playback, onExpand = { showPlayerSheet = true })
+                        }
+                    },
                     snackbarHost = { SnackbarHost(snackbar) },
                     containerColor = MaterialTheme.colorScheme.background
                 ) { padding ->
@@ -229,16 +229,19 @@ class MainActivity : ComponentActivity() {
                         },
                         contentAlignment = Alignment.TopCenter
                     ) {
-                        LazyColumn(
-                            Modifier.fillMaxWidth().widthIn(max = 560.dp),
-                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Content(client, ui, input, search, playback, snackbar, onLockedTap = {
-                                scope.launch { snackbar.showSnackbar("只有房主可以切歌") }
-                            })
+                        key(ui.credentials?.token) {
+                            LazyColumn(
+                                Modifier.widthIn(max = 560.dp).fillMaxSize(),
+                                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Content(client, ui, input, playback, snackbar, onLockedTap)
+                            }
                         }
                     }
+                }
+                if (ui.credentials != null && showPlayerSheet) {
+                    PlayerSheet(client, ui, playerState, track, playback, onLockedTap, onDismiss = { showPlayerSheet = false })
                 }
                 if (showLeaveConfirm && ui.credentials != null) {
                     AlertDialog(
@@ -256,35 +259,21 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** 顶栏：入房页显示应用名；房间页显示房间码与角色，附分享/复制邀请口令与退出房间入口（退出走确认弹窗）。 */
+/** 顶栏：始终显示应用名；房间页额外提供分享与退出入口（退出走确认弹窗）。邀请统一走分享口令，顶栏不再展示房间码。 */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TopBar(ui: UiState, baseUrl: String, snackbar: SnackbarHostState, onLeaveRequest: () -> Unit) {
-    CenterAlignedTopAppBar(
-        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+private fun TopBar(ui: UiState, baseUrl: String, onLeaveRequest: () -> Unit) {
+    val context = LocalContext.current
+    // 口令唯一来源：分享入口使用 encode 产物，避免硬编码漂移；
+    // 口令只含房间码与服务器地址（公开信息，默认端口在口令里省略），绝不包含成员令牌。
+    val inviteText = ui.credentials?.let { InviteCode.encode(it.code, baseUrl) }.orEmpty()
+    TopAppBar(
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
         title = {
-            if (ui.credentials == null) {
-                Text("一起听歌", style = MaterialTheme.typography.titleLarge)
-            } else {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    // 房间码等宽显示，降低 B/8、0/O 误读概率。
-                    Text(ui.credentials.code, style = MaterialTheme.typography.titleMedium, fontFamily = FontFamily.Monospace)
-                    Text(
-                        if (ui.room?.hostId == ui.credentials.memberId) "房主" else "一起听歌",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            Text("一起听歌", style = MaterialTheme.typography.titleLarge)
         },
         actions = {
             if (ui.credentials != null) {
-                val context = LocalContext.current
-                val clipboard = LocalClipboard.current
-                val scope = rememberCoroutineScope()
-                // 口令唯一来源：复制与分享共用同一份 encode 产物，避免两处硬编码漂移；
-                // 口令只含房间码与服务器地址（公开信息），绝不包含成员令牌。
-                val inviteText = InviteCode.encode(ui.credentials.code, baseUrl)
                 IconButton(onClick = {
                     val send = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
@@ -294,14 +283,6 @@ private fun TopBar(ui: UiState, baseUrl: String, snackbar: SnackbarHostState, on
                 }) {
                     Icon(Icons.Outlined.Share, contentDescription = "分享邀请口令", tint = MaterialTheme.colorScheme.primary)
                 }
-                IconButton(onClick = {
-                    scope.launch {
-                        clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("invite", inviteText)))
-                        snackbar.showSnackbar("邀请已复制，发给朋友即可")
-                    }
-                }) {
-                    Icon(Icons.Outlined.ContentCopy, contentDescription = "复制邀请口令", tint = MaterialTheme.colorScheme.primary)
-                }
                 IconButton(onClick = onLeaveRequest) {
                     Icon(Icons.AutoMirrored.Outlined.ExitToApp, contentDescription = "退出房间", tint = MaterialTheme.colorScheme.primary)
                 }
@@ -310,139 +291,143 @@ private fun TopBar(ui: UiState, baseUrl: String, snackbar: SnackbarHostState, on
     )
 }
 
-/** 内容主体：按是否在房间切换入房表单与房间内容；退出房间统一走顶栏确认弹窗。 */
-private fun LazyListScope.Content(client: RoomClient, ui: UiState, input: JoinInput, search: PlaylistSearch, playback: PlaybackView, snackbar: SnackbarHostState, onLockedTap: () -> Unit) {
+/** 内容主体：按是否在房间切换入房表单与房间内容；播放器常驻底部（MiniPlayer/Sheet），不再占列表位。 */
+private fun LazyListScope.Content(client: RoomClient, ui: UiState, input: JoinInput, playback: PlaybackView, snackbar: SnackbarHostState, onLockedTap: () -> Unit) {
     val room = ui.room
-    val track = ui.tracks.find { it.id == room?.trackId }
     if (ui.credentials == null) {
         JoinForm(client, ui, input, snackbar)
     } else {
-        if (showStatusNotice(ui, playback)) item { StatusBanner(ui, playback, onRetry = { client.retry() }, onLeave = { client.leave() }) }
-        item { MembersSection(ui) }
-        item { NowPlayingCard(client, ui, input, track, playback) }
-        PlaylistSection(client, ui, room?.trackId, search, onLockedTap)
+        if (showStatusNotice(ui, playback)) item(key = "status", contentType = "status") { StatusBanner(ui, playback, onRetry = { client.retry() }, onLeave = { client.leave() }) }
+        item(key = "members", contentType = "members") { MembersSection(ui) }
+        PlaylistSection(client, ui, room?.trackId, room?.playing == true && !ui.locallyPaused, onLockedTap)
     }
 }
 
-/** 创建和加入分为两条路径，错误留在表单内；切换路径保留已填信息。 */
+/**
+ * 创建和加入分为两条路径，错误留在表单内；切换路径保留已填信息。
+ * 布局收拢为"标题区 + 单卡片表单"：标签、输入、错误与主按钮同处一张卡，
+ * 视线在一个动作区内完成"选路径→填信息→点按钮"，不再逐块平铺。
+ */
 private fun LazyListScope.JoinForm(client: RoomClient, ui: UiState, input: JoinInput, snackbar: SnackbarHostState) {
-    item {
-        Column(Modifier.padding(vertical = 12.dp)) {
+    item(key = "join-heading", contentType = "heading") {
+        Column(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp)) {
             Text("此刻，一起听", style = MaterialTheme.typography.headlineMedium)
-            Spacer(Modifier.height(8.dp))
-            Text("和朋友分享同一段旋律", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(4.dp))
+            Text("和朋友分享同一段旋律", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
-    item {
-        TabRow(selectedTabIndex = if (input.joining) 1 else 0, containerColor = Color.Transparent) {
-            Tab(selected = !input.joining, onClick = { input.joining = false }, enabled = !ui.busy, text = { Text("创建房间") })
-            Tab(selected = input.joining, onClick = { input.joining = true }, enabled = !ui.busy, text = { Text("加入房间") })
-        }
-    }
-    item {
-        OutlinedTextField(
-            value = input.name, onValueChange = { input.name = it.take(24) },
-            label = { Text("怎么称呼你") }, singleLine = true, enabled = !ui.busy,
-            shape = FieldShape, modifier = Modifier.fillMaxWidth()
-        )
-    }
-    if (input.joining) item {
-        val clipboard = LocalClipboard.current
-        val scope = rememberCoroutineScope()
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilledTonalButton(
-                onClick = {
-                    scope.launch {
-                        // 只读一次剪贴板；Android 13+ 粘贴后系统会自行提示，成功不再额外弹告知。
-                        val text = clipboard.getClipEntry()?.clipData?.let { data ->
-                            (0 until data.itemCount).asSequence()
-                                .mapNotNull { data.getItemAt(it).text?.toString() }
-                                .firstOrNull { it.isNotBlank() }
-                        } ?: ""
-                        val parsed = InviteCode.decode(text)
-                        if (parsed == null) snackbar.showSnackbar("未识别到有效邀请，请复制完整邀请后重试")
-                        else input.accept(parsed)
+    item(key = "join-card", contentType = "form") {
+        Surface(shape = CardShape, color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(Modifier.fillMaxWidth().clip(FieldShape).background(MaterialTheme.colorScheme.surface).padding(4.dp)) {
+                    listOf("创建房间", "加入房间").forEachIndexed { index, label ->
+                        val selected = input.joining == (index == 1)
+                        Box(
+                            Modifier.weight(1f).clip(RowShape)
+                                .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
+                                .selectable(selected = selected, enabled = !ui.busy, role = Role.Tab) { input.joining = index == 1 }
+                                .heightIn(min = 48.dp).padding(8.dp),
+                            contentAlignment = Alignment.Center
+                        ) { Text(label, style = MaterialTheme.typography.titleSmall, color = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
-                },
-                enabled = !ui.busy,
-                shape = PillShape,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp)
-            ) {
-                Icon(Icons.Outlined.ContentPaste, contentDescription = null, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("粘贴邀请")
-            }
-            // 解析成功用确认卡替换手填输入框；与下方错误横幅互斥展示——入房失败时优先显示横幅，
-            // 确认卡数据保留（不销毁已填昵称），横幅消失（重新入房）后恢复显示。
-            val invite = input.invite
-            if (invite != null && joinError(ui) == null) {
-                InviteConfirmCard(
-                    invite = invite,
-                    rememberedAddress = client.baseUrl,
-                    busy = ui.busy,
-                    onReset = { input.invite = null }
-                )
-            } else {
+                }
                 OutlinedTextField(
-                    value = input.code,
-                    onValueChange = { raw ->
-                        if (raw.length > 8 && raw.contains("房间码")) {
-                            // 智能识别兜底：整段口令可能被直接粘进邀请码框；解析失败保留用户输入不动。
-                            InviteCode.decode(raw)?.let { input.accept(it) }
-                        } else {
-                            input.code = raw.trim().uppercase().take(8)
-                            input.invite = null
-                        }
-                    },
-                    label = { Text("8 位邀请码") }, singleLine = true, enabled = !ui.busy,
-                    supportingText = { Text("向房主获取邀请码") },
+                    value = input.name, onValueChange = { input.name = it.take(24) },
+                    label = { Text("怎么称呼你") }, singleLine = true, enabled = !ui.busy,
                     shape = FieldShape, modifier = Modifier.fillMaxWidth()
                 )
-            }
-        }
-    }
-    item {
-        // 服务器地址属基础设施细节，默认收起以保持主路径干净；
-        // 地址为空（首次使用或未记住）时自动展开，避免用户不知道去哪填。
-        var showAdvanced by rememberSaveable { mutableStateOf(false) }
-        Column {
-            if (showAdvanced || input.address.isBlank()) {
-                OutlinedTextField(
-                    value = input.address, onValueChange = { input.address = it },
-                    label = { Text("服务器地址") }, placeholder = { Text("https://music.example.com") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                    singleLine = true, enabled = !ui.busy, shape = FieldShape,
-                    supportingText = { Text("与好友使用同一个服务器地址") }, modifier = Modifier.fillMaxWidth()
-                )
-            } else {
-                TextButton(onClick = { showAdvanced = true }, enabled = !ui.busy) {
-                    Text("高级设置：更换服务器地址")
+                if (input.joining) {
+                    val clipboard = LocalClipboard.current
+                    val scope = rememberCoroutineScope()
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilledTonalButton(
+                            onClick = {
+                                scope.launch {
+                                    // 只读一次剪贴板；Android 13+ 粘贴后系统会自行提示，成功不再额外弹告知。
+                                    val text = clipboard.getClipEntry()?.clipData?.let { data ->
+                                        (0 until data.itemCount).asSequence()
+                                            .mapNotNull { data.getItemAt(it).text?.toString() }
+                                            .firstOrNull { it.isNotBlank() }
+                                    } ?: ""
+                                    val parsed = InviteCode.decode(text)
+                                    if (parsed == null) snackbar.showSnackbar("未识别到有效邀请，请复制完整邀请后重试")
+                                    else input.accept(parsed)
+                                }
+                            },
+                            enabled = !ui.busy,
+                            shape = PillShape,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp)
+                        ) {
+                            Icon(Icons.Outlined.ContentPaste, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("粘贴邀请")
+                        }
+                        // 解析成功用确认卡替换手填输入框；与下方错误横幅互斥展示——入房失败时优先显示横幅，
+                        // 确认卡数据保留（不销毁已填昵称），横幅消失（重新入房）后恢复显示。
+                        val invite = input.invite
+                        if (invite != null && joinError(ui) == null) {
+                            InviteConfirmCard(
+                                invite = invite,
+                                rememberedAddress = client.baseUrl,
+                                busy = ui.busy,
+                                onReset = { input.invite = null }
+                            )
+                        } else {
+                            OutlinedTextField(
+                                value = input.code,
+                                onValueChange = { raw ->
+                                    if (raw.length > 8 && raw.contains("房间码")) {
+                                        // 智能识别兜底：整段口令可能被直接粘进邀请码框；解析失败保留用户输入不动。
+                                        InviteCode.decode(raw)?.let { input.accept(it) }
+                                    } else {
+                                        input.code = raw.trim().uppercase().take(8)
+                                        input.invite = null
+                                    }
+                                },
+                                label = { Text("8 位邀请码") }, singleLine = true, enabled = !ui.busy,
+                                supportingText = { Text("向房主获取邀请码") },
+                                shape = FieldShape, modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
                 }
+                // 服务器地址属基础设施细节，默认收起以保持主路径干净；
+                // 地址为空（首次使用或未记住）时自动展开，避免用户不知道去哪填。
+                var showAdvanced by rememberSaveable { mutableStateOf(false) }
+                if (showAdvanced || input.address.isBlank()) {
+                    OutlinedTextField(
+                        value = input.address, onValueChange = { input.address = it },
+                        label = { Text("服务器地址") }, placeholder = { Text("https://music.example.com") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                        singleLine = true, enabled = !ui.busy, shape = FieldShape,
+                        supportingText = { Text("与好友使用同一个服务器地址") }, modifier = Modifier.fillMaxWidth()
+                    )
+                } else {
+                    TextButton(onClick = { showAdvanced = true }, enabled = !ui.busy) {
+                        Text("高级设置：更换服务器地址", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                // 入房错误横幅在卡内按钮上方；与确认卡互斥展示（确认卡侧在 joinError 存在时回退为输入框）。
+                joinError(ui)?.let { message ->
+                    Surface(color = MaterialTheme.colorScheme.errorContainer, shape = BannerShape) {
+                        Text(message, color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.fillMaxWidth().padding(14.dp).semantics { liveRegion = LiveRegionMode.Polite })
+                    }
+                }
+                val focus = LocalFocusManager.current
+                Button(
+                    onClick = {
+                        focus.clearFocus()
+                        client.join(input.address.trim(), input.name.trim(), if (input.joining) input.code else null)
+                    },
+                    enabled = !ui.busy && input.name.isNotBlank() && input.address.isNotBlank() &&
+                        (!input.joining || input.code.matches(Regex("[0-9A-F]{8}"))),
+                    shape = PillShape, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
+                ) { Text(if (ui.busy) "正在连接…" else if (input.joining) "加入，一起听" else "创建房间") }
             }
         }
     }
-    // 入房错误横幅沿用既有位置；与确认卡互斥展示（确认卡侧在 joinError 存在时回退为输入框）。
-    joinError(ui)?.let { message ->
-        item {
-            Surface(color = MaterialTheme.colorScheme.errorContainer, shape = BannerShape) {
-                Text(message, color = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier.fillMaxWidth().padding(14.dp).semantics { liveRegion = LiveRegionMode.Polite })
-            }
-        }
-    }
-    item {
-        val focus = LocalFocusManager.current
-        Button(
-            onClick = {
-                focus.clearFocus()
-                client.join(input.address.trim(), input.name.trim(), if (input.joining) input.code else null)
-            },
-            enabled = !ui.busy && input.name.isNotBlank() && input.address.isNotBlank() &&
-                (!input.joining || input.code.matches(Regex("[0-9A-F]{8}"))),
-            shape = PillShape, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
-        ) { Text(if (ui.busy) "正在连接…" else if (input.joining) "加入，一起听" else "创建房间") }
-    }
-    if (ui.busy) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
+    if (ui.busy) item(key = "join-progress", contentType = "progress") { LinearProgressIndicator(Modifier.fillMaxWidth()) }
 }
 
 /**
@@ -508,153 +493,30 @@ private fun StatusBanner(ui: UiState, playback: PlaybackView, onRetry: () -> Uni
     }
 }
 
-/**
- * 正在播放卡片：曲目、进度拖动、大号播放按钮。
- *
- * 进度拖动的确认模型（服务端仍是唯一事实来源，本机不提前 seek）：
- * 松手时把目标位置记为 pendingSeek 并发送指令，滑条停在目标处，
- * 避免"跳回旧位置→等广播→再跳走"的大延迟观感；
- * 收到 version 更新的快照且位置贴合目标后恢复跟随服务器进度；
- * 5 秒仍未确认则清除预览并提示重试，不自动重发。
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun NowPlayingCard(client: RoomClient, ui: UiState, input: JoinInput, track: Track?, playback: PlaybackView) {
-    val room = ui.room
-    val duration = (track?.durationMs ?: 1).coerceAtLeast(1).toFloat()
-    val playing = room?.playing == true && !ui.locallyPaused
-    var pendingSeek by remember(ui.credentials?.token, track?.id) { mutableStateOf<Long?>(null) }
-    var pendingSeekVersion by remember(ui.credentials?.token, track?.id) { mutableStateOf(-1L) }
-    /** 发起 seek 时刻的墙钟（毫秒），用于计算确认容忍窗口。 */
-    var pendingSeekTimeMs by remember(ui.credentials?.token, track?.id) { mutableStateOf(0L) }
-
-    LaunchedEffect(track?.id) { input.dragged = null }
-    // 快照确认：命令之后任何 version 更新的快照，其位置贴合目标即视为跳转已生效。
-    // 确认条件改用相对推进量：容忍窗口 = 确认以来经过的时长 + 固定余量（1500ms 含 RTT 补偿），
-    // 避免 target ≤ 1500ms 时原条件 `positionMs >= target - 1500` 对任意非负位置恒真。
-    LaunchedEffect(ui.room) {
-        val snapshot = ui.room ?: return@LaunchedEffect
-        val target = pendingSeek ?: return@LaunchedEffect
-        if (snapshot.version <= pendingSeekVersion) return@LaunchedEffect
-        val elapsed = System.currentTimeMillis() - pendingSeekTimeMs
-        val tolerance = elapsed + 1500
-        val confirmed = abs(snapshot.positionMs - target) <= tolerance
-        if (confirmed) pendingSeek = null
-    }
-    // 兜底：5 秒未确认按约定提示"未确认，请重试"，不自动重发。
-    LaunchedEffect(pendingSeek) {
-        if (pendingSeek != null) {
-            delay(5_000)
-            if (pendingSeek != null) {
-                pendingSeek = null
-                client.report("进度跳转未确认，请重试")
-            }
-        }
-    }
-    ElevatedCard(shape = CardShape, modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("当前歌曲", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(playbackLabel(ui, playback), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Text(
-                track?.title ?: if (client.isHost) "选一首喜欢的歌" else "等待房主选歌",
-                style = MaterialTheme.typography.headlineSmall,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-            Spacer(Modifier.size(6.dp))
-            // 默认 M3 Slider 手柄是 4×44dp 竖长条，观感突兀且占竖向空间；改用圆点端点 + 细轨道。
-            val sliderColors = SliderDefaults.colors()
-            val sliderEnabled = client.isHost && ui.status == ConnectionStatus.Ready && track != null
-            Slider(
-                value = (input.dragged ?: pendingSeek?.toFloat() ?: ui.positionMs.toFloat()).coerceIn(0f, duration),
-                onValueChange = { input.dragged = it },
-                onValueChangeFinished = {
-                    input.dragged?.let { dragged ->
-                        val target = dragged.toLong().coerceIn(0L, duration.toLong())
-                        client.command("seek", positionMs = target)
-                        pendingSeek = target
-                        pendingSeekVersion = room?.version ?: -1L
-                        pendingSeekTimeMs = System.currentTimeMillis()
-                    }
-                    input.dragged = null
-                },
-                valueRange = 0f..duration,
-                enabled = sliderEnabled,
-                thumb = {
-                    Box(
-                        Modifier.size(14.dp)
-                            .clip(CircleShape)
-                            .background(if (sliderEnabled) sliderColors.thumbColor else sliderColors.disabledThumbColor)
-                    )
-                },
-                track = {
-                    val shown = (input.dragged ?: pendingSeek?.toFloat() ?: ui.positionMs.toFloat()).coerceIn(0f, duration)
-                    val played = if (duration > 0f) shown / duration else 0f
-                    Box(
-                        Modifier.fillMaxWidth().height(5.dp)
-                            .clip(RoundedCornerShape(3.dp))
-                            .background(if (sliderEnabled) sliderColors.inactiveTrackColor else sliderColors.disabledInactiveTrackColor)
-                    ) {
-                        Box(
-                            Modifier.fillMaxWidth(played).fillMaxHeight()
-                                .background(if (sliderEnabled) sliderColors.activeTrackColor else sliderColors.disabledActiveTrackColor)
-                        )
-                    }
-                }
-            )
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                // 数字与滑块显示同一来源：拖动中跟随手指，确认前停在目标，其余跟随服务器进度。
-                Text(
-                    formatTime((input.dragged ?: pendingSeek?.toFloat() ?: ui.positionMs.toFloat()).toLong()),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(formatTime(track?.durationMs ?: 0), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            // 滑块被禁用时说明原因，避免跟听者/断线时误以为界面失灵。
-            if (track != null) {
-                Text(
-                    if (ui.status != ConnectionStatus.Ready) "连接就绪后即可播放" else if (client.isHost) "播放与暂停同步给所有人" else "暂停只影响自己 · 进度由房主控制",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                FilledIconButton(
-                    onClick = { client.setPlaying(!playing) },
-                    enabled = ui.status == ConnectionStatus.Ready && track != null,
-                    modifier = Modifier.size(64.dp),
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    )
-                ) {
-                    Icon(
-                        if (playing) Icons.Outlined.Pause else Icons.Outlined.PlayArrow,
-                        contentDescription = if (playing) "暂停" else "播放",
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-            }
-        }
-    }
-}
-
-/** 默认显示人数摘要，展开后查看成员；折叠状态只属于当前房间页面。 */
+/** 成员区默认压缩为一行：头像堆叠 + 人数摘要，整行点击展开完整列表；折叠状态只属于当前房间页面。 */
 @Composable
 private fun MembersSection(ui: UiState) {
     var expanded by rememberSaveable(ui.credentials?.code) { mutableStateOf(false) }
     val members = ui.room?.members.orEmpty()
     Column {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.fillMaxWidth().clip(RowShape)
+                .selectable(selected = false, role = Role.Button) { expanded = !expanded }
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AvatarStack(members)
+            Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(members.count { it.online }.toString() + " 人一起听", style = MaterialTheme.typography.titleSmall)
                 Text(if (ui.status == ConnectionStatus.Ready) "已连接" else statusLabel(ui.status),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            TextButton(onClick = { expanded = !expanded }) { Text(if (expanded) "收起成员" else "查看成员") }
+            Icon(
+                if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                contentDescription = if (expanded) "收起成员" else "查看成员",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
         if (expanded) members.forEach { member ->
             Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -670,70 +532,90 @@ private fun MembersSection(ui: UiState) {
     }
 }
 
-/** 歌单：顶部搜索框只过滤本地显示（不影响播放/服务器状态）；当前曲目高亮在过滤结果中依然生效。 */
-@OptIn(ExperimentalMaterial3Api::class)
-private fun LazyListScope.PlaylistSection(client: RoomClient, ui: UiState, currentTrackId: String?, search: PlaylistSearch, onLockedTap: () -> Unit) {
-    item {
-        Text("歌单", style = MaterialTheme.typography.titleMedium)
+/** 重叠头像堆：最多显示 5 个（后来者先绘制、前者压在上层，首个头像的状态点不被遮挡），超出部分以 +N 圆片收尾。 */
+@Composable
+private fun AvatarStack(members: List<Member>, maxVisible: Int = 5) {
+    if (members.isEmpty()) return
+    val shown = members.take(maxVisible)
+    val extra = members.size - shown.size
+    val step = 28.dp
+    Box(
+        Modifier
+            .width(step * (shown.size - 1) + 40.dp + if (extra > 0) step + 8.dp else 0.dp)
+            .height(40.dp)
+    ) {
+        if (extra > 0) {
+            Box(
+                Modifier.offset(x = step * shown.size + 8.dp).size(40.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    Modifier.size(36.dp).background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("+$extra", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+        shown.reversed().forEachIndexed { index, member ->
+            val position = shown.size - 1 - index
+            MemberAvatar(member.id, member.name, member.online, Modifier.offset(x = step * position))
+        }
+    }
+}
+
+/** 歌单：服务端曲库顺序即播放顺序（切歌按环形顺序见 TrackQueue）；当前曲目高亮、计数基于完整列表。 */
+private fun LazyListScope.PlaylistSection(client: RoomClient, ui: UiState, currentTrackId: String?, playingNow: Boolean, onLockedTap: () -> Unit) {
+    item(key = "playlist-heading", contentType = "heading") {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("歌单", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            Text("${ui.tracks.size} 首", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
     if (ui.tracks.isEmpty()) {
         item { Text("还没有歌曲，联系房主添加后再来听。", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         return
     }
-    item {
-        OutlinedTextField(
-            value = search.query,
-            onValueChange = { search.query = it },
-            placeholder = { Text("搜索歌曲") },
-            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
-            trailingIcon = {
-                // 非空时才给清除按钮；contentDescription 供读屏，图标本身不重复播报。
-                if (search.query.isNotEmpty()) {
-                    IconButton(onClick = { search.query = "" }) {
-                        Icon(Icons.Outlined.Close, contentDescription = "清除搜索")
-                    }
-                }
-            },
-            singleLine = true,
-            shape = FieldShape,
-            modifier = Modifier.fillMaxWidth()
-        )
+    items(ui.tracks, key = { "track:${it.id}" }, contentType = { "track" }) { song ->
+        PlaylistRow(song, song.id == currentTrackId, playingNow && song.id == currentTrackId, ui.status == ConnectionStatus.Ready) {
+            if (client.isHost) client.command("select", trackId = song.id) else onLockedTap()
+        }
     }
-    val hits = PlaylistFilter.filter(ui.tracks.map { it.title }, search.query)
-    if (hits.isEmpty()) {
-        item { Text("没有匹配的歌曲", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-    }
-    items(hits, key = { ui.tracks[it].id }) { index ->
-        val song = ui.tracks[index]
-        val current = song.id == currentTrackId
-        Surface(
-            shape = RowShape,
-            color = if (current) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
-            modifier = Modifier.fillMaxWidth()
-                .semantics { if (current) stateDescription = "当前曲目" }
-                .clickable(enabled = ui.status == ConnectionStatus.Ready) {
-                    if (client.isHost) client.command("select", trackId = song.id) else onLockedTap()
-                }
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 12.dp, vertical = 10.dp)) {
+}
+
+/** 每行只接收展示所需数据，播放进度变化不会使整张歌单重组。 */
+@Composable
+private fun PlaylistRow(song: Track, current: Boolean, playing: Boolean, enabled: Boolean, onClick: () -> Unit) {
+    val durationLabel = remember(song.durationMs) { formatTime(song.durationMs) }
+    Surface(
+        shape = RowShape,
+        color = if (current) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+        modifier = Modifier.fillMaxWidth()
+            .semantics { if (current) stateDescription = "当前曲目" }
+            .clickable(enabled = enabled, onClick = onClick)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 12.dp, vertical = 10.dp)) {
+            if (current && playing) {
+                PlayingIndicator(color = MaterialTheme.colorScheme.onPrimaryContainer)
+            } else {
                 Icon(
                     Icons.Outlined.MusicNote,
                     contentDescription = null,
                     tint = if (current) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )
-                Spacer(Modifier.size(12.dp))
-                Text(
-                    song.title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = if (current) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-                Spacer(Modifier.width(12.dp))
-                Text((if (current) "当前 · " else "") + formatTime(song.durationMs), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+            Spacer(Modifier.size(12.dp))
+            Text(
+                song.title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (current) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(Modifier.width(12.dp))
+            Text((if (current) "当前 · " else "") + durationLabel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

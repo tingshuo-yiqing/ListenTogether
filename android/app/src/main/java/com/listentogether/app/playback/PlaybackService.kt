@@ -20,6 +20,7 @@ import com.listentogether.app.ListenApplication
 import com.listentogether.app.MainActivity
 import com.listentogether.app.sync.SyncMath
 import com.listentogether.app.sync.PlaybackPolicy
+import com.listentogether.app.sync.TrackQueue
 import kotlin.math.abs
 import kotlinx.coroutines.*
 
@@ -79,7 +80,18 @@ class PlaybackService : MediaSessionService() {
                 if (playbackState == Player.STATE_BUFFERING || playbackState == Player.STATE_READY) applyState()
             }
         })
+        // 单媒体项的 ExoPlayer 不带 COMMAND_SEEK_TO_NEXT（默认下一首被隐藏），
+        // 且默认"上一首"=回到当前曲开头；切歌由房间歌单指令驱动，这里显式声明两个命令可用，
+        // 让通知栏/耳机/车机的上一首、下一首都走房间 select 指令。
         val controlled = object : ForwardingSimpleBasePlayer(player) {
+            override fun getState(): State {
+                val base = super.getState()
+                val commands = Player.Commands.Builder().addAll(base.availableCommands)
+                    .add(Player.COMMAND_SEEK_TO_NEXT)
+                    .add(Player.COMMAND_SEEK_TO_PREVIOUS)
+                    .build()
+                return base.buildUpon().setAvailableCommands(commands).build()
+            }
             override fun handleSetPlayWhenReady(playWhenReady: Boolean): ListenableFuture<*> {
                 client.setPlaying(playWhenReady)
                 return Futures.immediateVoidFuture()
@@ -89,7 +101,11 @@ class PlaybackService : MediaSessionService() {
                 return Futures.immediateVoidFuture()
             }
             override fun handleSeek(mediaItemIndex: Int, positionMs: Long, seekCommand: Int): ListenableFuture<*> {
-                if (client.isHost) client.command("seek", positionMs = positionMs.coerceAtLeast(0))
+                when (seekCommand) {
+                    Player.COMMAND_SEEK_TO_NEXT, Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM -> skipTrack(1)
+                    Player.COMMAND_SEEK_TO_PREVIOUS, Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM -> skipTrack(-1)
+                    else -> if (client.isHost) client.command("seek", positionMs = positionMs.coerceAtLeast(0))
+                }
                 return Futures.immediateVoidFuture()
             }
         }
@@ -194,6 +210,14 @@ class PlaybackService : MediaSessionService() {
             diag.playback(credentials.code, track.id, room.version, actualBefore, expected, expected - actualBefore,
                 buffering, ui.locallyPaused, "buffering", client.serverNow)
         }
+    }
+
+    /** 通知栏/耳机/车机切歌：按歌单环形顺序发 select 指令（服务端仍是播放唯一来源）；非房主忽略。 */
+    private fun skipTrack(direction: Int) {
+        if (!client.isHost) return
+        val ui = client.state.value
+        val target = TrackQueue.skip(ui.tracks, ui.room?.trackId, direction) ?: return
+        client.command("select", trackId = target)
     }
 
     /** 沿异常链找 HTTP 数据源状态码；无 HTTP 状态的错误（断网、解码失败）返回 null。 */

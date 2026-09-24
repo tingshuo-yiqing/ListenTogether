@@ -7,10 +7,12 @@ package com.listentogether.app
  * ```
  * 来一起听歌
  * 房间码 A1B2C3D4
- * 服务器 http://8.166.126.136:3000
+ * 服务器 http://8.166.126.136
  * 复制整段，打开 App 即可加入
  * ```
  * 服务器行为可省略（调用方拿不到地址时降级），decode 返回 server=null 表示沿用已记住地址。
+ * 项目约定默认端口 3000：encode 会剥掉 URL 末尾的 :3000 让口令更短更干净，
+ * 加入时由 RoomClient.join 按约定补回（非默认端口原样保留，往返一致）。
  * 安全边界：口令只含房间码与服务器地址（公开信息），绝不包含成员令牌。
  */
 object InviteCode {
@@ -24,14 +26,21 @@ object InviteCode {
     private val codeAnchor = Regex("(?:房间码|邀请码)[^0-9A-Za-z]*([0-9A-Fa-f]{8})")
     private val serverAnchor = Regex("(https?://[0-9A-Za-z.:@\\-]+)")
 
+    // 项目约定端口：口令里省略，入房时补回。
+    private val conventionPort = Regex("^(https?://[^/?#]+):3000$")
+
     private const val HEADLINE = "来一起听歌"
     private const val HINT = "复制整段，打开 App 即可加入"
 
-    /** 生成口令文本；server 为空/空白时省略服务器行（降级为仅房间码 + 提示，共三行）。 */
+    /**
+     * 生成口令文本；server 为空/空白时省略服务器行（降级为仅房间码 + 提示，共三行）。
+     * 末尾的约定端口 :3000 剥掉不展示；其他端口（含 https 的 443 显式写法）原样保留。
+     */
     fun encode(code: String, server: String?): String = listOfNotNull(
         HEADLINE,
         "房间码 ${code.uppercase()}",
-        server?.trim()?.takeIf { it.isNotBlank() }?.let { "服务器 $it" },
+        server?.trim()?.takeIf { it.isNotBlank() }
+            ?.let { "服务器 ${conventionPort.find(it)?.groupValues?.get(1) ?: it}" },
         HINT
     ).joinToString("\n")
 

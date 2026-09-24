@@ -8,14 +8,20 @@ import org.junit.Test
 class InviteCodeTest {
 
     @Test
-    fun encodeProducesFourLinePlainText() {
+    fun encodeOmitsConventionPortFromServerLine() {
         assertEquals(
             "来一起听歌\n" +
                 "房间码 A1B2C3D4\n" +
-                "服务器 http://8.166.126.136:3000\n" +
+                "服务器 http://8.166.126.136\n" +
                 "复制整段，打开 App 即可加入",
             InviteCode.encode("a1b2c3d4", "http://8.166.126.136:3000")
         )
+    }
+
+    @Test
+    fun encodeKeepsNonDefaultPort() {
+        val text = InviteCode.encode("A1B2C3D4", "http://music.example.com:8080")
+        assertEquals("http://music.example.com:8080", InviteCode.decode(text)!!.server)
     }
 
     @Test
@@ -25,10 +31,10 @@ class InviteCodeTest {
     }
 
     @Test
-    fun roundTripPreservesCodeAndServer() {
+    fun roundTripStripsConventionPort() {
         val invite = InviteCode.decode(InviteCode.encode("A1B2C3D4", "http://8.166.126.136:3000"))!!
         assertEquals("A1B2C3D4", invite.code)
-        assertEquals("http://8.166.126.136:3000", invite.server)
+        assertEquals("http://8.166.126.136", invite.server)
     }
 
     @Test

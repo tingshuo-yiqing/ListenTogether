@@ -4,6 +4,7 @@
 PlaybackService.kt 持有 ExoPlayer、MediaSession、HTTP音频数据源；播放可独立于页面继续。
 ForwardingSimpleBasePlayer 将通知/耳机媒体控制转为 RoomClient 意图，applyState 直接操作底层 Player，避免同步回发成控制指令。
 PlaybackPolicy 判断共享播放与本地暂停；音频属性使用媒体用途并由 ExoPlayer 管理焦点。
+通知/蓝牙的上一首、下一首经 `sync/TrackQueue.skip`（环形回绕纯函数）转为房主 select 意图；服务端仍是播放唯一来源，客户端只在用户点按时发切歌命令。
 
 ## 数据流
 收到有效房间快照 → 匹配 Track → 设置鉴权请求头 → 计算目标位置 → 必要时换 MediaItem/prepare/seek → 更新 playWhenReady。
@@ -30,6 +31,12 @@ PlaybackPolicy 判断共享播放与本地暂停；音频属性使用媒体用�
 onPlayerError 沿异常链取 HTTP 状态码交给 [PlaybackFailure] 分类：401 提示退出后重新加入，404 提示音乐文件缺失，其余保留 ExoPlayer 错误码并提示点击播放重试。失败一律进入本机暂停，只有明确点击播放才重试。
 真机侧：通知栏媒体按钮实际点击、蓝牙耳机断开触发本机暂停、404 音频错误（改名长测试音后拖到未缓冲区）与恢复均已验证，见 [M3 记录](../test-results/2026-09-22-m3-bluetooth-audio-error/README.md)。因短测试音会被一次性缓冲，音频错误注入需用 demo-long（40 分钟）等长测试音。
 
+## 通知栏切歌命令（2026-09-24 修复 后台上一首/下一首失效）
+- 症状：媒体通知没有「下一首」按钮，「上一首」表现为回到当前曲目开头。
+- 根因：`ForwardingSimpleBasePlayer.getState()` 透传底层单条目 ExoPlayer 的可用命令——没有 COMMAND_SEEK_TO_NEXT，COMMAND_SEEK_TO_PREVIOUS 由 ExoPlayer 实现为回到条目开头（rewind），转发器把它当普通 seek 处理。
+- 修复：`controlled` 覆写 `getState()` 用 `State.buildUpon()` 追加 COMMAND_SEEK_TO_NEXT/PREVIOUS；`handleSeek(mediaItemIndex, positionMs, seekCommand)` 对 NEXT/PREVIOUS 调 `TrackQueue.skip(tracks, currentId, ±1)`（环形回绕，未知当前曲目时下一首取第一首、上一首取最后一首），仅房主实际发 `command("select")`；其余 seek 仍走房主 command seek。成员身份由服务端拒绝，客户端不另设限。
+- 依赖陷阱：`kotlin.math.floorMod` 不存在（编译期即失败），负数安全回绕用 `java.lang.Math.floorMod`；Kotlin `%` 对负数保留负号。TrackQueueTest 5 项覆盖回绕/空歌单/未知当前曲目/单首自环。
+
 ## 下一阶段
 将单个可变回调收敛为生命周期内的状态订阅。
 增加真实准备/播放诊断状态，UI不要把“房间要求播放”误当成“设备已经出声”。
@@ -44,7 +51,7 @@ Activity 退出只释放 Controller；后台播放依靠媒体前台服务。
 
 ## 验收
 已验证单机出声、暂停/跳转/切歌、返回桌面和短暂息屏；完整记录见 [真机记录](../archive/playback-test-2026-09-21.md)。
-通知栏媒体按钮实际点击已验证（2026-09-22，见 [M3 记录](../test-results/2026-09-22-m3-notification-device/README.md)）。
+通知栏媒体按钮实际点击已验证（2026-09-22，见 [M3 记录](../test-results/2026-09-22-m3-notification-device/README.md)）；上一首/下一首真实切歌修复后验收见 [试用反馈轮记录](../test-results/2026-09-24-feedback-round/README.md)。
 蓝牙耳机断开相当于拔出路径，已验证本机暂停且重连后不自动恢复；音频 404 错误与手动重试恢复已验证（2026-09-22，见 [M3 记录](../test-results/2026-09-22-m3-bluetooth-audio-error/README.md)）。
 音频焦点抢占已验证（2026-09-22，见 [M3 焦点记录](../test-results/2026-09-22-m3-focus/README.md)）：其他应用持久抢占与真实来电均在本机暂停、服务端版本不变、不自动恢复，明确播放后按服务器进度续播；瞬态来电同样收敛为手动恢复（本地暂停态覆盖 ExoPlayer 瞬态自动恢复，无抖动）。注意：部分厂商应用（如 OPPO 视频）不经焦点而直接暂停媒体会话，此时按“显式暂停”处理并同步服务端，两条路径已区分记录。
 仍需真机验证：30 分钟长时息屏、401 令牌失效、退出后立即重新入房。
@@ -57,3 +64,4 @@ Activity 退出只释放 Controller；后台播放依靠媒体前台服务。
 2026-09-22：新增 PlaybackFailure 失败提示分类；补通知栏按钮真实点击、蓝牙断开本机暂停、404 错误与恢复真机证据。
 2026-09-22：音频焦点抢占（其他媒体、真实来电）真机验证通过；补 localPause 边沿诊断并复验。
 2026-09-24：修复 A-01 会话代次守卫——applyState/onPlayerError/500ms循环/焦点回调四处加代次检查，旧实例不再影响新会话。
+2026-09-24：修复后台通知栏上一首/下一首——getState() 补 NEXT/PREVIOUS 命令、handleSeek 路由到 TrackQueue.skip（房主 select）；真机验收见 test-results/2026-09-24-feedback-round。

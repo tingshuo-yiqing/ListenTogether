@@ -1,10 +1,10 @@
 # 一起听歌 · 当前交付与验收记录
 
 项目：D:\ListenTogether
-更新日期：2026-09-24
+更新日期：2026-09-25
 定位：**进度唯一事实来源**。当前状态看「状态一览」，待办看「尚待验收」；每轮交付以追加「本轮新增」小节的方式登记，测试细节由 docs/test-results/<日期-场景>/ 承载，更早的历史轮次已压缩为「交付历史索引」。
 
-## 当前状态一览（2026-09-24）
+## 当前状态一览（2026-09-25）
 
 | 阶段 | 状态 | 说明 |
 |---|---|---|
@@ -24,11 +24,51 @@ M4 四项部署门槛（2026-09-23 晚全部关闭）：
 
 关键锚点：
 
-- 当前 APK 锚 **2CBA59132F8103C9AB450CA627A61A1A2AC95F6708E7C55422E73111AB427E73**（70 项单测；批次 2 成员可视化 + 歌单搜索；**批次 1+2 真机验收已通过**（2026-09-24 下午，见 [test-results/2026-09-24-ui-batch-acceptance](test-results/2026-09-24-ui-batch-acceptance/README.md)）；上一锚 BF393FB4… 随本轮重构建被覆盖）。
+- 当前 APK 锚 **011DD835CF111A9DB8B352E206B00A341962EC5D5722D3D8830AC54BFEF1910E**（试用反馈轮：通知栏/展开页上一首下一首 + 顶栏去复制图标与房主标注 + 口令省略 :3000 + 移除歌单搜索；74 项单测、Lint 0；真机验收见 [feedback-round](test-results/2026-09-24-feedback-round/README.md)）。**注意：2026-09-25 反馈二小轮（顶栏去房间码 + 删保存长图）按用户指示未重建 APK/未跑门禁，工作区代码新于该锚。**
 - 云端：release **20260924-0937** 在产（prev=20260922-2159，20260923-2157 保留）；入口 `http://8.166.126.136:3000`。TLS 路线 A 已决策：**维持 IP 明文**（试用 ECS 无法备案、备案拦截按域名跨任意端口生效、Let's Encrypt 不签裸 IP），正式化留待转包年包月备案或迁香港。
-- 云端曲库 6 首 = 5 首真实 MP3（192k）+ demo-load 负载测试音（有意保留）。
+- 云端曲库 23 首真实音乐（96.5 分钟，192k；2026-09-24 按试用反馈移除 demo-load 负载测试音，备份在 media-originals/20260924-221628/，云端负载重测需先恢复——见 [陷阱 8.10](development-pitfalls.md)）。
 - 后端防线 E-05（WS 握手限连）/E-09（同 IP 建房配额 ≤3）/Q-3（事件日志 + health 计数）**已于 2026-09-24 上午上云并通过 14 项验证与新防线专项验证**；升级失败注入仍未做。
 - 剩余待办与恢复条件：M2 双机（缺设备）/ M3-LONG（≥70 分钟窗口）/ TLS 正式化（用户决策）/ 补测项（蜂窝公网、弱网注入、真实令牌作废、升级失败注入），详见 [路线图与验收标准](next-development-plan.md)。
+
+## 本轮新增（反馈二小轮：顶栏去房间码 + 删除保存长图，2026-09-25）
+
+> 用户指示："去掉房间号显示，去掉保存长图功能。其它部分放弃验证，实现功能就行不需要测试。" 本轮按指示未跑单测/Lint/真机验收，仅做 `:app:compileDebugKotlin` 编译确认通过；APK 未重建，锚点仍为 011DD835…（不含本轮改动）。
+
+- **顶栏去房间码**：`MainActivity.kt` TopBar 房间页不再显示房间码胶囊，与入房页统一显示「一起听歌」；操作区仍为分享与退出。房间码只出现在邀请口令文本与加入前的邀请确认卡（`InviteCode` 与分享逻辑不变）。
+- **删除保存长图**：`ui/PlaylistImage.kt` 整文件删除（exporter/按钮/PNG 绘制编码），MainActivity 移除 import、`rememberPlaylistImageExporter` 与 `imageExporter` 参数透传和歌单标题行按钮；无关联单测，无残留引用。此前记录的 ColorOS 系统长截屏兜底随功能一并移除。
+- **试用反馈轮真机验收终止**：上轮（011DD835）真机 8 项场景在设备可用时段已实测通过 5 项（通知栏下一首/上一首/末首回绕切歌、Sheet 切歌钮、顶栏/无搜索+云端 23 首、分享口令无 :3000），其余项（粘贴口令重入同房、成员 Snackbar、保存长图）按用户决定不再补验，其中「保存长图」场景随功能删除而作废。结果修订见 [feedback-round](test-results/2026-09-24-feedback-round/README.md)。
+
+## 本轮新增（试用反馈轮：通知栏切歌修复 + 顶栏收拢 + 口令隐端口 + 去搜索，2026-09-24 夜）
+
+> 用户试用反馈 4 项：建议可采纳（上一首/下一首图标、去搜索、去云端测试音），Bug 必修（后台通知栏无下一首、上一首变回开头）。代码与云端已完成，真机验收待 USB 重连（设备验收时离线）。完整证据见 [feedback-round](test-results/2026-09-24-feedback-round/README.md)。
+
+- **①顶栏收拢（MainActivity.kt TopBar）**：删除胶囊内复制图标与「房主」标注，房间码胶囊只读化（不再可点按）；操作区保留分享与退出。口令 encode 单一来源不变。
+- **②上一首/下一首（修复 Bug④ + 建议②）**：`PlayerSheet` 标题行新增 48dp 上一首/下一首圆钮（房主可用，成员点按弹「只有房主可以切歌」，与歌单行为一致）；通知栏/蓝牙切歌由 `ForwardingSimpleBasePlayer` 覆写 `getState()` 追加 COMMAND_SEEK_TO_NEXT/PREVIOUS、`handleSeek` 按命令路由到 `sync/TrackQueue.skip(±1)`（环形回绕纯函数，未知当前曲目下一首取首/上一首取末，空歌单返回 null）→ 房主 `command("select")`。根因：转发器透传单条目 ExoPlayer 可用命令——无 NEXT、PREVIOUS 被 ExoPlayer 实现为 rewind，根本到不了 handleSeek（[陷阱 9.4](development-pitfalls.md)）。
+- **③去搜索（MainActivity.kt + 删 PlaylistFilter.kt/PlaylistFilterTest）**：搜索框、`PlaylistFilter` 纯函数、9 项单测与长图导出的筛选词依赖整体移除，歌单恢复完整列表；「保存长图」导出全量歌单。
+- **④口令隐端口（InviteCode.kt + RoomClient.kt）**：encode 剥掉约定端口 `:3000`（正则 `^(https?://[^/?#]+):3000$`），分享口令不再暴露端口号；`RoomClient.join` 在地址唯一入口对无端口 URL（okhttp 回填成 80/443）补回 3000，**显式非默认端口（如 :8080）两向原样保留**——口令省略与入房补回互为 round-trip。新增 InviteCodeTest 2 项（隐端口/保非默认端口）+ RoomClientSessionTest 1 项（explicitNonDefaultPortPreserved），既有 3 处断言改以 `:3000` 基址为准（兼作回归）。
+- **⑤云端曲库去 demo-load（用户试用服务器）**：media-originals/20260924-221628/ 备份（mp3 + catalog.json.bak）→ catalog.json 24→23 → 音频移出 media/ → restart → catalog API 23 首实证 → `m4-deploy-verify.sh` **14/14**（[陷阱 8.10](development-pitfalls.md)：曲库启动时加载、改后必须重启）。
+- **构建验收**：`gradlew :app:cleanTestDebugUnitTest :app:testDebugUnitTest :app:assembleDebug :app:lintDebug` → BUILD SUCCESSFUL；单测实跑 **74 项**（`tests=74 failures=0 errors=0`，xml 合计），Lint 0。APK SHA256 **011DD835CF111A9DB8B352E206B00A341962EC5D5722D3D8830AC54BFEF1910E**。
+- **真机验收（待 USB 重连）**：通知栏上一首/下一首实际切歌、Sheet 切歌钮与成员 Snackbar、口令隐端口粘贴入房、无搜索框、云端 23 首——安装时设备离线（adb 无设备、无 mDNS 服务），装包脚本未执行成功；设备重连后按 [feedback-round](test-results/2026-09-24-feedback-round/README.md) 场景补验。
+
+## 本轮新增（UI 重构：入口收拢 + 常驻播放器，2026-09-24 晚）
+
+> Android 布局与组件重构轮，未改 server/、网络层与行为约定；seek 确认模型原样迁移。完整真机证据见 [ui-refresh](test-results/2026-09-24-ui-refresh/README.md)。
+
+- **入口页（A）**：删除 primaryContainer 欢迎大卡，收拢为「文字标题区 + 单卡片表单」——分段切换/昵称/粘贴邀请/邀请码/高级设置/错误横幅/主按钮同处一张 surfaceContainer 卡；连接进度条移到卡下。
+- **播放器（B1）**：`NowPlayingCard` 列表卡拆为 `ui/RoomPlayer.kt`——Scaffold bottomBar `MiniPlayer`（3dp 细进度 + 歌名/状态 + 44dp 播放键，点击展开）与 `ModalBottomSheet` 的 `PlayerSheet`（完整滑条/时间/同步说明）；`RoomPlayerState`（positionMs/dragged/pendingSeek）挂房间会话作用域，Sheet 关闭不中断快照确认与 5 秒兜底；`dragged` 从 JoinInput 迁出。
+- **成员区（B2）**：默认压缩为一行 `AvatarStack`（≤5 个重叠头像 + +N 圆片，首个头像状态点不被遮挡）+「N 人一起听 · 状态」+ 箭头，整行点击展开原成员列表。
+- **顶栏（B3）**：房间码 + 复制图标合并为 secondaryContainer 胶囊，点按即复制邀请口令（Snackbar 反馈），删除独立复制按钮；口令 encode 单一来源不变。
+- **歌单（B4）**：当前曲目播放中行首替换为 `PlayingIndicator`（3 根错相跳动竖条）。
+- **回归**：无新增纯函数逻辑（seek 确认/编解码/过滤均原样迁移），73 项单测 cleanTest 实跑全过、Lint `No issues found`；APK SHA256 **6C231394C9BD14D50CFE61D08F1513403AB32184C7E1C4CBDB836BFC192A76AC**。真机 10 项场景（两标签/校验/建房/胶囊复制/播放动效/展开页/两次 seek 确认/成员展开/退出回流）全部通过；多人堆叠、Sheet 关闭后 seek 未确认兜底、暗色对比度抽查如实标注未覆盖。
+
+## 本轮新增（UI 试用反馈：布局、滚动与歌单长图，2026-09-24）
+
+> Android 实现 + PHQ110 真机轮；公网歌单、滚动帧率和 PNG 导出已有实测，长截屏 OEM 入口、旧版对照与播放中听感仍待验。完整记录见 [ui-scroll](test-results/2026-09-24-ui-scroll/README.md)。
+
+- **UI**：首页主题欢迎卡 + 创建/加入分段切换；顶栏左对齐；播放按钮移至曲名右侧、播放卡去阴影并缩小内边距；歌单间距 8dp，显示命中数量；edge-to-edge 与 560dp 限宽修正。
+- **滚动开销**：隔离每 500ms 的本机进度刷新，播放器单独订阅；列表过滤按曲库/查询缓存；独立歌单行、时长文本缓存、稳定 key/contentType；保留全部 room 快照与 seek 确认信息。此为已实现的代码优化，未宣称真机卡顿已消除。
+- **长图**：新增「保存长图」导出完整命中歌单为 PNG（包含屏幕外歌曲）；系统保存器选位置，后台线程绘制/编码，无存储权限；当前标记/长标题/取消和失败路径已实现。系统 Compose ScrollCapture 本就存在；ColorOS 原生长截屏入口尚未确认修复。
+- **回归**：新增 ScreenStateTest 3 项（进度去重、业务状态透传、seek 快照完整性）。最终 `cleanTestDebugUnitTest + testDebugUnitTest + assembleDebug + lintDebug` 成功；**73 项实跑，0 失败/错误/跳过，Lint 0 错误 0 警告**；文档链接检查通过。APK SHA256：**B4833B95AAA278E8AFA946AB2D78786572A95A35A3622C8E704102B8FFB59431**。
 
 ## 本轮新增（UI 批次真机验收：批次 1 + 批次 2，2026-09-24 下午）
 
@@ -138,6 +178,8 @@ M4 四项部署门槛（2026-09-23 晚全部关闭）：
 
 | 日期 | 交付 | 结果 / 关键数据 | 详细记录 |
 |---|---|---|---|
+| 09-24 夜 | 试用反馈轮 | 通知栏/展开页上一首下一首（TrackQueue 环形回绕）+ 顶栏只读胶囊 + 口令隐 :3000 round-trip + 去搜索；云端 23 首（demo-load 移除、14/14）；74 项单测、Lint 0；APK 011DD835 | [feedback-round](test-results/2026-09-24-feedback-round/README.md)、本轮（见上节） |
+| 09-24 晚 | UI 重构轮（入口收拢+常驻播放器） | 单卡片表单/MiniPlayer+PlayerSheet/头像堆叠/码胶囊复制/当前曲动效；73 项单测实跑、Lint 0；APK 6C231394；真机 10 项场景通过 | [ui-refresh](test-results/2026-09-24-ui-refresh/README.md)、本轮（见上节） |
 | 09-24 | 工具与文档轮 | Q-2 门禁强制实跑（cleanTest，可重复）+ E-06 明文边界入 README + A-02 协议 schema 契约；后端测试 20/20；纯工具/文档轮、**无新 hash** | 本轮（见上节） |
 | 09-24 | 后端防线本地交付 | E-05 握手限连 + E-09 同 IP 建房配额 + Q-3 事件日志/health 计数；测试 7→18 全过；**未部署上云** | 本轮（见上节） |
 | 09-24 | 文档结构优化 | 本轮（见上节） | — |
@@ -173,6 +215,9 @@ M4 四项部署门槛（2026-09-23 晚全部关闭）：
 
 | SHA256 | 日期 | 内容 | 单测 | 真机状态 |
 |---|---|---|---|---|
+| 011DD835CF111A9DB8B352E206B00A341962EC5D5722D3D8830AC54BFEF1910E | 09-24 | 试用反馈轮：通知栏/展开页上一首下一首 + 顶栏只读胶囊（去复制图标/房主）+ 口令隐 :3000 + 移除歌单搜索 | 74 | 待验（安装时设备离线，见 [feedback-round](test-results/2026-09-24-feedback-round/README.md)） |
+| 6C231394C9BD14D50CFE61D08F1513403AB32184C7E1C4CBDB836BFC192A76AC | 09-24 | UI 重构轮：入口单卡片表单 + mini 播放器常驻/ModalBottomSheet 展开 + 成员头像堆叠 + 房间码胶囊复制 + 当前曲动效条 | 73 | 真机验收通过（10 项场景，见 [ui-refresh](test-results/2026-09-24-ui-refresh/README.md)；多人堆叠/跨生命周期 seek 兜底/暗色抽查标注未覆盖） |
+| B4833B95AAA278E8AFA946AB2D78786572A95A35A3622C8E704102B8FFB59431 | 09-24 | 紧凑 UI + 进度隔离/歌单缓存 + PNG 长图导出 | 73 | 已被 6C231394 覆盖（同批能力真机通过） |
 | 2CBA59132F8103C9AB450CA627A61A1A2AC95F6708E7C55422E73111AB427E73 | 09-24 | 批次 2 成员可视化（主题色板头像+状态点）+ 歌单搜索（PlaylistFilter） | 70 | 真机验收通过（批次 1+2 全场景，2026-09-24 下午） |
 | BF393FB4801BF907E390A6694E3FE56D9BE54A326E7E0E9176F9141738D5A967 | 09-24 | 批次 1 邀请口令闭环（InviteCode + 粘贴邀请/确认卡/智能识别 + 顶栏口令化） | 61 | 已被上锚覆盖（场景经 2CBA5913 重验通过） |
 | E814F90E1982936947218EA8917745B889A1430287F490A8E0FF5CB55B425FA7 | 09-24 | A-01 代次守卫 + E-07 seek 确认 + Q-1 诊断测试 | 53 | A-01/E-07 经 M3-LONG 与 2CBA5913 两轮真机验证通过 |
@@ -214,6 +259,9 @@ M4 四项部署门槛（2026-09-23 晚全部关闭）：
 - [x] 批次 1 邀请口令真机闭环（2026-09-24 下午，BF393FB4→2CBA5913 重验）：复制口令→Snackbar、粘贴邀请→确认卡（房间码+地址）、确认卡加入重入同房、口令地址≠已记住地址提示、join 失败横幅「房间不存在或已过期」+ 横幅优先于确认卡且昵称保留——全过（见 [test-results/2026-09-24-ui-batch-acceptance](test-results/2026-09-24-ui-batch-acceptance/README.md)）；**智能识别、busy 禁用、系统分享面板弹出三项自动化未能模拟，标注人工验证**。
 - [x] 批次 2 成员可视化 + 歌单搜索真机目视（2026-09-24 下午，2CBA5913…）：展开成员头像首字符'B'、'房主 · 在线'文字并存；搜索'192'→仅 192kbps 行、无命中占位「没有匹配的歌曲」、清除恢复全列表；选歌切换当前歌曲、播放健康（diag 速率 995ms/s=1.0x）、E-07 拖回开头回归（20794→6125ms、seek=1）——全过（见 [test-results/2026-09-24-ui-batch-acceptance](test-results/2026-09-24-ui-batch-acceptance/README.md)）；暗色主题下批次 2 头像可读性未自动验（暗色冷启动无白闪此前已验），标注人工。
 
+- [x] 本轮紧凑 UI + 滚动 + 长图（2026-09-24）：公网 24 首曲库安装/页面/PNG 保存已通过；快滑 janky 23.79%、自然节奏 8.43%。**长图导出已于 2026-09-25 按用户指示整体删除**，播放中听感、ColorOS 原生长截屏等待验项随之作废。步骤见 [ui-scroll](test-results/2026-09-24-ui-scroll/README.md)。
+- [ ] 试用反馈轮真机验收（APK 011DD835…）：**用户决定终止补验（2026-09-25）**。已实测通过：通知栏下一首/上一首/末首回绕实际切歌（Bug④ 修复成立，公网 23 首曲库）、Sheet 切歌钮、顶栏无复制图标/房主标注、无搜索框 + 云端 23 首、分享口令文本无 :3000 且系统分享面板含「复制」目标。未补验即关闭：粘贴口令→确认卡→重入同房、成员点切歌 Snackbar；「保存长图」「顶栏房间码胶囊」两场景随 2026-09-25 反馈二小轮功能删除而作废。注意：**当前工作区代码已含 011DD835 之后的新改动（未重建 APK）**。结果修订见 [feedback-round](test-results/2026-09-24-feedback-round/README.md)。
+
 ## 环境与联调速查
 
 - 本地后端：`.\scripts\start-demo.ps1`（前台窗口）；健康检查 `http://127.0.0.1:3000/health`；后端重启清空内存房间。
@@ -246,5 +294,6 @@ M4 四项部署门槛（2026-09-23 晚全部关闭）：
 | [2026-09-23-m4-rollback-drill](test-results/2026-09-23-m4-rollback-drill/README.md) | W3 升级/回滚演练 |
 | [2026-09-23-load15-cloud](test-results/2026-09-23-load15-cloud/README.md) | W4 云端 15 路重测 |
 | [2026-09-24-ui-batch-acceptance](test-results/2026-09-24-ui-batch-acceptance/README.md) | UI 批次真机验收：批次 1 邀请口令 + 批次 2 成员可视化/歌单搜索 |
+| [2026-09-24-feedback-round](test-results/2026-09-24-feedback-round/README.md) | 试用反馈轮：通知栏切歌修复 + 顶栏收拢 + 口令隐端口 + 去搜索/去云端测试音 |
 
 历史过程记录：[2026-09-21 播放测试](archive/playback-test-2026-09-21.md)（操作过程、状态采样与问题处理，已归档）；W1/W2 交接单 [handover-2026-09-23](archive/handover-2026-09-23.md)（卡顿根因完整分析，已归档）。

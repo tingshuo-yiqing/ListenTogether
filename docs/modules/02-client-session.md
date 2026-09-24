@@ -19,6 +19,7 @@ generation 区分加入/退出，WS 回调同时检查连接引用，防止旧�
 - leave 顺序：作废旧代次 → 取消重连/校时任务 → 关闭 Socket → 用旧上下文尽力发 DELETE；本地不等待，新会话不受影响。join 捕获 CancellationException 时原样重抛，不显示为服务器错误。
 - 状态回调改为 attachStateObserver/detachStateObserver（带代次校验），播放服务销毁不能清掉新会话的观察者。
 - 诊断日志（debug JSONL）记录 join、socket-open、reconnecting、expired、leave、command 事件，不含令牌。
+- 约定端口归一（2026-09-24）：join 是地址唯一入口——未写端口的 URL（okhttp 回填成协议默认 80/443）按项目约定补 3000，显式非默认端口（如 :8080）原样保留；与 InviteCode.encode 剥掉 `:3000` 的口令省略互为 round-trip。RoomClientSessionTest 以断言 `:3000` 基址覆盖该行为。
 
 ## 可替换边界与假传输层回归（2026-09-21 实现）
 - 存储（ConnectionStore）、诊断（Diagnostics 接口）、单调时钟、HTTP（HttpTransport）、WebSocket（WebSocket.Factory）、协程调度器均为构造注入；生产统一由 RoomClient.create 装配 OkHttp/SharedPreferences/Main.immediate，JVM 单测注入假实现，不访问公网。
@@ -38,3 +39,4 @@ DELETE 失败不阻止本地退出，服务器通过离线清理收回成员。
 ## 核心注释与记录
 SessionContext 所有权、generation 比较、回调线程、request取消、leave清理顺序均写 KDoc。
 2026-09-21：不可变上下文、明确状态机与假传输层竞态回归均已实现；换服务器的本地代理集成测试与真机复测仍待执行。
+2026-09-24：join 地址唯一入口增加约定端口归一——无端口 URL 补 3000（口令分享可省略 :3000）、显式非默认端口保留；新增 explicitNonDefaultPortPreserved 回归。

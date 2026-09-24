@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.listentogether.app.ScreenStateTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-09-24T12:19:25" hostname="LAPTOP-8H39RU28" time="0.084">
+  <properties/>
+  <testcase name="seekConfirmationVersionAndPositionArePreserved" classname="com.listentogether.app.ScreenStateTest" time="0.06"/>
+  <testcase name="positionSamplesDoNotRefreshScreen" classname="com.listentogether.app.ScreenStateTest" time="0.012"/>
+  <testcase name="businessChangesStillReachScreen" classname="com.listentogether.app.ScreenStateTest" time="0.01"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

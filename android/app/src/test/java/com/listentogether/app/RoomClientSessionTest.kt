@@ -124,10 +124,11 @@ class RoomClientSessionTest {
         val index = joinRoom(client, "http://a.local", null)
 
         // 入房请求带昵称、不带令牌；曲库请求带上下文里的令牌；地址已持久化。
+        // 未写端口按项目约定补 3000（口令分享可省略 :3000）。
         assertEquals(ConnectionStatus.Connecting, client.state.value.status)
-        assertEquals("http://a.local", store.value)
+        assertEquals("http://a.local:3000", store.value)
         assertEquals("POST", httpRequests[0].method)
-        assertEquals("http://a.local/api/rooms", httpRequests[0].url)
+        assertEquals("http://a.local:3000/api/rooms", httpRequests[0].url)
         assertNull(httpRequests[0].token)
         assertEquals("token-NEWROOM1", httpRequests[1].token)
 
@@ -172,6 +173,16 @@ class RoomClientSessionTest {
     }
 
     @Test
+    fun explicitNonDefaultPortPreserved() = runTest(dispatcher) {
+        val client = newClient()
+        // 显式非默认端口（:8080）是用户有意指定的服务器，不得被约定端口 3000 覆盖。
+        joinRoom(client, "http://a.local:8080", null)
+        assertEquals("http://a.local:8080", store.value)
+        assertEquals("http://a.local:8080/api/rooms", httpRequests[0].url)
+        client.leave()
+    }
+
+    @Test
     fun staleOldSocketCallbacksCannotAffectNewSession() = runTest(dispatcher) {
         val client = newClient()
         val oldIndex = joinRoom(client, "http://a.local", "AAAAAAAA")
@@ -197,14 +208,14 @@ class RoomClientSessionTest {
         joinRoom(client, "http://a.local", "AAAAAAAA")
         client.leave()
 
-        // DELETE 使用退出时的旧上下文：旧地址、旧令牌；失败也不阻塞本地退出。
+        // DELETE 使用退出时的旧上下文：旧地址（含约定端口 3000）、旧令牌；失败也不阻塞本地退出。
         val delete = httpRequests.single { it.method == "DELETE" }
-        assertEquals("http://a.local/api/rooms/AAAAAAAA/membership", delete.url)
+        assertEquals("http://a.local:3000/api/rooms/AAAAAAAA/membership", delete.url)
         assertEquals("token-AAAAAAAA", delete.token)
 
         joinRoom(client, "http://b.local", "BBBBBBBB")
         val join = httpRequests.last { it.method == "POST" && it.url.endsWith("/join") }
-        assertEquals("http://b.local/api/rooms/BBBBBBBB/join", join.url)
+        assertEquals("http://b.local:3000/api/rooms/BBBBBBBB/join", join.url)
         // 清理请求登记在新入房之前：旧会话清理不阻塞、也不混淆新会话。
         assertTrue(httpRequests.indexOf(delete) < httpRequests.indexOf(join))
     }
@@ -245,9 +256,9 @@ class RoomClientSessionTest {
         assertEquals(ConnectionStatus.Connecting, client.state.value.status)
         assertEquals("BBBBBBBB", client.state.value.credentials?.code)
 
-        // 旧会话清理确实发出：旧地址、旧令牌；失败不阻塞新会话。
+        // 旧会话清理确实发出：旧地址（含约定端口 3000）、旧令牌；失败不阻塞新会话。
         val delete = httpRequests.last { it.method == "DELETE" }
-        assertEquals("http://a.local/api/rooms/AAAAAAAA/membership", delete.url)
+        assertEquals("http://a.local:3000/api/rooms/AAAAAAAA/membership", delete.url)
         assertEquals("token-AAAAAAAA", delete.token)
 
         sockets.open(newIndex)

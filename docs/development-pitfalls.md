@@ -148,6 +148,15 @@
 ### 4.3 LazyColumn 里持状态
 - 规避：跨 item 共享的可变输入放 `remember` 的状态类（如 JoinInput）并在 setContent 层创建，不要在各 item lambda 里各自 remember。
 
+### 4.4 进度采样驱动整页重组（2026-09-24）
+- 现象：用户反馈歌单下滑明显卡顿；代码检查发现 PlaybackService 每 500ms 把 positionMs 写进 UiState，Activity 根级直接 collect，LazyListScope 内还每次 map/filter 全歌单。尚无真机帧率证据，不能认定这是唯一根因。
+- 规避：屏幕结构流先去掉 positionMs 再 distinctUntilChanged；只有播放器订阅原始进度。搜索按曲库/查询缓存，列表类型分离并保留稳定 key。不丢 room.version/room.positionMs，否则会破坏 seek 确认。ScreenStateTest 覆盖过滤边界。
+
+### 4.5 长截屏开关与实际依赖版本不一致（2026-09-24）
+- 现象：用户反馈 ColorOS 不支持长截屏，但旧网页建议的 ComposeFeatureFlag_LongScreenshotsEnabled 在本项目依赖中已不存在。
+- 根因与规避：本地 BOM 2025.04.01 对应 Compose UI 1.8.0，核对 sources.jar 的 AndroidComposeView/ScrollCapture 可见 API 31+ 默认接入。先查真实依赖源码，不能盲加旧实验开关或把 OEM 未识别归因于框架缺失；设备离线时保持原生入口待验，新增应用内长图导出作为兜底。
+- 同轮构建问题：`rememberSaveable(stateSaver=...)` 的状态可空而 `listSaver` 原类型非空，编译报 MutableState 类型不匹配；Saver 的 Original 类型必须与状态一致（本轮为 PlaylistImage?），空值保存为空列表。
+
 ## 5. 协程与 JVM 单元测试
 
 ### 5.1 测试调度器与生产调度器语义不同
@@ -217,6 +226,16 @@
 - 根因：每次采样本身要跑一次 `dumpsys media_session`（无线 adb 下 0.5–1s），相邻两条记录的真实墙钟间隔是 6s 而不是 5s；用固定的 5 作分母必然偏大。
 - 规避：速率只能用**同源时间戳**算——①诊断 JSONL 的 `wallClockMs`/`playerPositionMs`（1s 粒度）；②采样循环里记录每条的 `time.time()` 差值。报告里不要直接引用"每 5 秒 6 秒位移"这类比值。
 
+### 9.4 media3 `ForwardingSimpleBasePlayer` 透传底层可用命令：通知栏上一首/下一首行为由 `getState()` 决定，不由 handleSeek 决定（2026-09-24 后台切歌 bug）
+- 现象：媒体通知没有「下一首」按钮；点「上一首」不是切上一首而是回到当前曲目开头（ExoPlayer 的 rewind 语义）。
+- 根因：`ForwardingSimpleBasePlayer` 默认把 `getState()`（含 `availableCommands`）透传给被转发的单条目 ExoPlayer——单条目播放器没有 COMMAND_SEEK_TO_NEXT，COMMAND_SEEK_TO_PREVIOUS 由 ExoPlayer 自己实现为回到条目开头，根本到不了转发器的 `handleSeek`。
+- 规避：转发器要接管切歌必须**覆写 `getState()` 用 `State.buildUpon()` 追加 COMMAND_SEEK_TO_NEXT/PREVIOUS**，再在 `handleSeek(mediaItemIndex, positionMs, seekCommand)` 里按 seekCommand 分支路由。判断"通知栏会显示什么按钮"先看 State 的 availableCommands，不要假设转发器拦截一切。media3 没有 `State.copy()`，`buildUpon()` 是公开复制路径。
+
+### 9.5 `kotlin.math.floorMod` 不存在：负数安全回绕用 `java.lang.Math.floorMod`（2026-09-24 编译期踩坑）
+- 现象：写 `import kotlin.math.floorMod` 直接编译失败 `Unresolved reference 'floorMod'`（IDE 自动补全也不会提示它）。
+- 根因：Kotlin 标准库只有 `Int.floorMod(other)` **扩展函数**（`a.floorMod(b)` 写法，kotlin.math 包下无同名顶层函数）；java.lang.Math.floorMod(a, b) 是静态方法可直接 `Math.floorMod(a, b)`。
+- 规避：环形回绕（上一首/索引 -1 回末尾）用 `Math.floorMod(index + direction, size)`；不要顺手写 `kotlin.math.floorMod`，也不要用 Kotlin `%`（对负数保留负号，`(-1) % 5 == -1` 会越界）。
+
 ## 8. 云端部署（2026-09-22 首次部署实测）
 
 ### 8.1 个人音频随 demo-media 整目录误上云
@@ -275,3 +294,8 @@
 - 现象：①给 `/health` 追加 `rooms/onlineMembers/wsConnections` 后，`scripts/m4-deploy-verify.sh` 的第 1 项（`[ "$h" = '{"ok":true}' ]`）会直接判 FAIL——服务其实完全正常，是断言自己过期了；②同日新增"同一来源最多 3 个活跃房间"的存量配额后，**连续重跑**该脚本（基线→升级→回滚三段演练的常规做法）第 4 次会在建房步拿到 429，现象与"新版本建房坏了"一模一样。
 - 根因：①断言把**协议的可扩展响应体**当成不可变字符串，任何字段追加都会误判；②配额按"内存里的活跃房间数"计，脚本收尾只让成员退出、房间要等 5 分钟空房回收才释放，而脚本本身不感知这个前置条件——典型的"被测对象演进后验收仪器未同步"（[陷阱 8.8](#88-验收脚本硬编码演示曲库曲库换成真实音频后必然失败2026-09-23-升级演练实测) 的同类）。
 - 规避：①探活/契约断言一律**按字段解析**（`node -e` 解析 JSON 后断言 `ok === true` 与各计数），不要字符串全等；②脚本在建房前先读 `/health` 的 `rooms` 做**前置检查**，达到 3 就带可执行提示提前失败（"等空房 5 分钟回收或重启服务后再跑"），而不是让 429 混进后面的功能抽查；③旧版本没有该字段时按 `SKIP` 处理、不计入 fail，保证"已知良好版本跑基线"仍然全绿，后续失败才能归因于被测版本；④脚本收尾要打印"房间仍占配额约 5 分钟"，提示操作者不要连续重跑。
+
+### 8.10 云端曲库是启动时加载的内存态：改 catalog.json 必须重启服务；media-manage.sh 没有删除子命令（2026-09-24 移除 demo-load 实测）
+- 现象：按试用反馈把 demo-load 从云端曲库移除后，不改进程直接调 `/api/rooms/:code/catalog`，返回的还是旧条目（含 demo-load）。
+- 根因：服务端在**启动时一次性读入** media/catalog.json 到内存，运行期没有重载入口；曲库属于 media 持久层（跨部署保留），升级/回滚部署不动它，更不会触发重载。
+- 规避：手动改曲库的正确顺序是——①先备份（整个 media 目录或至少 catalog.json + 被移音频，移出 media/ 而不是删除，避免部署脚本按 catalog 引用校验时文件缺失）；②改 catalog.json；③`systemctl restart listen-together`；④先调 catalog API 验证条目数，再跑 `m4-deploy-verify.sh`（脚本按 catalog.json 动态抽查）。media-manage.sh 只有 add/list，**没有 remove**——删除只能手动 node 改 JSON + 挪文件。曲库条数变化要让所有依赖"已知曲目集合"的验收（m4 脚本、LOAD-15 的 `--bitrate 192` 曲目）重新确认前提。

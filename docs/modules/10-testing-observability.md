@@ -15,7 +15,7 @@ smoke-test.mjs：对运行后端执行HTTP、两个WS及真实Range验证。
 check-doc-links.mjs：扫描项目 Markdown 的本地链接；跳过外部 URL、锚点和不参与文档验证的构建/依赖目录。
 fault-proxy.mjs / fault-proxy-selftest.mjs：故障注入代理与其自测（延迟、断线、恢复、音频 401 注入，共 10 项）。
 load15.mjs：15 路负载脚本（playback 码率模型 + throughput 容量模型），见 [LOAD-15 记录](../test-results/2026-09-22-load15/README.md)。
-demo 曲库：demo-soft/demo-high/demo-long（40 分钟）+ demo-load（11 分钟 192kbps，负载与码率模型专用）。
+demo 曲库：demo-soft/demo-high/demo-long（40 分钟）+ demo-load（11 分钟 192kbps，负载与码率模型专用）。注意：云端曲库 2026-09-24 起不含 demo-load（试用反馈要求去掉测试音，备份在 media-originals/，见 test-results/2026-09-24-feedback-round），云端负载重测需先恢复该曲目。
 PHQ110真机报告覆盖单机出声、暂停/跳转/切歌、后台、短时息屏和媒体会话暂停。完整证据见 [记录](../archive/playback-test-2026-09-21.md)。
 2026-09-22 补：通知栏播放/暂停按钮真实点击（点后服务端 command pause）与 Dozing 息屏播放，见 [M3 记录](../test-results/2026-09-22-m3-notification-device/README.md)。
 2026-09-22 补：蓝牙耳机断开→本机暂停、重连不自动恢复、明确播放后追赶；音频 404（改名长测试音并拖到未缓冲区）→ERROR_CODE_IO_BAD_HTTP_STATUS→暂停→恢复文件后手动重试续播，见 [M3 记录](../test-results/2026-09-22-m3-bluetooth-audio-error/README.md)。新增 demo-long（40 分钟）测试音用于长时播放与错误注入。
