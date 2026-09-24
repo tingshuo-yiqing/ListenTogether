@@ -1,0 +1,340 @@
+[15:16:33] connected serial=adb-fbddbe8-WFMDTR._adb-tls-connect._tcp
+[15:16:33] low_power=0
+[15:16:42] RESULT[install-apk] PASS Performing Streamed Install | Success
+[15:16:42] reverse: 3000
+[15:16:43] device-side health: {"ok":true,"rooms":1,"onlineMembers":0,"wsConnections":0}
+[15:16:44] pc-side health: {"ok":true,"rooms":1,"onlineMembers":0,"wsConnections":0}
+[15:16:44] RESULT[backend-health] PASS 
+[15:16:45] baseUrl written http://127.0.0.1:3000: OK
+[15:16:49] ERROR: no EditText
+[15:16:49] RESULT[S1-create-room] FAIL 
+[15:16:49] ==== SUMMARY ====
+[15:16:49] PASS install-apk Performing Streamed Install | Success
+[15:16:49] PASS backend-health 
+[15:16:49] FAIL S1-create-room 
+[15:16:49] total=3 fail=1
+[15:18:41] connected serial=adb-fbddbe8-WFMDTR._adb-tls-connect._tcp
+[15:18:41] low_power=0
+[15:18:50] RESULT[install-apk] PASS Performing Streamed Install | Success
+[15:18:50] reverse: 3000
+[15:18:52] device-side health: {"ok":true,"rooms":1,"onlineMembers":0,"wsConnections":0}
+[15:18:52] pc-side health: {"ok":true,"rooms":1,"onlineMembers":0,"wsConnections":0}
+[15:18:52] RESULT[backend-health] PASS 
+[15:18:53] baseUrl written http://127.0.0.1:3000: OK
+[15:18:57] am start -W: Starting: Intent { cmp=com.listentogether.app/.MainActivity } | Status: ok | LaunchState: COLD | Activity: com.listentogether.app/.MainActivity | TotalTime: 2193 | WaitTime: 2203 | Complete
+[15:18:59] app in foreground after ~1.5s
+[15:19:13] ERROR: main button not found
+[15:19:13] RESULT[S1-create-room] FAIL 
+[15:19:13] ==== SUMMARY ====
+[15:19:13] PASS install-apk Performing Streamed Install | Success
+[15:19:13] PASS backend-health 
+[15:19:13] FAIL S1-create-room 
+[15:19:13] total=3 fail=1
+[15:21:43] connected serial=adb-fbddbe8-WFMDTR._adb-tls-connect._tcp
+[15:21:43] low_power=0
+[15:21:50] RESULT[install-apk] PASS Performing Streamed Install | Success
+[15:21:50] reverse: 3000
+[15:21:51] device-side health: {"ok":true,"rooms":0,"onlineMembers":0,"wsConnections":0}
+[15:21:52] pc-side health: {"ok":true,"rooms":0,"onlineMembers":0,"wsConnections":0}
+[15:21:52] RESULT[backend-health] PASS 
+[15:21:52] baseUrl written http://127.0.0.1:3000: OK
+[15:21:57] am start -W: Starting: Intent { cmp=com.listentogether.app/.MainActivity } | Status: ok | LaunchState: COLD | Activity: com.listentogether.app/.MainActivity | TotalTime: 2229 | WaitTime: 2243 | Complete
+[15:21:59] app in foreground after ~1.5s
+[15:22:27] room code = A6256E66
+[15:22:27] RESULT[S1-create-room] PASS code=A6256E66
+[15:22:32] RESULT[S1-copy-snackbar] PASS 邀请已复制，发给朋友即可
+[15:22:48] RESULT[s2-exit] PASS 
+[15:23:01] RESULT[S2-confirm-card] PASS card_code=A6256E66 addr=True
+[15:23:14] RESULT[S2-rejoin] PASS room=A6256E66 expect=A6256E66
+[15:23:17] RESULT[S3-refresh-copy] FAIL 
+[15:23:20] RESULT[s3b-exit-icon] FAIL exit icon not found
+[15:23:21] baseUrl written http://192.168.100.99:3000: OK
+[15:23:25] am start -W: Starting: Intent { cmp=com.listentogether.app/.MainActivity } | Status: ok | LaunchState: COLD | Activity: com.listentogether.app/.MainActivity | TotalTime: 2036 | WaitTime: 2044 | Complete
+[15:23:27] app in foreground after ~1.5s
+[15:23:42] RESULT[S3-addr-mismatch-hint] PASS hint=True invite_addr_shown=True
+[15:23:45] baseUrl written http://127.0.0.1:3000: OK
+[15:23:50] am start -W: Starting: Intent { cmp=com.listentogether.app/.MainActivity } | Status: ok | LaunchState: COLD | Activity: com.listentogether.app/.MainActivity | TotalTime: 1894 | WaitTime: 1920 | Complete
+[15:23:51] app in foreground after ~1.5s
+[15:24:07] RESULT[S4-smart-detect] FAIL keycombination or parse failed (标记人工)
+[15:24:28] S5 join error text = None
+[15:24:28] RESULT[S5-join-error] FAIL no error banner seen
+[15:24:33] am start -W: Starting: Intent { cmp=com.listentogether.app/.MainActivity } | Status: ok | LaunchState: COLD | Activity: com.listentogether.app/.MainActivity | TotalTime: 1862 | WaitTime: 1874 | Complete
+[15:24:34] app in foreground after ~1.5s
+[15:24:41] am start -W: Starting: Intent { cmp=com.listentogether.app/.MainActivity } | Status: ok | LaunchState: COLD | Activity: com.listentogether.app/.MainActivity | TotalTime: 1818 | WaitTime: 1825 | Complete
+[15:24:43] app in foreground after ~1.5s
+[15:25:05] room code = 736A6D60
+[15:25:20] state after play: ('PLAYING', 8643, 262086, 1.0, 328354260)
+[15:25:20] RESULT[S6-play] PASS ('PLAYING', 8643, 262086, 1.0, 328354260)
+[15:25:32] before drag: ('PLAYING', 20678, 262086, 1.0, 328366294)
+[15:25:35] drag-to-start via seekbar bounds [90, 839, 990, 887]
+[15:25:42] after drag-to-start: ('PLAYING', 6607, 262164, 1.04, 328377108)
+[15:25:42] RESULT[E07-drag-to-start] PASS ('PLAYING', 20678, 262086, 1.0, 328366294) -> ('PLAYING', 6607, 262164, 1.04, 328377108)
+[15:25:58] sample[b1] t=+15s state=PLAYING pos=21761 speed=1.00
+[15:26:13] sample[b1] t=+30s state=PLAYING pos=36837 speed=1.00
+[15:26:28] sample[b1] t=+45s state=PLAYING pos=51922 speed=1.00
+[15:26:43] sample[b1] t=+60s state=PLAYING pos=66979 speed=1.00
+[15:26:43] sample[b1] overall position rate = 1.005 x
+[15:26:43] RESULT[S6-playback-rate] PASS rate=1.005
+[15:26:50] diag exported: D:\ListenTogether\.workbuddy\b1-b1-diag-20260924-152441.jsonl (60888 bytes)
+[15:26:50] analyze[b1]: playback=179 corrections={'': 165, 'buffering': 8, 'load': 2, 'seek': 1, 'speed': 3} rate_median=998.024
+[15:26:50] RESULT[DIAG-seek-count] PASS seek=1 (应恰为拖回开头 1 次)
+[15:26:50] RESULT[DIAG-rate-median] FAIL median=998.024
+[15:26:50] screenshot: D:\ListenTogether\.workbuddy\b1-final.png (175423 bytes)
+[15:27:03] ==== SUMMARY ====
+[15:27:03] PASS install-apk Performing Streamed Install | Success
+[15:27:03] PASS backend-health 
+[15:27:03] PASS S1-create-room code=A6256E66
+[15:27:03] PASS S1-copy-snackbar 邀请已复制，发给朋友即可
+[15:27:03] PASS s2-exit 
+[15:27:03] PASS S2-confirm-card card_code=A6256E66 addr=True
+[15:27:03] PASS S2-rejoin room=A6256E66 expect=A6256E66
+[15:27:03] FAIL S3-refresh-copy 
+[15:27:03] FAIL s3b-exit-icon exit icon not found
+[15:27:03] PASS S3-addr-mismatch-hint hint=True invite_addr_shown=True
+[15:27:03] FAIL S4-smart-detect keycombination or parse failed (标记人工)
+[15:27:03] FAIL S5-join-error no error banner seen
+[15:27:03] PASS S6-play ('PLAYING', 8643, 262086, 1.0, 328354260)
+[15:27:03] PASS E07-drag-to-start ('PLAYING', 20678, 262086, 1.0, 328366294) -> ('PLAYING', 6607, 262164, 1.04, 328377108)
+[15:27:03] PASS S6-playback-rate rate=1.005
+[15:27:03] PASS DIAG-seek-count seek=1 (应恰为拖回开头 1 次)
+[15:27:03] FAIL DIAG-rate-median median=998.024
+[15:27:03] total=17 fail=5
+[15:33:53] connected serial=adb-fbddbe8-WFMDTR._adb-tls-connect._tcp
+[15:33:54] low_power=0
+[15:34:01] RESULT[install-apk] PASS app-debug.apk Performing Streamed Install | Success
+[15:34:01] reverse: 3000
+[15:34:02] device-side health: {"ok":true,"rooms":0,"onlineMembers":0,"wsConnections":0}
+[15:34:03] pc-side health: {"ok":true,"rooms":0,"onlineMembers":0,"wsConnections":0}
+[15:34:03] RESULT[backend-health] PASS 
+[15:34:03] baseUrl written http://127.0.0.1:3000: OK
+[15:34:09] am start -W: Starting: Intent { cmp=com.listentogether.app/.MainActivity } | Status: ok | LaunchState: COLD | Activity: com.listentogether.app/.MainActivity | TotalTime: 2675 | WaitTime: 2706 | Complete
+[15:34:10] app in foreground after ~1.5s
+[15:34:33] room code = A98A6C55
+[15:34:33] RESULT[R1-create-room] PASS code=A98A6C55
+[15:34:39] RESULT[R1-copy-snackbar] PASS 
+[15:34:55] RESULT[r1-exit] PASS 
+[15:35:07] RESULT[R2-confirm-card] PASS code=A98A6C55 addr=True
+[15:35:16] r1b: join button enabled=true bounds=[60,1797][1020,1953]
+[15:35:41] RESULT[R2-rejoin] FAIL marker=False room=None expect=A98A6C55
+[15:35:43] RESULT[R3-refresh-copy] FAIL 
+[15:35:46] RESULT[r2-exit-icon] FAIL exit icon not found
+[15:35:49] screenshot: D:\ListenTogether\.workbuddy\r3-smart-manual.png (179403 bytes)
+[15:35:49] RESULT[R3-smart-detect] FAIL paste 无效（自动化局限，标记人工验证）
+[15:35:52] RESULT[R4-join-error-banner] FAIL expected 2 EditText
+[15:35:57] am start -W: Starting: Intent { cmp=com.listentogether.app/.MainActivity } | Status: ok | LaunchState: COLD | Activity: com.listentogether.app/.MainActivity | TotalTime: 2266 | WaitTime: 2279 | Complete
+[15:35:59] app in foreground after ~1.5s
+[15:36:05] am start -W: Starting: Intent { cmp=com.listentogether.app/.MainActivity } | Status: ok | LaunchState: COLD | Activity: com.listentogether.app/.MainActivity | TotalTime: 1967 | WaitTime: 1978 | Complete
+[15:36:07] app in foreground after ~1.5s
+[15:36:31] room code = 57DA3083
+[15:36:31] RESULT[R5-room] PASS code=57DA3083
+[15:36:37] screenshot: D:\ListenTogether\.workbuddy\r5-members.png (171269 bytes)
+[15:36:37] RESULT[R5-member-visible] FAIL ['1 人一起听', '已连接', '查看成员', '当前歌曲', '已暂停', '合成测试音 A · 30 秒', '0:00', '0:30', '播放与暂停同步给所有人', '歌单']
+[15:36:43] RESULT[R5-search-filter] FAIL ['1 人一起听', '已连接', '查看成员', '当前歌曲', '已暂停', '合成测试音 A · 30 秒']
+[15:36:48] RESULT[R5-search-empty] PASS 
+[15:36:52] RESULT[R5-search-clear] PASS 
+[15:36:53] screenshot: D:\ListenTogether\.workbuddy\r5-search.png (179475 bytes)
+[15:37:12] RESULT[R6-play] PASS ('PLAYING', 8684, 30040, 1.0, 329066477)
+[15:37:35] drag-to-start: ('PLAYING', 20794, 30040, 1.0, 329078587) -> ('PLAYING', 6125, 30040, 1.04, 329088836)
+[15:37:35] RESULT[R6-drag-to-start] PASS ('PLAYING', 20794, 30040, 1.0, 329078587) -> ('PLAYING', 6125, 30040, 1.04, 329088836)
+[15:37:50] sample[r6] t=+15s state=PLAYING pos=21482 speed=1.00
+[15:38:05] sample[r6] t=+30s state=PLAYING pos=6181 speed=1.04
+[15:38:20] sample[r6] t=+45s state=PLAYING pos=21841 speed=1.00
+[15:38:20] sample[r6] overall position rate = 0.012 x
+[15:38:20] RESULT[R6-playback-rate] FAIL rate=0.012
+[15:38:27] diag exported: D:\ListenTogether\.workbuddy\b1-r6-diag-20260924-153606.jsonl (66428 bytes)
+[15:38:27] analyze[r6]: playback=196 corrections={'': 151, 'buffering': 8, 'load': 2, 'seek': 1, 'speed': 34} rate_median=995.059
+[15:38:27] RESULT[R6-diag-seek] PASS corrections={'': 151, 'buffering': 8, 'load': 2, 'seek': 1, 'speed': 34}
+[15:38:27] RESULT[R6-diag-rate] PASS median=995.1 ms/s (=1.0x)
+[15:38:28] screenshot: D:\ListenTogether\.workbuddy\r6-final.png (182404 bytes)
+[15:38:36] ==== SUMMARY ====
+[15:38:36] PASS install-apk app-debug.apk Performing Streamed Install | Success
+[15:38:36] PASS backend-health 
+[15:38:36] PASS R1-create-room code=A98A6C55
+[15:38:36] PASS R1-copy-snackbar 
+[15:38:36] PASS r1-exit 
+[15:38:36] PASS R2-confirm-card code=A98A6C55 addr=True
+[15:38:36] FAIL R2-rejoin marker=False room=None expect=A98A6C55
+[15:38:36] FAIL R3-refresh-copy 
+[15:38:36] FAIL r2-exit-icon exit icon not found
+[15:38:36] FAIL R3-smart-detect paste 无效（自动化局限，标记人工验证）
+[15:38:36] FAIL R4-join-error-banner expected 2 EditText
+[15:38:36] PASS R5-room code=57DA3083
+[15:38:36] FAIL R5-member-visible ['1 人一起听', '已连接', '查看成员', '当前歌曲', '已暂停', '合成测试音 A · 30 秒', '0:00', '0:30', '播放与暂停同步给所有人', '歌单']
+[15:38:36] FAIL R5-search-filter ['1 人一起听', '已连接', '查看成员', '当前歌曲', '已暂停', '合成测试音 A · 30 秒']
+[15:38:36] PASS R5-search-empty 
+[15:38:36] PASS R5-search-clear 
+[15:38:36] PASS R6-play ('PLAYING', 8684, 30040, 1.0, 329066477)
+[15:38:36] PASS R6-drag-to-start ('PLAYING', 20794, 30040, 1.0, 329078587) -> ('PLAYING', 6125, 30040, 1.04, 329088836)
+[15:38:36] FAIL R6-playback-rate rate=0.012
+[15:38:36] PASS R6-diag-seek corrections={'': 151, 'buffering': 8, 'load': 2, 'seek': 1, 'speed': 34}
+[15:38:36] PASS R6-diag-rate median=995.1 ms/s (=1.0x)
+[15:38:36] total=21 fail=8
+[16:16:45] ERROR: device not found after 300s
+[16:16:45] ==== SUMMARY ====
+[16:16:45] total=0 fail=0
+[16:19:01] connected serial=fbddbe8
+[16:19:02] low_power=0
+[16:19:05] RESULT[install-apk] PASS app-debug.apk Performing Streamed Install | Success
+[16:19:05] reverse: 3000
+[16:19:06] device-side health: {"ok":true,"rooms":0,"onlineMembers":0,"wsConnections":0}
+[16:19:07] pc-side health: {"ok":true,"rooms":0,"onlineMembers":0,"wsConnections":0}
+[16:19:07] RESULT[backend-health] PASS 
+[16:19:07] baseUrl written http://127.0.0.1:3000: OK
+[16:19:13] am start -W: Starting: Intent { cmp=com.listentogether.app/.MainActivity } | Status: ok | LaunchState: COLD | Activity: com.listentogether.app/.MainActivity | TotalTime: 2980 | WaitTime: 3000 | Complete
+[16:19:15] app in foreground after ~1.5s
+[16:19:38] room code = F77B31B5
+[16:19:38] RESULT[Q1-create-room] PASS code=F77B31B5
+[16:20:01] RESULT[Q1-copy-snackbar] PASS 
+[16:20:17] RESULT[q1-exit] PASS 
+[16:20:31] q2: join button enabled=true bounds=[60,1695][1020,1851]
+[16:20:35] q2-imm(+1s) texts: ['此刻，一起听', '和朋友分享同一段旋律', '创建房间', '加入房间', '怎么称呼你', '粘贴邀请', '8 位邀请码', '向房主获取邀请码', '高级设置：更换服务器地址', '加入，一起听', '一起听歌']
+[16:21:05] C retry via button node: True
+[16:21:31] RESULT[Q2-manual-join] FAIL room=None expect=F77B31B5
+[16:21:38] RESULT[Q4-confirm-card] PASS code=F77B31B5
+[16:21:47] q4b: join button enabled=true bounds=[60,1797][1020,1953]
+[16:21:50] q4-imm(+1s) texts: ['此刻，一起听', '和朋友分享同一段旋律', '创建房间', '加入房间', '怎么称呼你', '粘贴邀请', 'F77B31B5', 'http://127.0.0.1:3000', '重新输入', '高级设置：更换服务器地址', '加入，一起听', '一起听歌']
+[16:21:51] q4 focus: mCurrentFocus=Window{63aa316 u0 com.listentogether.app/com.listentogether.app.MainActivity}
+[16:22:16] q4-last texts: ['此刻，一起听', '和朋友分享同一段旋律', '创建房间', '加入房间', '怎么称呼你', '粘贴邀请', 'F77B31B5', 'http://127.0.0.1:3000', '重新输入', '高级设置：更换服务器地址', '加入，一起听', '一起听歌']
+[16:22:21] D retry via button node: True
+[16:22:46] RESULT[Q4-card-join] FAIL room=F77B31B5 expect=F77B31B5
+[16:22:49] RESULT[E-member] FAIL not in room after C/D
+[16:22:49] ==== SUMMARY ====
+[16:22:49] PASS install-apk app-debug.apk Performing Streamed Install | Success
+[16:22:49] PASS backend-health 
+[16:22:49] PASS Q1-create-room code=F77B31B5
+[16:22:49] PASS Q1-copy-snackbar 
+[16:22:49] PASS q1-exit 
+[16:22:49] FAIL Q2-manual-join room=None expect=F77B31B5
+[16:22:49] PASS Q4-confirm-card code=F77B31B5
+[16:22:49] FAIL Q4-card-join room=F77B31B5 expect=F77B31B5
+[16:22:49] FAIL E-member not in room after C/D
+[16:22:49] total=9 fail=3
+[16:28:19] connected serial=fbddbe8
+[16:28:20] low_power=0
+[16:28:24] RESULT[install-apk] PASS app-debug.apk Performing Streamed Install | Success
+[16:28:25] reverse: 3000
+[16:28:26] device-side health: {"ok":true,"rooms":0,"onlineMembers":0,"wsConnections":0}
+[16:28:26] pc-side health: {"ok":true,"rooms":0,"onlineMembers":0,"wsConnections":0}
+[16:28:26] RESULT[backend-health] PASS 
+[16:28:28] baseUrl written http://127.0.0.1:3000: OK
+[16:28:35] am start -W: Starting: Intent { cmp=com.listentogether.app/.MainActivity } | Status: ok | LaunchState: COLD | Activity: com.listentogether.app/.MainActivity | TotalTime: 3490 | WaitTime: 3528 | Complete
+[16:28:37] app in foreground after ~1.5s
+[16:29:07] room code = 3C67DD61
+[16:29:07] RESULT[Q1-create-room] PASS code=3C67DD61
+[16:29:37] RESULT[Q1-copy-snackbar] FAIL 
+[16:29:58] RESULT[q1-exit] PASS 
+[16:30:20] q2: join button enabled=true bounds=[60,1695][1020,1851]
+[16:30:25] q2-imm(+1s) texts: ['1 人一起听', '已连接', '查看成员', '当前歌曲', '已暂停', '合成测试音 A · 30 秒', '0:00', '0:30', '播放与暂停同步给所有人', '歌单', '搜索歌曲', '合成测试音 A · 30 秒', '当前 · 0:30', '合成测试音 B · 45 秒']
+[16:30:32] RESULT[Q2-manual-join] PASS room=3C67DD61 expect=3C67DD61
+[16:30:47] RESULT[q3-exit] PASS 
+[16:31:03] RESULT[Q4-confirm-card] PASS code=3C67DD61
+[16:31:20] q4b: join button enabled=true bounds=[60,1797][1020,1953]
+[16:31:25] q4-imm(+1s) texts: ['1 人一起听', '已连接', '查看成员', '当前歌曲', '已暂停', '合成测试音 A · 30 秒', '0:00', '0:30', '播放与暂停同步给所有人', '歌单', '搜索歌曲', '合成测试音 A · 30 秒', '当前 · 0:30', '合成测试音 B · 45 秒']
+[16:31:25] q4 focus: mCurrentFocus=Window{417ed35 u0 com.listentogether.app/com.listentogether.app.MainActivity}
+[16:31:32] q4-last texts: ['1 人一起听', '已连接', '查看成员', '当前歌曲', '已暂停', '合成测试音 A · 30 秒', '0:00', '0:30', '播放与暂停同步给所有人', '歌单', '搜索歌曲', '合成测试音 A · 30 秒', '当前 · 0:30', '合成测试音 B · 45 秒']
+[16:31:32] RESULT[Q4-card-join] PASS room=3C67DD61 expect=3C67DD61
+[16:31:42] screenshot: D:\ListenTogether\.workbuddy\q5-members.png (162394 bytes)
+[16:31:42] RESULT[E-member-visible] PASS ['1 人一起听', '已连接', '收起成员', 'B', 'B1', '房主 · 在线', '当前歌曲', '已暂停', '合成测试音 A · 30 秒', '0:00', '0:30', '播放与暂停同步给所有人']
+[16:31:48] RESULT[E-search-filter] PASS ['1 人一起听', '已连接', '收起成员', 'B', 'B1', '房主 · 在线', '当前歌曲', '已暂停']
+[16:31:53] RESULT[E-search-empty] PASS 
+[16:31:58] RESULT[E-search-clear] PASS 
+[16:31:59] screenshot: D:\ListenTogether\.workbuddy\q5-search.png (188951 bytes)
+[16:32:08] RESULT[E-track-switch] FAIL 当前歌曲应显示 40 分钟曲
+[16:32:08] ==== SUMMARY ====
+[16:32:08] PASS install-apk app-debug.apk Performing Streamed Install | Success
+[16:32:08] PASS backend-health 
+[16:32:08] PASS Q1-create-room code=3C67DD61
+[16:32:08] FAIL Q1-copy-snackbar 
+[16:32:08] PASS q1-exit 
+[16:32:08] PASS Q2-manual-join room=3C67DD61 expect=3C67DD61
+[16:32:08] PASS q3-exit 
+[16:32:08] PASS Q4-confirm-card code=3C67DD61
+[16:32:08] PASS Q4-card-join room=3C67DD61 expect=3C67DD61
+[16:32:08] PASS E-member-visible ['1 人一起听', '已连接', '收起成员', 'B', 'B1', '房主 · 在线', '当前歌曲', '已暂停', '合成测试音 A · 30 秒', '0:00', '0:30', '播放与暂停同步给所有人']
+[16:32:08] PASS E-search-filter ['1 人一起听', '已连接', '收起成员', 'B', 'B1', '房主 · 在线', '当前歌曲', '已暂停']
+[16:32:08] PASS E-search-empty 
+[16:32:08] PASS E-search-clear 
+[16:32:08] FAIL E-track-switch 当前歌曲应显示 40 分钟曲
+[16:32:08] total=14 fail=2
+[16:36:11] connected serial=fbddbe8
+[16:36:12] reverse: 3000
+[16:36:13] device-side health: {"ok":true,"rooms":1,"onlineMembers":0,"wsConnections":0}
+[16:36:14] pc-side health: {"ok":true,"rooms":1,"onlineMembers":0,"wsConnections":0}
+[16:36:14] RESULT[backend-health] PASS 
+[16:36:17] RESULT[T-in-room] PASS 
+[16:36:55] RESULT[T-track-switch] FAIL 当前歌曲=None
+[16:36:55] ==== SUMMARY ====
+[16:36:55] PASS backend-health 
+[16:36:55] PASS T-in-room 
+[16:36:55] FAIL T-track-switch 当前歌曲=None
+[16:36:55] total=3 fail=1
+[16:37:54] connected serial=fbddbe8
+[16:37:54] reverse: 3000
+[16:37:55] device-side health: {"ok":true,"rooms":0,"onlineMembers":0,"wsConnections":0}
+[16:37:56] pc-side health: {"ok":true,"rooms":0,"onlineMembers":0,"wsConnections":0}
+[16:37:56] RESULT[backend-health] PASS 
+[16:38:02] RESULT[T-in-room] PASS 
+[16:38:50] RESULT[T-track-switch] FAIL 当前歌曲='合成测试音 A · 30 秒'
+[16:38:50] ==== SUMMARY ====
+[16:38:50] PASS backend-health 
+[16:38:50] PASS T-in-room 
+[16:38:50] FAIL T-track-switch 当前歌曲='合成测试音 A · 30 秒'
+[16:38:50] total=3 fail=1
+[16:40:37] connected serial=fbddbe8
+[16:40:38] reverse: 3000
+[16:40:39] device-side health: {"ok":true,"rooms":0,"onlineMembers":0,"wsConnections":0}
+[16:40:40] pc-side health: {"ok":true,"rooms":0,"onlineMembers":0,"wsConnections":0}
+[16:40:40] RESULT[backend-health] PASS 
+[16:40:47] am start -W: Starting: Intent { cmp=com.listentogether.app/.MainActivity } | Status: ok | LaunchState: COLD | Activity: com.listentogether.app/.MainActivity | TotalTime: 2997 | WaitTime: 3043 | Complete
+[16:40:48] app in foreground after ~1.5s
+[16:41:01] am start -W: Starting: Intent { cmp=com.listentogether.app/.MainActivity } | Status: ok | LaunchState: COLD | Activity: com.listentogether.app/.MainActivity | TotalTime: 3059 | WaitTime: 3077 | Complete
+[16:41:03] app in foreground after ~1.5s
+[16:41:26] room code = 5D056B3C
+[16:41:26] RESULT[T-in-room] PASS 
+[16:41:33] RESULT[T-track-switch] PASS 当前歌曲='合成长测试音 · 40 分钟'
+[16:41:42] RESULT[T-play] PASS ('PLAYING', 8623, 262086, 1.0, 332936954)
+[16:42:48]   dump tail-seekbar FAILED
+[16:45:04] connected serial=fbddbe8
+[16:45:05] reverse: 3000
+[16:45:06] device-side health: {"ok":true,"rooms":1,"onlineMembers":0,"wsConnections":0}
+[16:45:07] pc-side health: {"ok":true,"rooms":1,"onlineMembers":0,"wsConnections":0}
+[16:45:07] RESULT[backend-health] PASS 
+[16:45:13] am start -W: Starting: Intent { cmp=com.listentogether.app/.MainActivity } | Status: ok | LaunchState: COLD | Activity: com.listentogether.app/.MainActivity | TotalTime: 2882 | WaitTime: 2939 | Complete
+[16:45:15] app in foreground after ~1.5s
+[16:45:23] am start -W: Starting: Intent { cmp=com.listentogether.app/.MainActivity } | Status: ok | LaunchState: COLD | Activity: com.listentogether.app/.MainActivity | TotalTime: 3018 | WaitTime: 3056 | Complete
+[16:45:25] app in foreground after ~1.5s
+[16:45:49] room code = CB8F66D3
+[16:45:49] RESULT[E1-create-room] PASS code=CB8F66D3
+[16:46:03] RESULT[e1-confirm] FAIL confirm button not found
+[16:46:11] ERROR: join tab not found
+[16:46:11] RESULT[E2-join-error-banner] FAIL expected 2 EditText
+[16:46:11] ==== SUMMARY ====
+[16:46:11] PASS backend-health 
+[16:46:11] PASS E1-create-room code=CB8F66D3
+[16:46:11] FAIL e1-confirm confirm button not found
+[16:46:11] FAIL E2-join-error-banner expected 2 EditText
+[16:46:11] total=4 fail=2
+[16:47:05] connected serial=fbddbe8
+[16:47:07] reverse: 3000
+[16:47:08] device-side health: {"ok":true,"rooms":2,"onlineMembers":0,"wsConnections":0}
+[16:47:08] pc-side health: {"ok":true,"rooms":2,"onlineMembers":0,"wsConnections":0}
+[16:47:08] RESULT[backend-health] PASS 
+[16:47:14] am start -W: Starting: Intent { cmp=com.listentogether.app/.MainActivity } | Status: ok | LaunchState: COLD | Activity: com.listentogether.app/.MainActivity | TotalTime: 2521 | WaitTime: 2581 | Complete
+[16:47:15] app in foreground after ~1.5s
+[16:47:22] am start -W: Starting: Intent { cmp=com.listentogether.app/.MainActivity } | Status: ok | LaunchState: COLD | Activity: com.listentogether.app/.MainActivity | TotalTime: 2114 | WaitTime: 2141 | Complete
+[16:47:24] app in foreground after ~1.5s
+[16:47:53] room code = 5928DA87
+[16:47:53] RESULT[E1-create-room] PASS code=5928DA87
+[16:48:14] RESULT[e1-exit] PASS 
+[16:48:33] e2: join button enabled=true bounds=[60,1695][1020,1851]
+[16:48:41] screenshot: D:\ListenTogether\.workbuddy\e2-error.png (145352 bytes)
+[16:48:41] RESULT[E2-join-error-banner] PASS text='房间不存在或已过期'
+[16:48:49] RESULT[E2-error-priority] PASS banner=True nick=True
+[16:48:50] screenshot: D:\ListenTogether\.workbuddy\e2-final.png (152301 bytes)
+[16:48:50] ==== SUMMARY ====
+[16:48:50] PASS backend-health 
+[16:48:50] PASS E1-create-room code=5928DA87
+[16:48:50] PASS e1-exit 
+[16:48:50] PASS E2-join-error-banner text='房间不存在或已过期'
+[16:48:50] PASS E2-error-priority banner=True nick=True
+[16:48:50] total=5 fail=0

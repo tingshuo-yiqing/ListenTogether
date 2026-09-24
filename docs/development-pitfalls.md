@@ -91,6 +91,12 @@
 - 根因：本机 ColorOS 的 screenrecord 二进制/编解码路径崩溃，非参数问题；不要反复换参数试。
 - 规避：需要逐帧/过程证据时改用**连续 screencap 连拍**（设备端落盘、最后批量 pull，间隔约 0.55s），事后用 ffmpeg `scale=1:1 -pix_fmt gray` 逐帧取均值做亮度判据（示例见 docs/test-results/2026-09-23-w1-recheck/tools/coldstart_flash_probe.py）。连拍分辨率受 screencap 编码耗时限制，比 flash 更短的现象可能漏采，报告里要如实标注。
 
+### 2.11 ColorOS 输入法对 uiautomator 不可见：`keyevent 111` 收不起，底部区域 tap 被吞（2026-09-24 实测）
+- 现象：真机自动化中创建按钮（y≈1287）可正常点击，加入按钮（y≈1695-1953）`input tap` 多次无响应——无 busy、无错误横幅、无导航；dump 只有应用自身节点、看不到输入法窗口；被吞的 tap 会在当时聚焦的输入框追加字符（昵称 B1→B1B1），证明 tap 实际落在输入法上。
+- 根因：ColorOS 定制输入法不进入无障碍转储（dump 看不到它），且 **`keyevent 111`（ESC）在 ColorOS 上不收起输入法**；输入法覆盖约 y≥1500 的底部区域。此前只点过 y<1500 的按钮所以未暴露，陷阱 3.2 的"111 收起键盘"在本机不成立。
+- 规避：文本输入完成后用 **`input keyevent 4`（BACK）收起输入法**——字段聚焦时 BACK 只收 IME 不退出页面；若 IME 已收起 BACK 会退出页面，dump 复核无 EditText 就重启 App 兜底，收起后再 dump 取坐标。连带三个坑：①播放/滚动中的 LazyColumn 只组合可见行，目标行不在视口时 dump 里根本没有该节点——先滚动查找，选中后滚回播放卡核验「当前歌曲」；②服务端空房 5 分钟回收后客户端可能仍停留在房间页（僵尸会话，UI 操作全部无效）——自动化前先看 `/health` 的 rooms 计数，残留会话一律退出重进；③`input text` 对非空字段是**追加**不是覆盖，填充前先循环 DEL 清空。
+- 实证：UI 批次验收驱动加入 keyevent 4 后，手填 join 与确认卡 join 立即恢复；对照数据见 docs/test-results/2026-09-24-ui-batch-acceptance/。
+
 ## 3. UI 自动化（uiautomator/input）
 
 ### 3.1 动态进度界面导致 dump 失效

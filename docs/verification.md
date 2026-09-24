@@ -24,15 +24,36 @@ M4 四项部署门槛（2026-09-23 晚全部关闭）：
 
 关键锚点：
 
-- 当前 APK 锚 **BF393FB4801BF907E390A6694E3FE56D9BE54A326E7E0E9176F9141738D5A967**（61 项单测；批次 1 邀请口令闭环；真机验收待设备在线，不得记为通过；上一锚 E814F90E… 随本轮重构建被覆盖）。
+- 当前 APK 锚 **2CBA59132F8103C9AB450CA627A61A1A2AC95F6708E7C55422E73111AB427E73**（70 项单测；批次 2 成员可视化 + 歌单搜索；**批次 1+2 真机验收已通过**（2026-09-24 下午，见 [test-results/2026-09-24-ui-batch-acceptance](test-results/2026-09-24-ui-batch-acceptance/README.md)）；上一锚 BF393FB4… 随本轮重构建被覆盖）。
 - 云端：release **20260924-0937** 在产（prev=20260922-2159，20260923-2157 保留）；入口 `http://8.166.126.136:3000`。TLS 路线 A 已决策：**维持 IP 明文**（试用 ECS 无法备案、备案拦截按域名跨任意端口生效、Let's Encrypt 不签裸 IP），正式化留待转包年包月备案或迁香港。
 - 云端曲库 6 首 = 5 首真实 MP3（192k）+ demo-load 负载测试音（有意保留）。
 - 后端防线 E-05（WS 握手限连）/E-09（同 IP 建房配额 ≤3）/Q-3（事件日志 + health 计数）**已于 2026-09-24 上午上云并通过 14 项验证与新防线专项验证**；升级失败注入仍未做。
 - 剩余待办与恢复条件：M2 双机（缺设备）/ M3-LONG（≥70 分钟窗口）/ TLS 正式化（用户决策）/ 补测项（蜂窝公网、弱网注入、真实令牌作废、升级失败注入），详见 [路线图与验收标准](next-development-plan.md)。
 
+## 本轮新增（UI 批次真机验收：批次 1 + 批次 2，2026-09-24 下午）
+
+> **通过，零产品缺陷**。PHQ110（USB，serial fbddbe8）+ 本地演示后端（demo-media）+ 验收驱动 `.workbuddy/b1_driver.py`（单进程连接→装包→reverse→场景序列→导出诊断）。APK 2CBA5913…（批次 2 构建，批次 1 场景同轮重验）。完整场景矩阵与证据见 [test-results/2026-09-24-ui-batch-acceptance](test-results/2026-09-24-ui-batch-acceptance/README.md)。
+
+- **批次 1 邀请口令闭环全过**：复制口令→Snackbar「邀请已复制，发给朋友即可」；「粘贴邀请」→确认卡（房间码+服务器地址，快照断言）；确认卡→「加入，一起听」→重入同房（room=3C67DD61 与口令一致，页面以顶栏「退出房间」图标为房间页标志、排除确认卡同码假阳性）；口令地址≠已记住地址→Info 提示且以口令地址入房；join 失败（手填不存在房间码）→错误横幅**「房间不存在或已过期」**、横幅优先于确认卡、已填昵称保留。
+- **批次 2 全过**：展开成员显示头像首字符'B'+'B1'+'房主 · 在线'（文字行并存不单靠颜色）；搜索'192'→列表仅剩 192kbps 行（'45 秒'行消失）、无命中显示「没有匹配的歌曲」、清除恢复全列表；选歌切换当前歌曲为「合成长测试音 · 40 分钟」。
+- **播放与 E-07 回归（批次 2 动了 MainActivity 后必做）**：40 分钟曲 PLAYING；拖回开头 20794ms→6125ms；诊断 playback=196、correction **seek=1**（恰为主动拖动一次）、速率中位 **995ms/s=1.0x**；手填 join 对照组同步通过。
+- **自动化边界（如实标注，三项待人工）**：智能识别（整段口令粘进邀请码框）——adb 无法向 Compose 字段注入中文剪贴板（keyevent 279 / Ctrl+V 均未生效）；busy 禁用——本地 reverse 下 join 时序过短无法稳定断言；系统分享面板实际弹出——需拉起外部 chooser。口令文本本身已由 encode 单测 + 复制路径旁证。
+- **验收过程发现并修复的驱动侧问题（非产品缺陷，已回填[陷阱 2.11](development-pitfalls.md)）**：ColorOS 输入法对 uiautomator 不可见且 keyevent 111 不收起，底部区域 tap 全被拦截（keyevent 4 解法）；LazyColumn 未组合行不在 dump（滚动查找）；服务端房间回收后的僵尸会话（先看 /health 再操作）；播放动画期 dump 失败须重试。期间 0 处产品代码改动。
+
+## 本轮新增（批次 2：成员可视化 + 歌单搜索，2026-09-24）
+
+> Android 客户端轮：只改 `android/app` 与文档，未动 server/、未引入新依赖、未部署、未做 git 提交、未执行 adb/真机操作（设备正被并行验收占用）。**真机目视验收已于同日通过**（成员头像/搜索过滤/占位/清除/选歌，见 [test-results/2026-09-24-ui-batch-acceptance](test-results/2026-09-24-ui-batch-acceptance/README.md)）。
+
+- **成员状态可视化（新增 `app/src/main/java/com/listentogether/app/ui/MemberAvatar.kt` + MainActivity.kt MembersSection 改造）**：成员行新增圆形头像——昵称首字符（空白兜底「友」），背景从主题派生的 6 色固定色板（primary/secondary/tertiary 及各自 container，配对对应 on 色）按 memberId 稳定散列（`avatarPaletteIndex(memberId, paletteSize)` 纯函数，`hash * 31 + code` 折叠 + `mod`）取索引，同一成员颜色恒定，无硬编码色值，亮暗方案自动跟随。头像右下角 10dp 在线状态点：在线 colorScheme.primary、离线 colorScheme.outline，surface 色 1.5dp 描边保证任意底色上可见。「房主 · 在线/离线」文字行保留，不单靠颜色传达状态；折叠/展开结构与「N 人一起听」摘要不变。实现收敛在独立小文件，避免 MainActivity 继续膨胀。
+- **歌单搜索（新增 `app/src/main/java/com/listentogether/app/ui/PlaylistFilter.kt` + MainActivity.kt PlaylistSection 改造）**：歌单区顶部新增 OutlinedTextField——单行、FieldShape、leading 图标 Icons.Outlined.Search、非空时 trailing 清除按钮 Icons.Outlined.Close（contentDescription「清除搜索」）、placeholder「搜索歌曲」。过滤逻辑抽为纯函数 `PlaylistFilter.filter(titles, query): List<Int>`（返回命中原索引，保持原顺序）：查询串首尾 trim、空查询返回全部、大小写不敏感、子串包含匹配（中文直接匹配）。过滤后为空显示「没有匹配的歌曲」；当前播放项按原索引对齐，高亮在过滤结果中依然生效；搜索词存于 `PlaylistSearch`（按房间会话 remember，退出重进自动重置），只影响本地显示，不触碰播放与服务器状态；清空或退出恢复完整列表。曲库为空时仍显示原提示，不显示搜索框。
+- **新增 9 项 JVM 单测**：PlaylistFilterTest 6 项（空查询全返回、大小写不敏感、trim、无命中返回空、中部子串命中、中文曲名匹配）+ AvatarPaletteIndexTest 3 项（同 id 恒定同色、任意 id/色板大小索引在界内、不同 id 允许分布）。
+- **构建验收**：`.\gradlew.bat :app:cleanTestDebugUnitTest :app:testDebugUnitTest :app:assembleDebug :app:lintDebug --console=plain` → **BUILD SUCCESSFUL in 1m 54s**；单测实跑 **70 项（61 基线 + 9 新增），0 失败 0 错误 0 跳过**（`build/test-results/testDebugUnitTest/*.xml` 合计 `tests=70 failures=0 errors=0 skipped=0`；`> Task :app:testDebugUnitTest` 实跑，不带 UP-TO-DATE）；Lint **0 错误 0 警告**。
+- **APK SHA256**：**2CBA59132F8103C9AB450CA627A61A1A2AC95F6708E7C55422E73111AB427E73**（app-debug.apk，本轮 15:22 重建）。
+- **边界与自查修正**：首轮构建暴露 PlaylistFilterTest 一处断言错误（「loving you」不含子串「love」，测试预期自身写错，非实现缺陷），修正预期后全绿；初次全量重跑 BUILD FAILED 后修正，最终结果以上述最终一轮实跑为准。未改 server/、未部署、未执行 adb、未做 git 提交。
+
 ## 本轮新增（批次 1：邀请口令闭环，2026-09-24）
 
-> Android 客户端轮：只改 `android/app` 与文档，未动 server/、未部署、未做 git 提交。**真机验收待设备在线（复制→粘贴闭环/分享文本/智能识别/失败路径/地址不一致提示），不得记为通过。**
+> Android 客户端轮：只改 `android/app` 与文档，未动 server/、未部署、未做 git 提交。**真机验收已于同日通过**（复制→粘贴闭环/失败路径/地址不一致提示，见 [test-results/2026-09-24-ui-batch-acceptance](test-results/2026-09-24-ui-batch-acceptance/README.md)）；智能识别、busy 禁用、分享面板弹出三项自动化未能模拟，标注人工验证。
 
 - **InviteCode 编解码（新增 `app/src/main/java/com/listentogether/app/InviteCode.kt`）**：encode 产出四行纯文本口令（来一起听歌 / 房间码 X / 服务器 URL / 复制整段，打开 App 即可加入），地址为空时省略服务器行；decode 用锚点正则（`(?:房间码|邀请码)[^0-9A-Za-z]*([0-9A-Fa-f]{8})` 与 `(https?://…)`）容错解析，容忍微信/QQ 加引号、前后闲聊行、全角冒号、hex 大小写混用，两行均在全文任意位置匹配、不做宽松匹配；房间码必得（大写归一），服务器可空=缺地址降级沿用已存地址；失败返回 null 不抛异常。口令只含房间码与服务器地址（公开信息），**绝不包含成员令牌**。
 - **顶栏复制/分享改造（MainActivity.kt）**：复制改为完整口令，Snackbar「邀请已复制，发给朋友即可」；分享 EXTRA_TEXT 与复制共用同一 encode 来源（`inviteText` 单点生成，无两处硬编码）；chooser 标题「分享邀请」。
@@ -152,8 +173,9 @@ M4 四项部署门槛（2026-09-23 晚全部关闭）：
 
 | SHA256 | 日期 | 内容 | 单测 | 真机状态 |
 |---|---|---|---|---|
-| BF393FB4801BF907E390A6694E3FE56D9BE54A326E7E0E9176F9141738D5A967 | 09-24 | 批次 1 邀请口令闭环（InviteCode + 粘贴邀请/确认卡/智能识别 + 顶栏口令化） | 61 | 待真机验收（设备离线） |
-| E814F90E1982936947218EA8917745B889A1430287F490A8E0FF5CB55B425FA7 | 09-24 | A-01 代次守卫 + E-07 seek 确认 + Q-1 诊断测试 | 53 | 待真机验收（设备离线，已被上锚覆盖） |
+| 2CBA59132F8103C9AB450CA627A61A1A2AC95F6708E7C55422E73111AB427E73 | 09-24 | 批次 2 成员可视化（主题色板头像+状态点）+ 歌单搜索（PlaylistFilter） | 70 | 真机验收通过（批次 1+2 全场景，2026-09-24 下午） |
+| BF393FB4801BF907E390A6694E3FE56D9BE54A326E7E0E9176F9141738D5A967 | 09-24 | 批次 1 邀请口令闭环（InviteCode + 粘贴邀请/确认卡/智能识别 + 顶栏口令化） | 61 | 已被上锚覆盖（场景经 2CBA5913 重验通过） |
+| E814F90E1982936947218EA8917745B889A1430287F490A8E0FF5CB55B425FA7 | 09-24 | A-01 代次守卫 + E-07 seek 确认 + Q-1 诊断测试 | 53 | A-01/E-07 经 M3-LONG 与 2CBA5913 两轮真机验证通过 |
 | 36BD3A5B3ACA74EE45CCEE952F6EB8C042BB0A18D40123601398ADF626DD0CCE | 09-23 | 分级纠正+SmoothRenderers+进度条圆点 | 45 | W1 验收+W2 公网 E2E 通过 |
 | 169018AE746164D274E9C843AC8985A1DD27B647D6BF28DFA05110B705FB6845 | 09-23 | UI 评审优化 12 项 | 42 | UI 优化真机验证通过（后被覆盖） |
 | 59773A08ACB9A4FBFF815C8FEDF3680B55FC7FA4EDA992FC6DC664EFB7119EED | 09-23 | 简洁 UI 重构 | 42 | 无线本地 reverse 目视通过 |
@@ -188,8 +210,9 @@ M4 四项部署门槛（2026-09-23 晚全部关闭）：
 - [ ] 公网弱网/丢包/抖动条件下的真机表现（未测；fault-proxy 注入此前只在本地用过）。
 - [x] 版本回滚演练：升级 + 真实回滚双向通过（2026-09-23 晚，13 项抽查三次各 13/0）；两次 restart 各清空一次内存房间已实证。升级失败注入未做（如实标注）。
 - [x] 15 路实际音频带宽云端重测（2026-09-23 晚）。**M4 四项部署门槛至此全部关闭**。
-- [ ] 后端防线 E-05/E-09/Q-3 上云：需独占云端时间片部署新 release + 复跑 14 项服务端验证 + 升级/回滚演练；`restart` 会清空全部内存房间，执行前确认无活跃房间（`/health` 计数 + [deployment.md 第 5 节](deployment.md)）。**本地通过，未部署**。
-- [ ] 批次 1 邀请口令真机闭环（2026-09-24，BF393FB4…）：房主/成员复制口令→Snackbar 文案、系统分享面板口令文本、对方复制→「粘贴邀请」确认卡、邀请码框整段粘贴智能识别、解析失败 Snackbar、join 失败横幅与确认卡互斥且不销毁已填昵称、口令地址与已记住地址不同提示、busy 禁用——设备离线，不得记为通过。
+- [x] 后端防线 E-05/E-09/Q-3 上云：**已完成**（2026-09-24 上午，release 20260924-0937，14 项验证 + 新防线专项验证通过，见上文与本轮记录）；升级失败注入仍未做。
+- [x] 批次 1 邀请口令真机闭环（2026-09-24 下午，BF393FB4→2CBA5913 重验）：复制口令→Snackbar、粘贴邀请→确认卡（房间码+地址）、确认卡加入重入同房、口令地址≠已记住地址提示、join 失败横幅「房间不存在或已过期」+ 横幅优先于确认卡且昵称保留——全过（见 [test-results/2026-09-24-ui-batch-acceptance](test-results/2026-09-24-ui-batch-acceptance/README.md)）；**智能识别、busy 禁用、系统分享面板弹出三项自动化未能模拟，标注人工验证**。
+- [x] 批次 2 成员可视化 + 歌单搜索真机目视（2026-09-24 下午，2CBA5913…）：展开成员头像首字符'B'、'房主 · 在线'文字并存；搜索'192'→仅 192kbps 行、无命中占位「没有匹配的歌曲」、清除恢复全列表；选歌切换当前歌曲、播放健康（diag 速率 995ms/s=1.0x）、E-07 拖回开头回归（20794→6125ms、seek=1）——全过（见 [test-results/2026-09-24-ui-batch-acceptance](test-results/2026-09-24-ui-batch-acceptance/README.md)）；暗色主题下批次 2 头像可读性未自动验（暗色冷启动无白闪此前已验），标注人工。
 
 ## 环境与联调速查
 
@@ -222,5 +245,6 @@ M4 四项部署门槛（2026-09-23 晚全部关闭）：
 | [2026-09-23-m4-public-e2e](test-results/2026-09-23-m4-public-e2e/README.md) | W2 公网 E2E 通过 |
 | [2026-09-23-m4-rollback-drill](test-results/2026-09-23-m4-rollback-drill/README.md) | W3 升级/回滚演练 |
 | [2026-09-23-load15-cloud](test-results/2026-09-23-load15-cloud/README.md) | W4 云端 15 路重测 |
+| [2026-09-24-ui-batch-acceptance](test-results/2026-09-24-ui-batch-acceptance/README.md) | UI 批次真机验收：批次 1 邀请口令 + 批次 2 成员可视化/歌单搜索 |
 
 历史过程记录：[2026-09-21 播放测试](archive/playback-test-2026-09-21.md)（操作过程、状态采样与问题处理，已归档）；W1/W2 交接单 [handover-2026-09-23](archive/handover-2026-09-23.md)（卡顿根因完整分析，已归档）。

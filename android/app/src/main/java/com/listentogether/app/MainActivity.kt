@@ -38,6 +38,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ExitToApp
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.ErrorOutline
@@ -45,6 +46,7 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -107,7 +109,9 @@ import com.listentogether.app.network.RoomClient
 import com.listentogether.app.network.Track
 import com.listentogether.app.network.UiState
 import com.listentogether.app.playback.PlaybackService
+import com.listentogether.app.ui.MemberAvatar
 import com.listentogether.app.ui.PlaybackView
+import com.listentogether.app.ui.PlaylistFilter
 import com.listentogether.app.ui.joinError
 import com.listentogether.app.ui.playbackLabel
 import com.listentogether.app.ui.showStatusNotice
@@ -138,6 +142,11 @@ private class JoinInput {
         invite.server?.let { address = it }
         this.invite = invite
     }
+}
+
+/** 歌单搜索输入；只影响本地显示，退出房间随页面会话一起重置。 */
+private class PlaylistSearch {
+    var query by mutableStateOf("")
 }
 
 @UnstableApi
@@ -200,6 +209,8 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 val input = remember(ui.credentials?.token) { JoinInput().apply { address = client.baseUrl } }
+                // 歌单搜索词：按房间会话隔离，退出重进自动清空，恢复完整列表。
+                val search = remember(ui.credentials?.token) { PlaylistSearch() }
                 // 软键盘弹出时给内容区加 IME 内边距，避免输入框与按钮被顶出视野；
                 // 点空白处收起键盘（实测该设备 ESC 无法关闭输入法）。
                 val focusManager = LocalFocusManager.current
@@ -223,7 +234,7 @@ class MainActivity : ComponentActivity() {
                             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Content(client, ui, input, playback, snackbar, onLockedTap = {
+                            Content(client, ui, input, search, playback, snackbar, onLockedTap = {
                                 scope.launch { snackbar.showSnackbar("只有房主可以切歌") }
                             })
                         }
@@ -300,7 +311,7 @@ private fun TopBar(ui: UiState, baseUrl: String, snackbar: SnackbarHostState, on
 }
 
 /** 内容主体：按是否在房间切换入房表单与房间内容；退出房间统一走顶栏确认弹窗。 */
-private fun LazyListScope.Content(client: RoomClient, ui: UiState, input: JoinInput, playback: PlaybackView, snackbar: SnackbarHostState, onLockedTap: () -> Unit) {
+private fun LazyListScope.Content(client: RoomClient, ui: UiState, input: JoinInput, search: PlaylistSearch, playback: PlaybackView, snackbar: SnackbarHostState, onLockedTap: () -> Unit) {
     val room = ui.room
     val track = ui.tracks.find { it.id == room?.trackId }
     if (ui.credentials == null) {
@@ -309,7 +320,7 @@ private fun LazyListScope.Content(client: RoomClient, ui: UiState, input: JoinIn
         if (showStatusNotice(ui, playback)) item { StatusBanner(ui, playback, onRetry = { client.retry() }, onLeave = { client.leave() }) }
         item { MembersSection(ui) }
         item { NowPlayingCard(client, ui, input, track, playback) }
-        PlaylistSection(client, ui, room?.trackId, onLockedTap)
+        PlaylistSection(client, ui, room?.trackId, search, onLockedTap)
     }
 }
 
@@ -647,9 +658,7 @@ private fun MembersSection(ui: UiState) {
         }
         if (expanded) members.forEach { member ->
             Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.size(32.dp)) {
-                    Box(contentAlignment = Alignment.Center) { Text(member.name.take(1)) }
-                }
+                MemberAvatar(memberId = member.id, name = member.name, online = member.online)
                 Spacer(Modifier.width(12.dp))
                 Text(member.name, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
@@ -661,16 +670,41 @@ private fun MembersSection(ui: UiState) {
     }
 }
 
-/** 歌单：当前曲目高亮；仅房主可切歌，非房主点击给出提示而不是静默无响应。 */
+/** 歌单：顶部搜索框只过滤本地显示（不影响播放/服务器状态）；当前曲目高亮在过滤结果中依然生效。 */
 @OptIn(ExperimentalMaterial3Api::class)
-private fun LazyListScope.PlaylistSection(client: RoomClient, ui: UiState, currentTrackId: String?, onLockedTap: () -> Unit) {
+private fun LazyListScope.PlaylistSection(client: RoomClient, ui: UiState, currentTrackId: String?, search: PlaylistSearch, onLockedTap: () -> Unit) {
     item {
         Text("歌单", style = MaterialTheme.typography.titleMedium)
     }
     if (ui.tracks.isEmpty()) {
         item { Text("还没有歌曲，联系房主添加后再来听。", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        return
     }
-    items(ui.tracks, key = { it.id }) { song ->
+    item {
+        OutlinedTextField(
+            value = search.query,
+            onValueChange = { search.query = it },
+            placeholder = { Text("搜索歌曲") },
+            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+            trailingIcon = {
+                // 非空时才给清除按钮；contentDescription 供读屏，图标本身不重复播报。
+                if (search.query.isNotEmpty()) {
+                    IconButton(onClick = { search.query = "" }) {
+                        Icon(Icons.Outlined.Close, contentDescription = "清除搜索")
+                    }
+                }
+            },
+            singleLine = true,
+            shape = FieldShape,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+    val hits = PlaylistFilter.filter(ui.tracks.map { it.title }, search.query)
+    if (hits.isEmpty()) {
+        item { Text("没有匹配的歌曲", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+    }
+    items(hits, key = { ui.tracks[it].id }) { index ->
+        val song = ui.tracks[index]
         val current = song.id == currentTrackId
         Surface(
             shape = RowShape,

@@ -44,6 +44,13 @@ ListenApplication 持有 RoomClient；页面通过 StateFlow 观察 UiState，�
 - 确认卡与入房错误横幅互斥展示：入房失败优先显示错误横幅，确认卡数据保留、已填昵称不受影响；入房进行中（busy）粘贴与「重新输入」禁用。
 - 口令可包含服务器地址（公开信息），绝不包含成员令牌。
 
+### 成员可视化与歌单搜索（2026-09-24 批次 2）
+
+- 成员头像：展开成员列表后每行显示圆形头像，取昵称首字符（空白时兜底「友」），背景色从主题派生的 6 色固定色板（primary/secondary/tertiary 及各自 container，配对对应 on 色）按 memberId 稳定散列取索引——同一成员颜色恒定，不硬编码色值，亮暗方案自动跟随。实现收敛在 `ui/MemberAvatar.kt`（色板索引为纯函数 `avatarPaletteIndex(memberId, paletteSize)`，可注入色板大小做 JVM 测试）。
+- 在线状态点：头像右下角 10dp 圆点，在线 colorScheme.primary、离线 colorScheme.outline，加 surface 色描边保证任意头像底色上可见；「房主 · 在线/离线」文字行保留，不单靠颜色传达状态。折叠/展开结构与「N 人一起听」摘要不变。
+- 歌单搜索：歌单区顶部新增 OutlinedTextField（单行、FieldShape，leading 图标 Icons.Outlined.Search，非空时 trailing 清除按钮 Icons.Outlined.Close，placeholder「搜索歌曲」）。过滤逻辑抽成纯函数 `ui/PlaylistFilter.kt`（`filter(titles, query): List<Int>` 返回命中原索引）：查询串首尾 trim、空查询返回全部、大小写不敏感、子串包含匹配（中文直接匹配）。
+- 过滤为空时显示「没有匹配的歌曲」；当前播放项高亮在过滤结果中依然生效（按原索引对齐）；搜索只影响本地显示，不触碰播放与服务器状态；清空查询或退出房间恢复完整列表（搜索词按房间会话 remember，退出自动重置）。
+
 ## 下一阶段
 拆分连接页、房间页和播放器组件，保留单 Activity；采用单一不可变状态，避免控件各自推测连接情况。
 本机播放/缓冲/失败状态已接入；下一步补真机视觉与控制器断连场景验收。
@@ -75,3 +82,4 @@ ListenApplication 持有 RoomClient；页面通过 StateFlow 观察 UiState，�
 2026-09-23 上午：上述 UI 优化批次真机验证通过（PHQ110 无线通道，地址折叠/顶栏三入口/退出确认/播放反馈/返回 Toast 全过；分享面板与非房主 Snackbar 等待后续条件），记录见 test-results/2026-09-23-ui-optimize。
 2026-09-23 傍晚：进度条端点样式改造——material3 1.3 默认手柄是 4×44dp 竖长条（用户报告"很长的竖线不美观且占空间"），改为自定义 thumb/track：14dp 圆点手柄 + 5dp 细轨道，禁用态仍取 SliderDefaults 色，拖动/乐观预览逻辑不变；NowPlayingCard 加 @OptIn(ExperimentalMaterial3Api)。真机目视验收并入下一批次。
 2026-09-24：批次 1 邀请口令闭环——新增 InviteCode 编解码纯函数（8 项 JVM 单测）；顶栏复制/分享改用完整口令（同一 encode 来源）；加入 Tab 新增「粘贴邀请」按钮 + 邀请确认卡 + 智能识别兜底；验收项「复制的邀请码不含地址或令牌」修订为「口令可包含服务器地址（公开信息），绝不包含成员令牌」。RoomClient 调用与行为约定不变；真机验收（复制→粘贴闭环/分享文本/智能识别/失败路径/地址不一致提示）待设备在线。
+2026-09-24：批次 2——成员状态可视化 + 歌单搜索。成员行新增圆形头像（主题派生 6 色色板 + memberId 稳定散列取色，纯函数可测）与 10dp 在线状态点（在线 primary/离线 outline），「房主 · 在线/离线」文字保留；歌单区新增搜索框，过滤逻辑抽为 PlaylistFilter 纯函数（trim/大小写不敏感/子串匹配，返回命中原索引），空结果占位「没有匹配的歌曲」，当前播放高亮在过滤结果中依然生效，搜索仅影响本地显示。新增 9 项 JVM 单测（PlaylistFilterTest 6 + AvatarPaletteIndexTest 3）；无新依赖、未改 server/；真机目视验收待设备在线。
