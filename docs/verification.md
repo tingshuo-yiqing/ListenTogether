@@ -4,6 +4,15 @@
 更新日期：2026-09-26
 定位：**进度唯一事实来源**。当前状态看「状态一览」，待办看「尚待验收」；每轮交付以追加「本轮新增」小节的方式登记，测试细节由 docs/test-results/<日期-场景>/ 承载，更早的历史轮次已压缩为「交付历史索引」。
 
+## 本轮新增（工作区二次清理 + 清理标准定型，2026-09-26 深夜，无代码改动、无新 hash）
+
+接上一节清理轮之后，用户要求全面复查目录并执行安全、克制的二次清理，同时把本次流程固化为今后清理的更新标准（已写入 [development-standards.md](development-standards.md)「仓库清理标准」）。APK 锚 **517A776B…** 不变。
+
+- **审查结论（git 跟踪的 366 文件零删除）**：源码（Kotlin/TS）扫描无死代码与成块废弃注释；此前按反馈删除的 UI 文件（RoomActivity/TrackArtwork/PlaylistImage 等）确认无残留；12 篇顶层文档 + 11 篇模块文档互有引用、无孤儿文档；22 个脚本逐一核对均被 README/模块文档/证据链引用（含绑定已闭环场景的 `m3-auth-recheck*.sh`，删除会断证据链，保留）。冗余全部集中在 gitignore 覆盖的本地产物。
+- **删除项（均 gitignore、可再生/已归档，经用户逐项确认后执行，共回收约 343MB）**：①`demo-backend.log`（本机后端已停的残留日志，重启自动重建）；②`deploy-artifacts/` 内的在产 release 20260926-1822 制品 + SHA256SUMS 本地副本（12MB——云端 `releases/20260926-1822` 保留完整解包副本，`package-deploy.ps1` 可随时重建；目录保留为空备用）；③`.workbuddy/` 356 项 → 11 项（57MB → 296K）——删除 tmp-* 探针（含两个 24MB 装机核对 APK 副本）、09-22~09-24 三轮测试的 UI dump XML/截图/诊断 JSONL/旧 build/pkg 日志（场景均已闭环、关键证据已归档 docs/test-results/ 并入 git），**保留**可复跑驱动（w1/b1/fb_driver.py、lt_drive.py、lt_finalize.sh、lt_unlock.sh）、分析脚本（analyze-diag/analyze-stall/find-ui）、agent-prompts-w1-w4.md 与 memory/；④`android/app/build/`（274MB）全清后全量重建。
+- **保留项（保守原则）**：`demo-media/有何不可.mp3`（未被 catalog 引用的个人音频，本地唯一副本）继续保留；`media/` 空 catalog 模板、`server/dist`、`node_modules`、`.gradle/`、`deploy/` 基线不动。
+- **门禁（实跑）**：全量重建后 `cleanTestDebugUnitTest → testDebugUnitTest → assembleDebug → lintDebug` BUILD SUCCESSFUL（2m53s），单测 **96/96 实跑、0 失败/错误/跳过**（XML 报告逐个统计），Lint 通过，`app-debug.apk` 再生；`git status` 0 变更（删除项全部为非跟踪内容）。项目体积（不含 .git）约 472MB → 129MB。
+
 ## 本轮新增（工作区与文档清理，2026-09-26 晚，纯文档/工作区、无代码改动、无新 hash）
 
 按用户指示清理过期、无用文件并收敛文档结构；未改任何产品代码与协议，APK 锚 **517A776B…** 不变。

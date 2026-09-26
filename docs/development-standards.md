@@ -84,3 +84,14 @@ Kotlin 的公共模型、状态转换、Service 生命周期、时钟算法使�
 - 文档、接口、注释、测试和发布记录一致；所有待测项仍明确标为待测。
 - 检查 Markdown 相对链接和代码入口有效。
 - 发布记录包括版本、构建命令、测试报告、APK hash、设备与服务器条件。
+
+## 仓库清理标准（2026-09-26 定型，后续清理一律照此执行）
+
+本标准由 2026-09-26 深夜「工作区二次清理」轮定型（证据见 verification.md 该节），适用于一切删除/精简类操作：
+
+1. **先勘察后动手**：`git status` 确认基线干净；对待删项做引用扫描（docs/scripts/README 互相 grep，含证据目录 README）；确认目标是否被 .gitignore 覆盖。
+2. **逐项给结论**：每个拟删项必须写明「是否仍被引用 / 是否影响构建测试运行 / 是否有保留价值」与保留或删除理由；**用途不确定的一律保留并标注说明**。
+3. **清单先行**：先输出按路径列出的清理清单交用户确认，确认后才执行删除；不替用户决定有争议项。
+4. **只动安全区**：默认只删 .gitignore 覆盖、可由源码/脚本重建或已在云端/证据目录归档的产物（构建目录、残留日志、临时探针、已上云制品的本地副本）。git 跟踪文件的删除必须逐条说明断链影响。**永不删除**：版本控制关键配置（.gitignore 等）、`docs/test-results/` 证据链、`docs/archive/`、`deploy/` 部署基线、`.workbuddy/memory/` 与可复跑驱动脚本（w1/b1/fb_driver.py、lt_*）、本地唯一副本的个人文件（如 `demo-media/有何不可.mp3`）。
+5. **删后必验**：删过构建产物（如 `android/app/build`）必须全量重跑门禁 `cleanTestDebugUnitTest → testDebugUnitTest → assembleDebug → lintDebug`，确认测试实跑（非 UP-TO-DATE）、0 失败；收尾 `git status` 应为 0 变更（证明未误删跟踪文件）。
+6. **登记闭环**：清理结果按「本轮新增」追加进 verification.md，写明删除项/保留项/回收体积/门禁结论；踩到新坑回填 development-pitfalls.md。
