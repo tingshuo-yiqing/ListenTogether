@@ -4,7 +4,9 @@
 
 ---
 
-## 1. 当前状态快照（模块 × 状态）
+## 1. 2026-09-24 历史状态快照（模块 × 状态）
+
+以下表格保留当时编排背景；当前曲库、部署版本、APK 与测试数量一律见 [verification.md](verification.md)，不要用于当前验收。
 
 | 模块（见[架构文档](architecture.md)） | 当前状态 | 关键证据 |
 |---|---|---|
@@ -34,7 +36,7 @@
 | 真机 PHQ110（唯一） | 真机任务互斥；无线 adb 需亮屏 + 单命令块完成 connect/reverse | 陷阱 2.7、2.8 |
 | 云端 ECS（1.7Gi+2G swap，内存态） | 重启即清空房间；**严禁同机跑 VS Code Remote/重负载**；重测与升级不能同时进行 | 陷阱 8.5、2.3 |
 | 公网出网流量 | 大陆地域免费 20GiB/月；LOAD-15 实测 ≈235MB/轮 | verification.md |
-| APK 版本 | 改码即换锚，真机/公网结论必须与 hash 绑定（当前锚 36BD3A5B） | verification.md |
+| APK 版本 | 改码即换锚，真机/公网结论必须与 hash 绑定（该历史轮锚 36BD3A5B；当前锚见 verification） | verification.md |
 | 共享文档 | verification.md、AGENTS.md、模块文档、陷阱清单被所有工作流写入 | 开发规范 |
 
 ## 3. 已完成工作流摘要（W1–W4，2026-09-23 晚）

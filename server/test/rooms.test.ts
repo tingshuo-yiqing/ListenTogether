@@ -89,3 +89,40 @@ test('health keeps ok:true and exposes room, member and connection counters', as
   await until(async () => (await health(app)).wsConnections === 0);
   assert.equal((await health(app)).onlineMembers, 0);
 });
+
+// 全员超时后不得把已删除成员继续作为房主发布；空房仍沿用五分钟回收规则。
+test('expired host is cleared without repeated transfer events, new connection claims host immediately', () => {
+  let now = 0; const events: ServerEvent[] = [];
+  const store = new Rooms([track()], () => now, event => events.push(event));
+  const host = store.create('host'); const room = store.get(host.code);
+  now = 59_999; store.tick(); assert.equal(room.hostId, host.memberId);
+  now = 60_000; store.tick();
+  assert.equal(room.members.length, 0); assert.equal(store.snapshot(room).hostId, '');
+  const transfers = events.filter(e => e.event === 'host.transferred').length;
+  store.tick(); assert.equal(events.filter(e => e.event === 'host.transferred').length, transfers);
+  const guest = store.add(room, 'guest'); const snapshots: unknown[] = [];
+  store.connect(room.code, guest.token, state => snapshots.push(state), () => {});
+  assert.equal(room.hostId, guest.memberId);
+  assert.equal((snapshots[0] as { hostId: string }).hostId, guest.memberId);
+  assert.doesNotThrow(() => store.command(room.code, guest.token, { action: 'play' }));
+  now = 300_000; store.tick(); assert.equal(store.get(room.code), room);
+});
+
+test('joining during host grace does not steal host; exact expiry transfers to earliest online member', () => {
+  let now = 0; const store = new Rooms([track()], () => now);
+  const host = store.create('host'); const room = store.get(host.code);
+  const first = store.add(room, 'first'); const second = store.add(room, 'second');
+  store.connect(room.code, second.token, () => {}, () => {});
+  store.connect(room.code, first.token, () => {}, () => {});
+  now = 59_999; store.tick(); assert.equal(room.hostId, host.memberId);
+  now = 60_000; store.tick(); assert.equal(room.hostId, first.memberId);
+});
+
+test('host leaving with only offline members lets the next connection become host before tick', () => {
+  const store = new Rooms([track()], () => 0);
+  const host = store.create('host'); const room = store.get(host.code);
+  const guest = store.add(room, 'guest'); store.leave(room.code, host.token);
+  assert.equal(room.hostId, '');
+  store.connect(room.code, guest.token, () => {}, () => {});
+  assert.equal(room.hostId, guest.memberId);
+});

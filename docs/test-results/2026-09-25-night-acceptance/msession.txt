@@ -1,0 +1,78 @@
+MEDIA SESSION SERVICE (dumpsys media_session)
+
+7 sessions listeners.
+Global priority session is com.android.server.telecom/HeadsetMediaButton (userId=0)
+  HeadsetMediaButton com.android.server.telecom/HeadsetMediaButton (userId=0)
+    ownerPid=1885, ownerUid=1000, userId=0
+    package=com.android.server.telecom
+    launchIntent=null
+    mediaButtonReceiver=null
+    active=false
+    flags=65537
+    rating type=0
+    controllers: 0
+    state=null
+    audioAttrs=AudioAttributes: usage=USAGE_VOICE_COMMUNICATION content=CONTENT_TYPE_SPEECH flags=0x800 tags= bundle=null
+    volumeType=LOCAL, controlType=ABSOLUTE, max=0, current=0, volumeControlId=null
+    metadata: null
+    queueTitle=null, size=0
+User Records:
+Record for full_user=0
+  Volume key long-press listener: null
+  Volume key long-press listener package: 
+  Media key listener: null
+  Media key listener package: 
+  OnMediaKeyEventDispatchedListener: added 0 listener(s)
+  OnMediaKeyEventSessionChangedListener: added 1 listener(s)
+    from com.android.bluetooth
+  Last MediaButtonReceiver: null
+  Media button session is com.listentogether.app.benchmark/androidx.media3.session.id. (userId=0)
+  Sessions Stack - have 3 sessions:
+    androidx.media3.session.id. com.listentogether.app.benchmark/androidx.media3.session.id. (userId=0)
+      ownerPid=504, ownerUid=10332, userId=0
+      package=com.listentogether.app.benchmark
+      launchIntent=PendingIntent{91949e: PendingIntentRecord{5a08569 com.listentogether.app.benchmark startActivity (allowlist: 5f8c1d4:+30s0ms/0/NOTIFICATION_SERVICE/NotificationManagerService)}}
+      mediaButtonReceiver=null
+      active=true
+      flags=7
+      rating type=0
+      controllers: 6
+      state=PlaybackState {state=PLAYING(3), position=105100, buffered position=174759, speed=1.0, updated=71493880, actions=7340027, custom actions=[], active item id=0, error=null}
+      audioAttrs=AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_MUSIC flags=0x800 tags= bundle=null
+      volumeType=LOCAL, controlType=ABSOLUTE, max=0, current=0, volumeControlId=null
+      metadata: size=5, description=有何不可, 一起听歌, null
+      queueTitle=null, size=1
+    TbAliveMedia com.taobao.taobao/TbAliveMedia (userId=0)
+      ownerPid=12711, ownerUid=10188, userId=0
+      package=com.taobao.taobao
+      launchIntent=null
+      mediaButtonReceiver=MBR {pi=PendingIntent{c25e8fd: PendingIntentRecord{b5e8cc0 com.taobao.taobao broadcastIntent}}, componentName=ComponentInfo{com.taobao.taobao/com.taobao.matrix.MdaReceiver}, type=1, pkg=com.taobao.taobao}
+      active=true
+      flags=0
+      rating type=0
+      controllers: 2
+      state=null
+      audioAttrs=AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0x800 tags= bundle=null
+      volumeType=LOCAL, controlType=ABSOLUTE, max=0, current=0, volumeControlId=null
+      metadata: null
+      queueTitle=null, size=0
+    androidx.media3.session.id. com.listentogether.app/androidx.media3.session.id. (userId=0)
+      ownerPid=30746, ownerUid=10364, userId=0
+      package=com.listentogether.app
+      launchIntent=PendingIntent{9789b7f: PendingIntentRecord{6f46614 com.listentogether.app startActivity (allowlist: 5f8c1d4:+30s0ms/0/NOTIFICATION_SERVICE/NotificationManagerService)}}
+      mediaButtonReceiver=null
+      active=true
+      flags=7
+      rating type=0
+      controllers: 5
+      state=PlaybackState {state=PAUSED(2), position=0, buffered position=26, speed=0.0, updated=70958338, actions=7340029, custom actions=[], active item id=0, error=null}
+      audioAttrs=AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_MUSIC flags=0x800 tags= bundle=null
+      volumeType=LOCAL, controlType=ABSOLUTE, max=0, current=0, volumeControlId=null
+      metadata: size=5, description=有何不可, 一起听歌, null
+      queueTitle=null, size=1
+Audio playback (lastly played comes first)
+  uid=10332 packages=com.listentogether.app.benchmark 
+Media session config:
+  media_button_receiver_fgs_allowlist_duration_ms: [cur: 10000, def: 10000]
+  media_session_calback_fgs_allowlist_duration_ms: [cur: 10000, def: 10000]
+  media_session_callback_fgs_while_in_use_temp_allow_duration_ms: [cur: 10000, def: 10000]

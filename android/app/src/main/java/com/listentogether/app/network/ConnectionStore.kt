@@ -10,11 +10,25 @@ import androidx.core.content.edit
 interface ConnectionStore {
     fun loadBaseUrl(): String
     fun saveBaseUrl(url: String)
+
+    /** 最近一次成功加入的公开房间码与昵称；只用于进程重启后的手动重入预填，不含令牌。 */
+    fun loadLastRoom(): LastRoom? = null
+    fun saveLastRoom(room: LastRoom) {}
 }
 
-/** 生产实现：baseUrl 是唯一持久化字段；进程重启后需重新加入房间（令牌不落盘）。 */
+data class LastRoom(val code: String, val nickname: String)
+
+/** 生产实现：只持久化服务器地址、最近房间码与昵称；成员令牌不落盘。 */
 internal class SharedPrefsStore(context: Context) : ConnectionStore {
     private val prefs = context.getSharedPreferences("connection", Context.MODE_PRIVATE)
     override fun loadBaseUrl(): String = prefs.getString("baseUrl", "") ?: ""
     override fun saveBaseUrl(url: String) { prefs.edit { putString("baseUrl", url) } }
+    override fun loadLastRoom(): LastRoom? {
+        val code = prefs.getString("lastRoomCode", null) ?: return null
+        val nickname = prefs.getString("lastNickname", null) ?: return null
+        return LastRoom(code, nickname)
+    }
+    override fun saveLastRoom(room: LastRoom) {
+        prefs.edit { putString("lastRoomCode", room.code); putString("lastNickname", room.nickname) }
+    }
 }

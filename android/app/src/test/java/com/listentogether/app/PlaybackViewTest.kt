@@ -11,26 +11,13 @@ class PlaybackViewTest {
         status = ConnectionStatus.Ready, message = "已同步",
         room = RoomState("host", emptyList(), "song", true, 0, 0, 1)
     )
-    private val player = PlaybackView(connected = true, mediaId = "song")
+    private val player = PlaybackView(mediaId = "song")
 
-    @Test fun roomIntentDoesNotPretendToBeAudible() {
-        assertEquals("准备中", playbackLabel(ready, player))
-        assertEquals("缓冲中", playbackLabel(ready, player.copy(buffering = true)))
-        assertEquals("播放中", playbackLabel(ready, player.copy(playing = true)))
-    }
     @Test fun connectedAudioFailureRemainsVisible() {
-        val failed = player.copy(failed = true)
-        assertTrue(showStatusNotice(ready, failed))
-        assertEquals("播放失败", playbackLabel(ready, failed))
+        assertTrue(showStatusNotice(ready, player.copy(failed = true)))
     }
-    @Test fun localPauseAndDisconnectOverrideOldPlayingObservation() {
-        val old = player.copy(playing = true)
-        assertEquals("本机已暂停", playbackLabel(ready.copy(locallyPaused = true), old))
-        assertEquals("等待连接", playbackLabel(ready.copy(status = ConnectionStatus.Reconnecting), old))
-    }
-    @Test fun oldTrackObservationCannotLabelNewTrack() {
-        val old = player.copy(mediaId = "old", playing = true, failed = true)
-        assertEquals("准备中", playbackLabel(ready, old))
+    @Test fun oldTrackObservationCannotNoticeNewTrack() {
+        val old = player.copy(mediaId = "old", failed = true)
         assertFalse(showStatusNotice(ready, old))
     }
     @Test fun normalSyncIsCompactButPauseAndNoticeAreNotHidden() {

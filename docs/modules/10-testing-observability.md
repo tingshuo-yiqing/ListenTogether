@@ -1,15 +1,15 @@
 # 10 测试、诊断与验收
 
 ## 当前资产与覆盖
-server/test：20 项测试（5 个文件，2026-09-24）。app.test.ts 5 项覆盖房间权限与生命周期、HTTP/Range 与限流、15 个真实 WS；
+server/test：23 项测试（5 个文件，2026-09-26）。app.test.ts 5 项覆盖房间权限与生命周期、HTTP/Range 与限流、15 个真实 WS；
 catalog.test.ts 3 项覆盖真实 MP3 解析、坏清单，以及曲库外 `../` 逃逸与目录链接逃逸的拒绝（含"曲库内链接可用"对照）；
 protocol.test.ts 2 项把 [protocol.md](../protocol.md) 的 JSON Schema 当作契约：直接从文档提取 schema，校验 buildApp 产出的真实
 state/clock/error 与出站 sync/command，并用构造性漂移（多字段/缺字段/类型错/未知 action）证明校验器有牙——
 实现与文档任一侧改动都会变红。校验器是 `test/mini-schema.ts` 的最小实现，无运行时依赖、无 codegen；
 realtime.test.ts 6 项钉住传输防线：消息级 20 条/秒第 21 条回 429、握手限连（同令牌+IP 超限 429、换源 IP 不受影响、无效令牌仍 401）、
 bufferedAmount 超 128KiB 时 close(1013)、15 秒无 pong 的 terminate（假 timer）；
-rooms.test.ts 4 项覆盖同 IP 存量房间配额（含回收释放与按 IP 隔离）、房屋领域事件全生命周期与"不含令牌/昵称"红线、health 计数随连接变化。
-android/app/src/test：6 项 ClockEstimator、13 项 RoomClient 会话竞态、5 项同步数学、4 项本地播放策略、4 项播放失败分类、4 项时间格式化、6 项 UI 状态语义回归、8 项 DiagnosticsLog 诊断边界，共 50 项（2026-09-24）。
+rooms.test.ts 7 项覆盖同 IP 存量房间配额（含回收释放与按 IP 隔离）、房间领域事件全生命周期与"不含令牌/昵称"红线、health 计数随连接变化；另验证房主清扫、首次上线立即接任与 60 秒宽限边界。
+android/app/src/test：本轮共 91 项（09-26），在 84 项基线上新增邀请边界 2 项、倍速策略 5 项；包含会话竞态、时钟、同步、播放策略、UI 纯逻辑与诊断边界。
 诊断：debug 构建 DiagnosticsLog 已实现（连接/校时/播放事件 JSONL，单文件约20MB、实例创建起60分钟窗口，超限停止写入，不自动轮转，不含令牌）；DiagnosticsLogTest（8 项 JVM 单测）覆盖 20MB/60 分钟轮转停止、JSONL 行格式、令牌不出现在输出红线约束、禁用时不创建文件；DiagnosticsLog 边界可注入（时钟、目录、执行器），生产构造器不变。
 smoke-test.mjs：对运行后端执行HTTP、两个WS及真实Range验证。
 check-doc-links.mjs：扫描项目 Markdown 的本地链接；跳过外部 URL、锚点和不参与文档验证的构建/依赖目录。
@@ -60,7 +60,7 @@ Debug诊断JSONL已实现（限60分钟或20MB，用户主动测试时采集）�
 2026-09-21：建档；ClockEstimator 单测、debug 诊断日志与会话竞态假传输层回归已实现；第二设备、双机采集和故障矩阵尚待执行。
 
 ## 2026-09-22 推进补充
-**2026-09-24 更新**：验收报告字段规范见 [开发规范](../development-standards.md)；M3-LONG 执行要点见 [路线图第 4 节](../next-development-plan.md)（60 分钟播放需 ≥65 分钟测试音、全程外部采样、不能中途重启拼接连续播放结论——demo-hour 70 分钟已备）。15 路云端公网重测已通过（2026-09-23 晚，见 [load15-cloud](../test-results/2026-09-23-load15-cloud/README.md)）；M3-LONG 真机执行仍挂起。
+**2026-09-24 更新**：验收报告字段规范见 [开发规范](../development-standards.md)；M3-LONG 执行要点见 [路线图第 4 节](../next-development-plan.md)（60 分钟播放需 ≥65 分钟测试音、全程外部采样、不能中途重启拼接连续播放结论——demo-hour 70 分钟已备）。15 路云端公网重测已通过（2026-09-23 晚，见 [load15-cloud](../test-results/2026-09-23-load15-cloud/README.md)）；M3-LONG 已于 09-24 完成（真实音乐 70 分钟 + 息屏 30 分钟），见 [长时记录](../test-results/2026-09-24-long-multiplayer/README.md)。
 
 2026-09-23：新增 PlaybackViewTest，覆盖播放意图与实际播放区分、音频错误可见性、本机暂停、旧曲目隔离及入房错误；UI 目视场景见 [UI 交付记录](../test-results/2026-09-23-ui-refresh/README.md)，当前无连接设备，待执行。
 2026-09-24：新增 DiagnosticsLogTest（8 项 JVM 单测），覆盖 20MB/60 分钟轮转停止、JSONL 行格式、令牌不出现在输出红线约束、禁用时不创建文件；DiagnosticsLog 重构为内部构造器注入时钟/目录/执行器，生产入口不变。

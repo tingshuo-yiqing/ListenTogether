@@ -1,0 +1,19 @@
+{
+  "android": {
+    "tests": 91,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lintIssues": 0,
+  "apk": {
+    "debug": {
+      "sha256": "EC5FCF0A987D10087CE88CEC228CF4509CDCC5B4E6D06E0CC79662005A4C4870",
+      "bytes": 23049926
+    },
+    "benchmark": {
+      "sha256": "F943E3CA4942B84E23169CF0927A07BE11D607329F27DA86B27225F894E2438B",
+      "bytes": 2429597
+    }
+  }
+}

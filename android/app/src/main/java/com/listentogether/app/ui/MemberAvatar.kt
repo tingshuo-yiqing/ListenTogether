@@ -22,8 +22,20 @@ internal fun avatarPaletteIndex(memberId: String, paletteSize: Int): Int {
 }
 
 /**
- * 圆形成员头像：昵称首字符，背景从主题派生的 6 色固定色板取色
- * （primary/secondary/tertiary 及各自 container，配对对应 on 色，禁止硬编码）。
+ * 头像字符：昵称自带的 emoji 优先，否则取首个字素，全空回落"友"。
+ * 不使用 `take(1)`——那会把 emoji 的代理对截成半个字符（渲染成方框）。
+ */
+internal fun memberAvatarGlyph(name: String): String {
+    val (emoji, label) = splitAvatarPrefix(name)
+    return emoji ?: firstGrapheme(label) ?: "友"
+}
+
+/** 成员行文字：去掉头像前缀后的显示名，避免头像 emoji 在头像与文字上重复出现。 */
+internal fun memberDisplayName(name: String): String = splitAvatarPrefix(name).second.ifBlank { name.trim() }
+
+/**
+ * 圆形成员头像：昵称首个字素（emoji 则直接用 emoji，见 [splitAvatarPrefix]），
+ * 背景从主题派生的 6 色固定色板取色（primary/secondary/tertiary 及各自 container，配对对应 on 色，禁止硬编码）。
  * 右下角在线状态点：在线 primary、离线 outline；描边用 surface 保证点在任意头像底色上可见。
  * 角色与在线/离线仍由旁边文字行承载，不单靠颜色传达状态。
  */
@@ -48,7 +60,7 @@ fun MemberAvatar(memberId: String, name: String, online: Boolean, modifier: Modi
             contentAlignment = Alignment.Center
         ) {
             Text(
-                name.trim().take(1).ifBlank { "友" },
+                memberAvatarGlyph(name),
                 style = MaterialTheme.typography.titleSmall,
                 color = content,
                 maxLines = 1,

@@ -46,6 +46,8 @@ export class Rooms {
   connect(code: string, token: string, send: Member['send'], close: () => void) {
     const { room, member } = this.auth(code, token);
     member.close?.(); member.send = send; member.close = close; room.emptySince = undefined;
+    // 无房主时在首个在线快照之前补位；仍在宽限中的房主保留身份。
+    if (!room.members.some(m => m.id === room.hostId)) this.transferHost(room, room.members.find(m => m.send)!.id);
     this.broadcast(room);
     this.emit({ event: 'member.online', code: room.code, memberId: member.id });
     // 旧连接的 close 事件不能把替换后的新连接标记为离线。
@@ -87,8 +89,8 @@ export class Rooms {
       const now = this.now(); let changed = false;
       const host = room.members.find(m => m.id === room.hostId);
       if (!host || (!host.send && now - host.offlineAt >= MEMBER_GRACE_MS)) {
-        const next = room.members.find(m => m.send);
-        if (next && next.id !== room.hostId) { this.transferHost(room, next.id); changed = true; }
+        const nextId = room.members.find(m => m.send)?.id ?? '';
+        if (nextId !== room.hostId) { this.transferHost(room, nextId); changed = true; }
       }
       const expired = room.members.filter(m => !m.send && now - m.offlineAt >= MEMBER_GRACE_MS);
       if (expired.length) {

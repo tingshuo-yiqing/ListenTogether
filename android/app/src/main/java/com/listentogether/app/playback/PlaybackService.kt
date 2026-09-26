@@ -47,9 +47,6 @@ class PlaybackService : MediaSessionService() {
     private var lastBuffering = false
     private var localPauseLogged = false
 
-    /** 当前生效的追赶倍速（1.0 = 原速）；load/大漂移 seek 时复位。 */
-    private var catchupSpeed = 1.0f
-
     override fun onCreate() {
         super.onCreate()
         http = DefaultHttpDataSource.Factory()
@@ -93,10 +90,18 @@ class PlaybackService : MediaSessionService() {
                 return base.buildUpon().setAvailableCommands(commands).build()
             }
             override fun handleSetPlayWhenReady(playWhenReady: Boolean): ListenableFuture<*> {
+                // 暂停请求先同步清掉追赶倍速，再等待服务端快照；否则用户快速“暂停→恢复”时，
+                // PAUSED 已出现在 MediaSession，但旧的 0.88/1.12 PlaybackParameters 仍可能被下一次播放沿用。
+                if (!playWhenReady && player.playbackParameters.speed != 1.0f) {
+                    player.playbackParameters = player.playbackParameters.withSpeed(1.0f)
+                }
                 client.setPlaying(playWhenReady)
                 return Futures.immediateVoidFuture()
             }
             override fun handleStop(): ListenableFuture<*> {
+                if (player.playbackParameters.speed != 1.0f) {
+                    player.playbackParameters = player.playbackParameters.withSpeed(1.0f)
+                }
                 client.setPlaying(false)
                 return Futures.immediateVoidFuture()
             }
@@ -147,8 +152,7 @@ class PlaybackService : MediaSessionService() {
         if (!client.synchronized || room == null || ui.locallyPaused) {
             player.pause()
             // 暂停期间不保留追赶倍速，恢复后由校准逻辑重新决定。
-            if (catchupSpeed != 1.0f) {
-                catchupSpeed = 1.0f
+            if (player.playbackParameters.speed != 1.0f) {
                 player.playbackParameters = player.playbackParameters.withSpeed(1.0f)
             }
             // 本机暂停会被快照周期反复触发；只在进入暂停沿记录一条，保证 JSONL 能看到焦点/耳机中断的时刻。
@@ -161,19 +165,26 @@ class PlaybackService : MediaSessionService() {
         }
         localPauseLogged = false
         val track = ui.tracks.find { it.id == room.trackId }
-        if (track == null) { player.pause(); return }
+        if (track == null) {
+            player.pause()
+            player.playbackParameters = player.playbackParameters.withSpeed(1.0f)
+            return
+        }
         http.setDefaultRequestProperties(mapOf("Authorization" to "Bearer " + credentials.token))
         val expected = SyncMath.target(room.positionMs, room.timestampMs, room.playing, client.serverNow, track.durationMs)
         val changed = player.currentMediaItem?.mediaId != track.id
         val buffering = player.playbackState == Player.STATE_BUFFERING
         val actualBefore = player.currentPosition
+        // 不另存倍速缓存：换曲/seek 不会自动清除 ExoPlayer 的 PlaybackParameters。
+        val speed = PlaybackPolicy.correctionSpeed(
+            player.playbackParameters.speed, expected - actualBefore, buffering, changed || !room.playing
+        )
         var correction = ""
         if (changed) {
             val item = MediaItem.Builder().setMediaId(track.id)
                 .setUri(client.baseUrl + "/api/rooms/" + credentials.code + "/audio/" + track.id)
                 .setMediaMetadata(MediaMetadata.Builder().setTitle(track.title).setArtist("一起听歌").build()).build()
             player.setMediaItem(item, expected); player.prepare()
-            catchupSpeed = 1.0f
             correction = "load"
         } else if (!buffering && SyncMath.needsSeek(actualBefore, expected)) {
             // 分级纠正（漂移 = 服务端目标 - 本机位置，正值为落后）：
@@ -183,20 +194,14 @@ class PlaybackService : MediaSessionService() {
             val drift = expected - actualBefore
             if (abs(drift) > SyncMath.SPEED_MAX_DRIFT_MS) {
                 player.seekTo(expected)
-                catchupSpeed = 1.0f
                 correction = "seek"
             } else {
-                val speed = SyncMath.catchupSpeed(drift)
-                if (abs(speed - catchupSpeed) >= 0.01f) {
-                    catchupSpeed = speed
-                    player.playbackParameters = player.playbackParameters.withSpeed(speed)
-                }
                 correction = "speed"
             }
-        } else if (!buffering && catchupSpeed != 1.0f && abs(expected - actualBefore) <= SyncMath.SPEED_DONE_MS) {
-            catchupSpeed = 1.0f
-            player.playbackParameters = player.playbackParameters.withSpeed(1.0f)
-            correction = "speed"
+        }
+        if (player.playbackParameters.speed != speed) {
+            player.playbackParameters = player.playbackParameters.withSpeed(speed)
+            if (correction.isEmpty()) correction = "speed"
         }
         if (player.playbackState == Player.STATE_IDLE) player.prepare()
         player.playWhenReady = PlaybackPolicy.shouldPlay(client.synchronized, room.playing, ui.locallyPaused)

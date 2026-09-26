@@ -33,6 +33,12 @@
 - 规避：调用会写 stderr 的原生命令（ffmpeg/ffprobe/scp/ssh/gradle）前把 EAP 收窄为 Continue（用完恢复），stderr 用 `2> 文件` 承接（PS 5.1 产出 UTF-16，Get-Content 自动识别），成败只认 `$LASTEXITCODE`。另：给原生命令传"一组选项"必须数组展开 `@("-map_metadata","-1")`，单个字符串 `"-map_metadata -1"` 会被当成一个参数名（同 2.7E 参数形态坑）；ffmpeg 真因元数据 fatal 时用 `-map_metadata -1` 去元数据重转，曲库标题来自 catalog.json 不受影响。
 - **2026-09-24 补充**：`scripts/check.ps1` 的 `Invoke-CheckedCommand` 已按本条改造——调用原生命令期间把 EAP 收窄为 Continue，`finally` 恢复，成败只认 `$LASTEXITCODE`（此前的写法在 EAP=Stop 下会把 gradle/npm 的任意一行 stderr 变成终止错误，退出码 0 也中招）。脚本外部仍**不要**对外层做 `*>&1` 合并重定向（陷阱 1.5）。
 
+### 1.7 用 `*>&1 | Out-File` 采集 Gradle 输出，Kotlin 报错被拆行加装饰后搜不到（2026-09-25）
+- 现象：编译失败的日志里只剩「Compilation error. See log for more details」，`Select-String '^e: '` 一条都匹配不到；真正的错误 `e: file:///...MainActivity.kt:505:26 Unresolved reference 'contentDescription'` 被 PowerShell 按控制台宽度折断成两行，中间还插入 `所在位置 行:1 字符: 204`、`+ CategoryInfo`、`RemoteException` 等装饰。
+- 根因：原生命令的 stderr 行被 PowerShell 包装成 ErrorRecord 后再格式化输出（与 1.5/1.6 同族），格式化会折行；外层 `*>&1` 合并重定向正是 1.5/1.6 明令避免的写法。
+- 规避：原生命令的 stdout/stderr **分开做文本重定向**（`1>out.log 2>err.log`），错误行保持原样；再用 Grep 工具搜 `e: file` 定位。已按此跑 `gradlew :app:compileDebugKotlin` 验证——同一次错误直接给出文件:行:列与未解析符号名。
+- **2026-09-25 深夜补充（后台任务的退出码）**：把 Gradle 挂到后台跑时，若包装命令结尾是 `tail`/`echo`，工具看到的退出码属于最后那条命令，**`BUILD FAILED` 也会报"exit code 0"**（本轮首轮门禁的 Lint 失败就是这样被掩盖成通过，靠翻日志才看到）。规避：包装里显式回写 `echo "GRADLE_EXIT=$?" >> 日志`，判定只读这一行；后台任务完成通知里的"成功"不能当作门禁结论。
+
 ## 2. 真机与 adb
 
 ### 2.1 USB 重插清空 adb reverse
@@ -85,6 +91,7 @@
 - 现象：`adb shell settings put system screen_off_timeout 1800000` 报 `SecurityException: com.android.shell was not granted this permission: android.permission.WRITE_SETTINGS`；`settings put global low_power 1` 报 `SecurityException: Permission denial, must have one of: [WRITE_SECURE_SETTINGS]`，且**读回来仍是 0**（不报错时更危险，容易误判"已开启省电"）。
 - 根因：`settings put` 的 `system`/`global` 命名空间分别要求 WRITE_SETTINGS / WRITE_SECURE_SETTINGS，本机 shell 两个都没有；`settings get` 不受影响（所以"能读不能写"）。
 - 规避：需要状态切换时走对应子系统命令——省电用 **`cmd power set-mode 1`（1=on，0=off）**，改完必须 `settings get global low_power` 复核（应为 1、sticky 通常也为 1）；夜间模式用 `cmd uimode night yes|no|auto`（先 `cmd uimode night` 读原值，测完复原）；被改过电池状态用 `dumpsys battery reset` 收尾。屏幕超时等其他 system 设置只能人工在设置界面改。
+- **2026-09-25 深夜补充（把限制变成工具）**：`settings put system user_rotation` / `accelerometer_rotation` 同样被拒（shell 无 WRITE_SETTINGS），想造"配置变更"验证 `rememberSaveable` 是否存活，**不必转手机**——`cmd uimode night yes` 再 `cmd uimode night no` 就会强制 Activity 重建（Manifest 未声明 `configChanges`），比物理旋转稳定且可脚本化。本轮入房表单恢复项即用它取证。
 
 ### 2.10 `screenrecord` 在 PHQ110 段错误，录屏不可用（2026-09-23 实测）
 - 现象：`adb shell screenrecord --time-limit 3 /sdcard/rec.mp4` 返回 **rc=139**（128+11=SIGSEGV）、stdout/stderr 全空、文件不存在；`--size 480x800`、换 `/data/local/tmp` 同样失败。
@@ -97,11 +104,37 @@
 - 规避：文本输入完成后用 **`input keyevent 4`（BACK）收起输入法**——字段聚焦时 BACK 只收 IME 不退出页面；若 IME 已收起 BACK 会退出页面，dump 复核无 EditText 就重启 App 兜底，收起后再 dump 取坐标。连带三个坑：①播放/滚动中的 LazyColumn 只组合可见行，目标行不在视口时 dump 里根本没有该节点——先滚动查找，选中后滚回播放卡核验「当前歌曲」；②服务端空房 5 分钟回收后客户端可能仍停留在房间页（僵尸会话，UI 操作全部无效）——自动化前先看 `/health` 的 rooms 计数，残留会话一律退出重进；③`input text` 对非空字段是**追加**不是覆盖，填充前先循环 DEL 清空。
 - 实证：UI 批次验收驱动加入 keyevent 4 后，手填 join 与确认卡 join 立即恢复；对照数据见 docs/test-results/2026-09-24-ui-batch-acceptance/。
 
+### 2.12 触感反馈没有 adb 级客观证据：`dumpsys vibrator_manager` 不记录 `performHapticFeedback`（2026-09-25 实测）
+- 现象：想为"点播放/切歌/拖动有震动"留客观证据，读 `dumpsys vibrator_manager` 的 `Previous vibrations for usage TOUCH` 历史——本机只保留 ALARM / TOUCH / NOTIFICATION 三类，且**应用包名（`opPkg=com.listentogether.app`）零条**，点击前后计数都是 0；而同一时刻 `dumpsys media_session` 显示 `state=PLAYING`、诊断 `localPause=false` 且位置推进，说明点击确实生效、只是震动没进这份历史。
+- 根因（未深挖，按现象记录）：`View.performHapticFeedback` 走输入系统的 `HapticFeedbackConstants` 通道，ColorOS 的 vibrator 历史只登记显式 `Vibrator.vibrate()`（含 usage 归属）的调用。
+- 规避：**不要用 dumpsys 给触感下结论**；触感的"有无/轻重是否合适"必须在验收记录里标为人工手感项（与"听感"同类），或者改用 `HapticFeedbackConstants` 之外的显式 `Vibrator` 调用（本项目不采用，避免为了可测性改产品实现）。本轮场景⑤因此如实标注"无客观证据，待人工确认"。
+
+### 2.13 同一台手机装两个包也测不了双人：ColorOS 后台断网 + 60 秒清扫（2026-09-25 深夜实测）
+- 现象：想验"房主 + 成员同屏"，于是在同一台 PHQ110 上并装 `com.listentogether.app`（debug）与 `com.listentogether.app.benchmark`（R8），A 包建房后切到 B 包加入。B 包能进房，但 A 包一切回前台就变成 `Expired`；两次都是同一条链路：App 退到后台约 1 分钟 WS 被系统掐断 → 服务端 60 秒后移除该成员 → 空房 5 分钟回收 → 重连拿到 404。
+- 根因：陷阱 2.4（息屏/后台挂起网络）+ 2.5（前台应用查杀后台进程）在"同机双客户端"场景下必然触发，与本项目代码无关；不是同步逻辑缺陷。
+- 规避：**双人场景不要试图用同机两包做**——要么第二台真机，要么"一台手机 + `scripts/member-sim.mjs` 脚本成员"（成员必持 WS），且脚本成员要连本机演示后端并 `adb reverse tcp:3000`（公网地址在 PC 侧可能被安全策略拦截）。反过来，这条链路是**免费的失效路径复现器**：本轮的 Expired 横幅、「重新加入房间」换发新令牌、房间回收后的表单内联错误三个场景就是这样顺带验掉的，写进验收记录时按"意外覆盖"标注而不是"设计用例"。
+
+### 2.14 性能包（`isDebuggable=false`）拿不到客户端诊断：`run-as` 直接拒绝（2026-09-25 深夜实测）
+- 现象：在 benchmark 变体上执行 `adb shell run-as com.listentogether.app.benchmark cat files/diagnostics/*.jsonl` → `run-as: package not debuggable: com.listentogether.app.benchmark`，性能包一侧完全没有本机诊断证据。
+- 根因：`run-as` 要求包可调试（debuggable），而 benchmark 变体刻意 `isDebuggable=false` 才能贴近 release 的 R8/运行时表现；这是取舍不是 bug。
+- 规避：性能包的取证只能靠**外部可见通道**——`dumpsys media_session`（播放态与位置）、`screencap` 截图、`dumpsys gfxinfo <pkg>`（帧耗时）；诊断类结论（seek 确认、漂移校正）留在 debug 包上验。要同一份代码两种口径对照时，**帧耗时用性能包、诊断日志用 debug 包**，并在记录里写明各自来源。另：`am start -n <applicationId>/.MainActivity` 对带 `applicationIdSuffix` 的变体会报"Activity class does not exist"，改用 `monkey -p <pkg> 1` 或写全 `com.listentogether.app.benchmark/com.listentogether.app.MainActivity`。
+
+### 2.15 `adb pull` 遇 USB 抖动静默截断：装机回拉只对哈希会在中途误判（2026-09-26 实测）
+- 现象：装机后 `pm path` 回拉 base.apk，SHA256 与交付锚不一致；`adb pull` 退出无报错（输出被 `tail -1` 过滤后更看不见），文件却只有 4,587,520 / 23,049,926 字节——USB 传输中断把尾部丢了。
+- 根因：USB 线/接口抖动（本轮同日两次设备掉线）使 pull 中途断流；部分路径下 adb 不重试也不显著报错，截断文件留在本地，按哈希一比对就是"装机不一致"的假信号。
+- 规避：装机一致性核对**先比字节数、再比哈希**，大小不符直接重拉而不是怀疑构建；USB 反复掉线时换线/换口，或改用无线 adb（陷阱 2.7）。证据：2026-09-26 设备复测 README「装机与一致性」。
+
+### 2.16 制造「断网 60s+」触发服务端清扫：飞行模式会连带关热点，改用 `svc data disable`（2026-09-26 实测）
+- 现象：为验证「断网 >60s → 服务端清扫 → 令牌作废 → 过期横幅 → 重新加入」，按 HOME 挂后台 78 秒不触发（音频前台服务保活 WS）；`am force-stop` 更不行（冷启不静默入房、无横幅）；飞行模式 70–95 秒能触发，但用户在开个人热点——**飞行模式会把热点一并关掉**，用户明确要求不得关闭热点/不得再开飞行模式。
+- 根因：飞行模式切断整机射频（WiFi AP 含在内）；而热点主机的自身流量走蜂窝数据，`svc data disable` 只断数据面、热点 AP 保持开启。
+- 规避：需要短时断网时用 `adb shell svc data disable`（恢复 `svc data enable`），热点与其余射频不受影响；触发窗口要覆盖清扫 tick——70 秒可能恰好跨过 tick 不触发（实测 70s 一次失败、一次成功），**用 95 秒更稳**；重连后先「连接断开，正在重试」，重连拿到 401 才升级为过期横幅。
+
 ## 3. UI 自动化（uiautomator/input）
 
 ### 3.1 动态进度界面导致 dump 失效
 - 现象：`could not get idle state`，dump 出来的是旧快照。
 - 规避：播放验证以 `dumpsys media_session` 为准，UI dump 只用于静态布局；失败的 dump 标记无效，不当代证据（见 playback-test 文档）。
+- **2026-09-25 补充（代价实例）**：批次 A 真机轮在播放中连续两次 dump 都返回**播放前的旧层级**（显示"已暂停 / 单车 当前"），而诊断 JSONL 与 `dumpsys media_session` 明确显示已切到《富士山下》且 `localPause=false`、位置在推进——一度看起来像"切歌没生效 + 莫名暂停"。改用 `screencap` 截图直接看到真实界面（时间线、当前曲动效、"播放中"）才澄清。**结论：播放/动画进行中的界面事实一律以截图或诊断为准，dump 只能用于静态页面（进入房间前、暂停后）取证。**
 
 ### 3.2 键盘弹起导致坐标漂移、输错字段
 - 现象：昵称输入串进地址字段（"UITest2http://…"），创建房间按钮点空。
@@ -133,6 +166,12 @@
   `adb shell "run-as com.listentogether.app sh -c 'echo <base64(xml)> | base64 -d > shared_prefs/connection.xml'"`（写后 `cat` 复核；`rm` 该文件可让地址框恢复空值并自动展开）。
   对比 3.4：`sed -i` 在 run-as 下静默失败，**重定向 `>` 可用**。昵称用短 ASCII 串 + `input keyevent 111` 收键盘即可。
 
+### 3.7 `input text` 打不进非 ASCII、URL 里的 `://` 会被吞；多行框清空要 `MOVE_HOME`+`FORWARD_DEL`（2026-09-25 深夜实测）
+- 现象：①昵称想输 emoji 或中文，`input text` 后框内为空或只剩乱码；②地址 `http://8.166.126.136:3000` 经 `adb shell input text http://…` 只落进一个 `h`（与 3.6 的"长串丢字"同源，但这里连引号都被 shell 层吃掉）；③清空一个已有多行内容的 Compose 输入框时，`KEYCODE_MOVE_END(123)` 后循环 `KEYCODE_DEL(67)` 删到某一行开头就再也不动。
+- 根因：`input text` 走 keyevent 注入，非 ASCII 无键位可映射；Git Bash → adb → device shell 两层引号会剥掉 `://` 之后的内容；`MOVE_END` 在 Compose 多行字段里**只到当前行行尾**，DEL 于是反复删已空的行首，看起来"卡住"。
+- 规避：①**非 ASCII 昵称不做真机注入**——emoji/代理对截断这类逻辑交给 JVM 单测（`DisplayNameTest`）覆盖，并在验收记录里显式标注"真机未目视"；确需非 ASCII 时人工输入或走存储层写偏好。②URL 整体放进设备端单引号里：`adb shell "input text 'http://8.166.126.136:3000'"`（本轮实测可用），或按 3.6 直接改 `connection.xml`。③清空多行框：`KEYCODE_MOVE_HOME(122)` + 循环 `KEYCODE_FORWARD_DEL(112)` 向后删，或先 `MOVE_HOME` 再一次性 `FORWARD_DEL` 到末尾。
+- 附带：`input keyevent 4` 收 ColorOS 输入法并不总生效（2.11），点空白处（如 y≈1500 的卡片外）也能收起，收完再 dump 取坐标。
+
 ## 4. Compose / Material3
 
 ### 4.1 API 弃用与签名陷阱
@@ -152,10 +191,28 @@
 - 现象：用户反馈歌单下滑明显卡顿；代码检查发现 PlaybackService 每 500ms 把 positionMs 写进 UiState，Activity 根级直接 collect，LazyListScope 内还每次 map/filter 全歌单。尚无真机帧率证据，不能认定这是唯一根因。
 - 规避：屏幕结构流先去掉 positionMs 再 distinctUntilChanged；只有播放器订阅原始进度。搜索按曲库/查询缓存，列表类型分离并保留稳定 key。不丢 room.version/room.positionMs，否则会破坏 seek 确认。ScreenStateTest 覆盖过滤边界。
 
+### 4.4 补充：列表内动画逐帧改变布局尺寸（2026-09-25）
+
+- 现象：用户反馈上下滑动歌单迟滞，检查发现当前曲目 `PlayingIndicator` 在组合阶段读取动画值，并用其修改三根 Box 的 height；这会逐帧触发重组及布局测量，与列表滚动竞争帧预算。无设备帧率证据，不能认定为唯一根因。
+- 规避：外部尺寸固定，在 Canvas 绘制阶段读取动画值、改变绘制高度；动画只触发重绘。切歌跟随同时检查 `isScrollInProgress`，用户正在滑动时跳过自动滚动；进度采样仍按 4.4 隔离，不为优化歌单而改变已修复的 seek 行为。
+
 ### 4.5 长截屏开关与实际依赖版本不一致（2026-09-24）
 - 现象：用户反馈 ColorOS 不支持长截屏，但旧网页建议的 ComposeFeatureFlag_LongScreenshotsEnabled 在本项目依赖中已不存在。
 - 根因与规避：本地 BOM 2025.04.01 对应 Compose UI 1.8.0，核对 sources.jar 的 AndroidComposeView/ScrollCapture 可见 API 31+ 默认接入。先查真实依赖源码，不能盲加旧实验开关或把 OEM 未识别归因于框架缺失；设备离线时保持原生入口待验，新增应用内长图导出作为兜底。
 - 同轮构建问题：`rememberSaveable(stateSaver=...)` 的状态可空而 `listSaver` 原类型非空，编译报 MutableState 类型不匹配；Saver 的 Original 类型必须与状态一致（本轮为 PlaylistImage?），空值保存为空列表。
+
+### 4.6 昵称首字符用 `take(1)` 会把 emoji 截成半个代理对（2026-09-25）
+
+- 现象：为成员加 emoji 头像后（昵称形如「🐱 小王」），原来的 `name.trim().take(1)` 只取到 UTF-16 高位代理，头像位渲染成方框（tofu），成员行文字也可能出现半个字符。
+- 根因：Kotlin 的 `Char` 是 UTF-16 码元，emoji（如 🐱 U+1F431）占两个码元；`take(1)`/`[0]`/`charAt(0)` 都是码元级操作，对星平面字符必然截断。
+- 规避：按码点/字素簇取首字符——`String.codePointAt` + `Character.charCount`，并向后吞掉变体选择符（FE00–FE0F）、肤色修饰符（1F3FB–1F3FF）、keycap（20E3）、成对地区指示符与 ZWJ 组合（`previous == ZWJ` 也要继续吞，否则 👨‍👩‍👧 只取到第一个 emoji）。实测 `"👨‍👩‍👧 一家人"`、`"🇨🇳 中国"`、`"👍🏽 好"` 必须整体取回；回归钉在 DisplayNameTest（含反例断言 `"🐱 小王".take(1).length == 1`，把这个坑固定在测试里而不是注释里）。
+- 连带约束：昵称长度在**两处**都按 UTF-16 码元校验——客户端输入框 `take(24)` 与服务端 `store.ts` 的 1–24 字；给昵称加头像前缀会让总长超限并直接 400，因此拼接后必须再按 24 截断（`composeNickname`）。**截断本身也不能用 `take`**：第 21/24 个码元正好是代理对高位时会切出半个字符，请求体经 UTF-8 编码后被替换成 `?` 存进服务端，成员列表就是方框；用 `takeCodePoints`（累加码点直到再加一个就超限）放不下整个 emoji 时宁可少一个字。
+
+### 4.7 `remember` 的 key 漏了会话/配置维度：跨房间复用与重建清零（2026-09-25，独立复核发现）
+
+- 现象一（跨房间复用）：`remember(client)` 里的 `RoomPlayerState` 存着 `pendingSeek` 与发起那一刻的快照 version。房主拖完滑条 5 秒内退出或换房，新房间 version 从 0 起，确认分支 `snapshot.version <= pendingSeekVersion` 永远成立 → 新房间滑条停在上一个房间的 seek 目标值，5 秒后凭空弹出"进度跳转未确认，请重试"（用户没在新房间做过任何操作）。修法：`remember(client, ui.credentials?.token)`，退房（credentials 变 null）即重建清空；该 state 只存进度与预览，重建无副作用。
+- 现象二（重建清零）：房间动态的 entries/previous/everOnline 用纯 `remember`，而 AndroidManifest 未锁方向、无 `configChanges`——旋转屏幕、切深色、改系统字号都会重建 Activity。`RoomClient` 是 Application 级单例，房间状态因此保住、界面不报任何错，但时间线归零；偏偏成员区展开状态是 `rememberSaveable`，于是出现"展开着却一条动态都没有"的自相矛盾界面。修法：需要跨重建存活的状态用 `rememberSaveable` + `listSaver`（Saver 的 Original 类型必须与状态一致，见 4.5），并把读取放在最小作用域——本轮返回 `State`，在成员区那个 `item` 里读 `.value`，避免每条动态重组整个房间页。
+- 判定口诀：**这个状态属于"进程 / 房间会话 / 页面"哪一层？** 属于房间会话的，必须把会话标识（token 或房间码）写进 `remember` 的 key；属于页面且用户看得见的，必须能跨配置变更存活，否则要么补 Saver，要么接受归零并保证文案自洽（"展开着但空白"就是不自洽）。同轮复核还指出：`JoinInput`（昵称/邀请码/地址）也还是纯 `remember`，旋转后输入会丢——本轮未改，留待后续。
 
 ## 5. 协程与 JVM 单元测试
 
@@ -182,6 +239,22 @@
 - 根因：Gradle 的增量/构建缓存按输入输出判 up-to-date；测试任务的输入（源码、classpath、参数）没变时直接复用上次的输出，退出码 0、报告是旧的。这是构建系统的正常行为，不是故障——但它与"门禁必须给出本轮实测结论"的语义冲突。
 - 规避：**在测试任务之前清掉该任务的输出**。`gradlew :app:cleanTestDebugUnitTest :app:testDebugUnitTest`（Gradle 会为每个 Test 任务自动生成 `clean<任务名>`，删除 `build/test-results`、`build/reports` 下的对应目录）即可强制实跑，只影响测试结果目录，不触发重新编译与重新打包（APK hash 不变）。等价的强制手段：单独一次 `gradlew :app:testDebugUnitTest --rerun`（`--rerun` 只能用于命令行上只指定一个任务的场景，故不适合与 assemble/lint 串在一条命令里）。判断是否真跑过：日志里出现 `> Task :app:testDebugUnitTest` 而不是 `UP-TO-DATE`，且 `build/test-results/testDebugUnitTest/*.xml` 的 mtime 是本次。
 - 同类提醒：**任何"复用上次结论"的验收都要在本轮重新取证**（报告里的 UP-TO-DATE、缓存的 hash、上次的服务端响应）；写验收记录时不要照抄上一轮的"通过"字样。
+- **2026-09-25 补充：Lint 报告同样是"可能过期的产物"**。`> Task :app:lintReportDebug UP-TO-DATE` 表示报告内容被判定未变而**不重写磁盘文件**——本轮就遇到 `app/build/reports/lint-results-debug.txt` 的 mtime 还停在 09-24 20:20，内容却是"No issues found."，直接照抄等于把上一轮的结论写进本轮验收（分析任务 `lintAnalyzeDebug` 其实跑了）。规避：先删 `app/build/reports/lint-results-debug.*` 再跑 `:app:lintDebug`，确认日志里 `lintReportDebug` 不带 UP-TO-DATE、报告的 mtime 是本轮，并且以 `lint-results-debug.xml` 的 `issues` 计数（0）为证，而不是只看 txt 的一句话。
+
+### 5.6 加了 `CAMERA` 权限却没声明 `uses-feature`，门禁被 Lint 拦下（2026-09-25 深夜实测）
+- 现象：为扫码加入引入 ZXing 并在 manifest 加 `<uses-permission android:name="android.permission.CAMERA"/>`，`:app:testDebugUnitTest` 与 `:app:assembleDebug` 都过，只有 `:app:lintDebug` 失败：`Permission exists without corresponding hardware <uses-feature android:name="android.hardware.camera" android:required="false"> [PermissionImpliesUnsupportedChromeOsHardware]`。
+- 根因：Android 把"权限"与"硬件特性"分开登记；只声明权限会让 ChromeOS/无相机设备被判定为"要装到不支持的设备上"，Lint 按兼容性阻断构建。扫码这类**可选能力**必须 `required="false"`。
+- 规避：加权限的同一轮就补 `<uses-feature android:name="android.hardware.<xxx>" android:required="false"/>`，并把 Lint 与编译放在**同一条门禁命令**里跑（本项目 `:app:cleanTestDebugUnitTest :app:testDebugUnitTest :app:assembleDebug :app:lintDebug`），不要"先编译过就算"。同类：`UseKtx` 警告（手绘位图该用 `androidx-core` 的 `createBitmap` / `set`）也在此轮一并清掉——新增 `w:` 必须当场处理（4.1）。
+
+### 5.7 用 `grep -c "<issue"` 数 Lint 问题数会把根标签算成 1 条（2026-09-25 深夜实测）
+- 现象：`grep -c "<issue" lint-results-debug.xml` 返回 `1`，看起来"还有 1 个问题"，实际 XML 是 `<issues>` 根标签自己。
+- 根因：`<issue` 同时前缀匹配 `<issues>`。
+- 规避：判计数用带空格/属性的模式 `grep -o '<issue ' | wc -l`，或直接解析 XML（`python -c "import re;print(len(re.findall(r'<issue ', open(p,encoding='utf-8').read())))"`）；报告仍要先删再生并确认 `> Task :app:lintReportDebug` 不带 UP-TO-DATE（5.5 补充）。
+
+### 5.8 按"测试文件数"对账单测数会少计：JUnit XML 按运行时类名拆分（2026-09-26 审计发现）
+- 现象：上一轮登记"安卓 91 项"，下一轮按 91+新增对账发现实际 96（对不上 1 项）；XML 目录里出现"没有源码文件的 AvatarGlyphTest"。
+- 根因：`DisplayNameTest.kt` 一个文件内含 `DisplayNameTest`(10) 与 `AvatarGlyphTest`(2) 两个测试类；JUnit XML 每个运行时类一份 `TEST-<类名>.xml`，按文件或按"文件数=类数"对账就会少计。
+- 规避：对账一律汇总 XML 属性（`tests/failures/errors/skipped` 逐文件累加）并与源码 `grep -c '@Test'` 全量核对（本仓 96=96）；一个文件多个测试类是合法形态，别把 XML 里的"多余类"当旧文件混入（结合 17:02 时间戳与 cleanTest 排除陈旧结果）。
 
 ## 6. 设计与流程纪律
 
@@ -192,6 +265,7 @@
 - **故障注入先于修复**：构造失败场景再改代码，避免无依据的大规模重写（计划第 3 节原则）。
 - **短测试音会掩盖音频错误与长时问题**：本机环回下 ExoPlayer 会一次性缓冲 30/45 秒的 demo 测试音（buffered position = 文件全长），停后端或改名不再产生 HTTP 请求，401/404/断流错误无法触发；30 分钟息屏/60 分钟播放也需要足够长的测试音。规避：已加入 `demo-media/demo-long.mp3`（40 分钟 220Hz 单声道 32kbps，ffmpeg 合成），音频错误注入时改名该文件并拖动进度到未缓冲区域；新增长测试音后必须**重启演示后端**才会加载进曲库。
 - **压测/多成员脚本成员必须持有 WS**（2026-09-22）：服务端按"离线 60 秒"清扫无连接成员（store.ts:72 tick），空房间 300 秒后删除。纯 HTTP 的"假成员"先 401（成员被清）后 404（房间被删），表现为"前 60 秒成功之后全挂"。规避：load15.mjs 每名成员建立 WS 并保持（ws 客户端自动回 pong）；判断失败时间线时先对照服务端清扫/删除阈值。
+- **由快照反推"上下线"必须区分"首次连接"与"掉线回来"（2026-09-25）**：服务端 `add()`（HTTP join）先广播一份新成员 online=false 的快照，WS `connect()` 之后才置 online=true（store.ts）；只比较前后两帧的 online 位，会把每个新人都播成"加入了房间"+"回来了"两条，而后者是假的。规避：跨快照维护"见过在线"的成员 id 集合（`everOnline`，用 `updateEverOnline` 只保留当前在房成员，集合随 15 人上限有界），"在线"事件要求该 id 此前已在集合里，并补单测（`firstConnectionAfterJoinDoesNotReportComeBack`）。同类教训：**从全量快照反推事件之前，先去 server 源码确认快照的产生时序**（谁先谁后、哪些动作会 broadcast），不要按直觉假定"加入即在房且在线"。
 - **长时任务要脱离工具进程树**（2026-09-22）：终端工具超时会连带杀死 Start-Process 启动的子进程（10 分钟负载第一次启动即被杀）。规避：用 `Invoke-CimMethod Win32_Process Create`（WMI 创建，非工具子进程）+ 输出重定向到文件，再轮询日志取结果。
 
 ## 7. 开发工具环境（2026-09-22）
@@ -206,6 +280,7 @@
 - **非交互 PowerShell 5.1 的 Invoke-WebRequest 直接失败（2026-09-23）**：报"Windows PowerShell 处于非交互模式。朗读和提示功能不可用"，与目标 URL 无关。规避：HTTP 健康检查改用 `[System.Net.HttpWebRequest]::CreateHttp($u)` + GetResponse/StreamReader；会话内 PowerShell stdout 不回显时按 152 条惯例写日志文件再 Read。
 - **Git Bash 会把 adb shell 的 /sdcard/... 参数改写成 Windows 路径（2026-09-23）**：`adb shell uiautomator dump /sdcard/ui.xml` 实际收到 `C:/Users/.../PortableGit/.../sdcard/ui.xml`，dump "成功"却找不到文件，pull 报 failed to stat。规避：命令前加 `export MSYS2_ARG_CONV_EXCL="*" MSYS_NO_PATHCONV=1`，或改用 PowerShell 工具执行 adb。这是陷阱 7 "Windows 原生程序不识别 /d/ 路径"的镜像形态：MSYS 对**看起来像路径的参数**都会转换，进设备 shell 的参数同样中招。
 - **AI 会话中断/网络重试后，"失败"的编辑可能实际已应用（2026-09-23）**：一次会话中断续接后，同一批文件出现 import 重复、`SmoothRenderers` 类重复定义、"未找到匹配串"实为早已改过。规避：中断恢复后先 Read 关键文件再继续编辑；提交前跑一次构建，编译器的 Redeclaration 错误是重复编辑的最好探测器；见到"已在文件里"的修改不要慌，先核对内容是否正是意图所需。
+- **"看起来没变"的替换会吃掉行尾换行，把两个 import 并成一行（2026-09-25，本族镜像形态）**：一次本意是"原样保留"的替换去掉了 `import androidx.compose.foundation.layout.Arrangement` 行尾的换行，与下一行 `import ...layout.Box` 并成 `Arrangementimport ...layout.Box`，两个 import 同时失效。**编译错误报在使用处**（文件末尾 376/380 行 `Arrangement`/`Box` 未解析），与受损位置相距 350 行，第一眼极易误判成"新代码写错了"。规避：批量改 import 区后先自查——Grep 搜 `^import .+import ` 是否有并行（本轮用它 2 秒定位）；见到"未解析引用"先看 import 区，再动使用处代码。与上一条同源：编辑落地与意图不一致时，以文件实际内容为准，不以"我刚改了什么"为准。
 - **Windows 下 `fs.symlink` 的文件类型静默退化成普通文件（2026-09-24，本机实测）**：写"曲库拒绝库外符号链接"的回归用例时，`fs.symlinkSync(绝对目标, 链接路径)`（type 缺省或 `'file'`）**既没抛错也没建出链接**——`lstat().isSymbolicLink` 为 `false`、`isFile()` 为 `true`、`nlink=1`、`readlinkSync` 报 `EINVAL`，`realpathSync` 直接返回链接自己的路径（不解析目标）。后果具有欺骗性：被测的 `realpath + startsWith` 防护在本机会**放过**这类文件，看起来像"防线失效"，实际是链接压根没建出来（生产是 Linux，realpath 会正常解析）。规避：①需要符号链接证据时用**目录链接**——`fs.symlink(target, path, 'junction')`（Windows 走 junction 不需要管理员权限，POSIX 忽略 type，实为目录符号链接），实测 `realpathSync` 能解析到真实目标，逃逸用例据此编写；②判定"链接是否真的建立"必须看 `lstat().isSymbolicLink`，不要只看 `symlink()` 没报错；③这类"同一 API 跨平台语义不同且静默降级"的问题，最终结论要落在目标平台（Linux）上，本机只能证明"防护对已解析出的库外路径生效"。
 - **会话沙箱内 scp 被拦：`scp: pipe: Unknown error` exit 255（2026-09-23 LOAD-15 云端轮实测）**：PowerShell 工具沙箱内运行 `add-media.ps1`，转码/ffprobe/scp 前置全过，唯独 scp 上传报 `pipe: Unknown error`（exit 255）；同一会话中 Bash 通道（沙箱外执行）的 scp/ssh 全部正常。规避：①在此环境跑涉及 scp 的脚本前，先用最小 scp 命令探通道，失败即换 Bash 通道；②`add-media.ps1` 中断后的**续传路径**：转码产物在 `%TEMP%\lt-media\up-<id>.mp3`，手动完成 `scp 上传 → manifest（UTF-8 无 BOM，`id\t标题`）→ `media-manage.sh install <id> <临时名> <manifest>` → `-Restart` 段的 systemctl restart + health 轮询 → `media-manage.sh verify`；不要从头重跑浪费一轮转码。属陷阱 7"沙箱辅助进程初始化"的同族形态。
 
@@ -299,3 +374,18 @@
 - 现象：按试用反馈把 demo-load 从云端曲库移除后，不改进程直接调 `/api/rooms/:code/catalog`，返回的还是旧条目（含 demo-load）。
 - 根因：服务端在**启动时一次性读入** media/catalog.json 到内存，运行期没有重载入口；曲库属于 media 持久层（跨部署保留），升级/回滚部署不动它，更不会触发重载。
 - 规避：手动改曲库的正确顺序是——①先备份（整个 media 目录或至少 catalog.json + 被移音频，移出 media/ 而不是删除，避免部署脚本按 catalog 引用校验时文件缺失）；②改 catalog.json；③`systemctl restart listen-together`；④先调 catalog API 验证条目数，再跑 `m4-deploy-verify.sh`（脚本按 catalog.json 动态抽查）。media-manage.sh 只有 add/list，**没有 remove**——删除只能手动 node 改 JSON + 挪文件。曲库条数变化要让所有依赖"已知曲目集合"的验收（m4 脚本、LOAD-15 的 `--bitrate 192` 曲目）重新确认前提。
+
+### 9.6 倍速缓存复位不等于播放器复位（2026-09-26）
+- 现象：代码审计发现 load/大漂移 seek 只写 `catchupSpeed = 1.0f`，实际 PlaybackParameters 可仍是 0.88/1.12；之后暂停还根据缓存判断是否需要复位，漏掉真实倍速。
+- 根因：播放器实际值与独立缓存两套状态失配；换媒体项和 seek 没有代替应用写回倍速。
+- 规避：读取播放器实际 speed，复位必须写回 PlaybackParameters；纯策略测试覆盖追赶→换曲/seek/暂停/缓冲边界。当前为代码/单测证据，未新增真机听感结论。
+
+### 9.7 seek 确认窗口用墙钟算流逝时长：系统对时跳变会让容忍窗口失真（2026-09-26 审计发现）
+- 现象：代码审计发现 `RoomPlayerState` 的 seek 确认用 `System.currentTimeMillis()` 差值度量"发起以来的流逝"，窗口 = 流逝 + 1500ms。
+- 根因：墙钟可被系统对时/NTP 突然前跳或回拨，窗口随之瞬间膨胀或收缩；度量时间流逝必须用单调时钟（项目既有原则，见 9.3 同类）。
+- 规避：确认窗口改用 `SystemClock.elapsedRealtime`（`nowMs` 注入保持可测），并把确认逻辑抽成纯函数 `seekConfirmed` 直接单测（含 elapsed 为负的防御）；全局排查后主源码不再有 `System.currentTimeMillis()` 做流逝度量的残留。当前为代码/单测证据，真机 seek 听感留待统一测试。
+
+### 3.8 失败 dump 重读旧树造成“播放态始终错误”的假证据（2026-09-26 复核）
+- 现象：夜轮 label-lag.py 报 13 次“已暂停”，但留存 17/18/19 三张截图都显示“播放中”。
+- 根因：脚本忽略 uiautomator dump 失败并重复读取同一路径旧 XML；因此不能据此断言 PlaybackView 通路有缺陷（3.1 的具体再现）。
+- 规避：先删除旧转储、检查退出码与成功标志，失败标无效；动态页面优先截图，并核对采样所属包与时刻。本轮修复采样脚本并撤回过强归因，不把证据失效说成已真机修复播放器。

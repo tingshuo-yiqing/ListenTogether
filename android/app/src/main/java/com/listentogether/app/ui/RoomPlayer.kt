@@ -6,8 +6,11 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +37,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
@@ -48,13 +52,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
+import android.os.SystemClock
 import com.listentogether.app.formatTime
 import com.listentogether.app.network.ConnectionStatus
 import com.listentogether.app.network.RoomClient
@@ -76,8 +86,29 @@ import kotlinx.coroutines.flow.map
  * 位置贴合目标（容忍窗口 = 确认以来经过时长 + 1500ms 含 RTT 补偿）即恢复跟随；
  * 5 秒未确认清除预览并提示重试，不自动重发。
  */
+/** seek 确认的容忍余量（毫秒）：覆盖快照周期、RTT 与播放推进的估计误差。 */
+internal const val SEEK_CONFIRM_TOLERANCE_MS = 1500L
+
+/**
+ * seek 是否已被快照确认（纯函数）：快照版本必须新于发起时刻记录的版本，
+ * 且位置与目标贴合——容忍窗口 = 发起以来经过时长 + [SEEK_CONFIRM_TOLERANCE_MS]。
+ * 用相对贴合而非 `positionMs >= target - 余量`：拖回开头等低目标时后者对任意非负位置恒真（E-07）。
+ * elapsed 必须来自单调时钟（[RoomPlayerState.elapsedSinceSeekMs]）：墙钟会被系统对时改动，窗口失真。
+ */
+internal fun seekConfirmed(
+    target: Long,
+    snapshotVersion: Long,
+    pendingSeekVersion: Long,
+    snapshotPositionMs: Long,
+    elapsedMs: Long,
+): Boolean =
+    snapshotVersion > pendingSeekVersion && abs(snapshotPositionMs - target) <= elapsedMs + SEEK_CONFIRM_TOLERANCE_MS
+
 @UnstableApi
-internal class RoomPlayerState internal constructor(private val client: RoomClient) {
+internal class RoomPlayerState internal constructor(
+    private val client: RoomClient,
+    private val nowMs: () -> Long = SystemClock::elapsedRealtime,
+) {
     /** 服务器进度采样（毫秒），由 rememberRoomPlayer 内的订阅持续刷新。 */
     var positionMs by mutableLongStateOf(0L)
     /** 拖动中的瞬时预览位置；松手发起 seek 或切曲时清空。 */
@@ -85,26 +116,32 @@ internal class RoomPlayerState internal constructor(private val client: RoomClie
     /** 已发送但未获快照确认的 seek 目标（毫秒）；null 表示无挂起跳转。 */
     var pendingSeek by mutableStateOf<Long?>(null)
     internal var pendingSeekVersion by mutableLongStateOf(-1L)
+    /** 发起 seek 的时刻；与 [elapsedSinceSeekMs] 同用单调时钟（毫秒），不写墙钟。 */
     internal var pendingSeekTimeMs by mutableLongStateOf(0L)
 
     /** 当前应展示的进度（毫秒），含拖动与挂起 seek 的乐观预览。 */
     fun shownMs(): Long = (dragged ?: pendingSeek?.toFloat() ?: positionMs.toFloat()).toLong()
+
+    /** 发起 seek 以来的单调流逝毫秒；确认窗口用它度量，系统对时跳变不影响判定。 */
+    internal fun elapsedSinceSeekMs(): Long = nowMs() - pendingSeekTimeMs
 
     /** 发起 seek：发送指令并记录目标、快照版本与发起时刻。主线程调用。 */
     fun seek(target: Long, currentVersion: Long) {
         client.command("seek", positionMs = target)
         pendingSeek = target
         pendingSeekVersion = currentVersion
-        pendingSeekTimeMs = System.currentTimeMillis()
+        pendingSeekTimeMs = nowMs()
         dragged = null
     }
 }
 
-/** 房间播放器状态工厂：随 client 与曲目切换重建；订阅进度、快照确认与 5 秒兜底都在房间作用域存活。 */
+/** 房间播放器状态工厂：随 client 与房间会话重建；订阅进度、快照确认与 5 秒兜底都在房间作用域存活。 */
 @Composable
 @UnstableApi
 internal fun rememberRoomPlayer(client: RoomClient, ui: UiState, track: Track?): RoomPlayerState {
-    val state = remember(client) {
+    // 必须以房间会话（token）为 key：pendingSeek 记着上一间房的快照 version，新房 version 从 0 起，
+    // 会让确认分支永远不成立——滑条停在上一个房间的目标值，5 秒后新房凭空弹出"未确认，请重试"。
+    val state = remember(client, ui.credentials?.token) {
         RoomPlayerState(client).apply { positionMs = client.state.value.positionMs }
     }
     val positionFlow = remember(client) { client.state.map { it.positionMs }.distinctUntilChanged() }
@@ -115,9 +152,10 @@ internal fun rememberRoomPlayer(client: RoomClient, ui: UiState, track: Track?):
     LaunchedEffect(state, ui.room) {
         val snapshot = ui.room ?: return@LaunchedEffect
         val target = state.pendingSeek ?: return@LaunchedEffect
-        if (snapshot.version <= state.pendingSeekVersion) return@LaunchedEffect
-        val elapsed = System.currentTimeMillis() - state.pendingSeekTimeMs
-        if (abs(snapshot.positionMs - target) <= elapsed + 1500) state.pendingSeek = null
+        val elapsed = state.elapsedSinceSeekMs()
+        if (seekConfirmed(target, snapshot.version, state.pendingSeekVersion, snapshot.positionMs, elapsed)) {
+            state.pendingSeek = null
+        }
     }
     // 兜底：5 秒未确认按约定提示"未确认，请重试"，不自动重发。
     LaunchedEffect(state, state.pendingSeek) {
@@ -132,7 +170,7 @@ internal fun rememberRoomPlayer(client: RoomClient, ui: UiState, track: Track?):
     return state
 }
 
-/** 底部常驻 mini 播放器：细进度条 + 歌名与状态 + 播放键；整条点击进入展开页。 */
+/** 底部常驻 mini 播放器：细进度条 + 歌名 + 播放键；整条点击进入展开页。 */
 @Composable
 @UnstableApi
 internal fun MiniPlayer(
@@ -140,7 +178,6 @@ internal fun MiniPlayer(
     ui: UiState,
     state: RoomPlayerState,
     track: Track?,
-    playback: PlaybackView,
     onExpand: () -> Unit,
 ) {
     val duration = (track?.durationMs ?: 1).coerceAtLeast(1).toFloat()
@@ -163,23 +200,19 @@ internal fun MiniPlayer(
                 )
             }
             Row(
-                Modifier.fillMaxWidth().pointerInput(Unit) { detectTapGestures { onExpand() } }
+                // 用 clickable 而不是 detectTapGestures：前者带语义点击动作与涟漪，
+                // 读屏/TalkBack 才点得开播放页（手势写法对无障碍不可见）。
+                Modifier.fillMaxWidth().clickable(onClick = onExpand)
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        track?.title ?: if (client.isHost) "选一首喜欢的歌" else "等待房主选歌",
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        playbackLabel(ui, playback),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                Text(
+                    track?.title ?: if (client.isHost) "选一首喜欢的歌" else "等待房主选歌",
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
                 Spacer(Modifier.width(12.dp))
                 PlayPauseButton(client, ui, track, playing, size = 44.dp)
             }
@@ -187,7 +220,7 @@ internal fun MiniPlayer(
     }
 }
 
-/** 展开播放页内容：完整进度拖拽、切歌、时间显示与同步说明；由 MainActivity 挂进 ModalBottomSheet。 */
+/** 展开播放页内容：完整进度拖拽、切歌与时间显示；由 MainActivity 挂进 ModalBottomSheet。 */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @UnstableApi
@@ -196,7 +229,6 @@ internal fun PlayerSheet(
     ui: UiState,
     state: RoomPlayerState,
     track: Track?,
-    playback: PlaybackView,
     onLockedTap: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -209,44 +241,38 @@ internal fun PlayerSheet(
         if (client.isHost) TrackQueue.skip(ui.tracks, ui.room?.trackId, direction)?.let { client.command("select", trackId = it) }
         else onLockedTap()
     }
+    // skipPartiallyExpanded：默认会先停在"半屏"锚点，真机实测此时进度滑条与时间都在屏幕外
+    // （PHQ110，2026-09-25），主控制项要点开后再滚一次才看得到。改成直接展开到内容高度，
+    // 小屏/大字体仍由内容列自身的 verticalScroll 兜底。
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
     ) {
+        // 以标题、主控与进度为中心；小屏或大字体时内容仍可滚动。
         Column(
-            Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp).padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("当前歌曲", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(playbackLabel(ui, playback), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    track?.title ?: if (client.isHost) "选一首喜欢的歌" else "等待房主选歌",
-                    style = MaterialTheme.typography.headlineSmall,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-                Spacer(Modifier.width(12.dp))
+            Text(
+                track?.title ?: if (client.isHost) "选一首喜欢的歌" else "等待房主选歌",
+                style = MaterialTheme.typography.headlineSmall,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
+            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 SkipButton(Icons.Outlined.SkipPrevious, "上一首", canSkip) { skip(-1) }
-                Spacer(Modifier.width(6.dp))
-                PlayPauseButton(client, ui, track, playing, size = 56.dp)
-                Spacer(Modifier.width(6.dp))
+                PlayPauseButton(client, ui, track, playing, size = 64.dp)
                 SkipButton(Icons.Outlined.SkipNext, "下一首", canSkip) { skip(1) }
             }
             SliderRow(client, ui, state, track, duration, shown)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(formatTime(shown.toLong()), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(formatTime(track?.durationMs ?: 0), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            if (track != null) {
-                Text(
-                    if (ui.status != ConnectionStatus.Ready) "连接就绪后即可播放" else if (client.isHost) "播放与暂停同步给所有人" else "暂停只影响自己 · 进度由房主控制",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }
@@ -255,8 +281,14 @@ internal fun PlayerSheet(
 @Composable
 @UnstableApi
 private fun PlayPauseButton(client: RoomClient, ui: UiState, track: Track?, playing: Boolean, size: Dp) {
+    val haptics = LocalHapticFeedback.current
     FilledIconButton(
-        onClick = { client.setPlaying(!playing) },
+        onClick = {
+            // 点击类动作用轻触感（TextHandleMove 是"轻点一下"级），长按级震动留给拖动确认；
+            // 失败与否由状态横幅承载，不用震动表达错误。
+            haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            client.setPlaying(!playing)
+        },
         enabled = ui.status == ConnectionStatus.Ready && track != null,
         modifier = Modifier.size(size),
         colors = IconButtonDefaults.filledIconButtonColors(
@@ -275,7 +307,15 @@ private fun PlayPauseButton(client: RoomClient, ui: UiState, track: Track?, play
 /** 切歌键：上一首/下一首共用的 48dp 圆钮；禁用态由 canSkip 控制。 */
 @Composable
 private fun SkipButton(icon: ImageVector, label: String, enabled: Boolean, onClick: () -> Unit) {
-    FilledTonalIconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(48.dp)) {
+    val haptics = LocalHapticFeedback.current
+    FilledTonalIconButton(
+        onClick = {
+            haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            onClick()
+        },
+        enabled = enabled,
+        modifier = Modifier.size(48.dp)
+    ) {
         Icon(imageVector = icon, contentDescription = label)
     }
 }
@@ -287,11 +327,14 @@ private fun SkipButton(icon: ImageVector, label: String, enabled: Boolean, onCli
 private fun SliderRow(client: RoomClient, ui: UiState, state: RoomPlayerState, track: Track?, duration: Float, shown: Float) {
     val sliderColors = SliderDefaults.colors()
     val sliderEnabled = client.isHost && ui.status == ConnectionStatus.Ready && track != null
+    val haptics = LocalHapticFeedback.current
     Slider(
         value = shown,
         onValueChange = { state.dragged = it },
         onValueChangeFinished = {
             state.dragged?.let { dragged ->
+                // 拖动结束是"重"动作，保留长按级触感与点击类区分开。
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                 state.seek(dragged.toLong().coerceIn(0L, duration.toLong()), ui.room?.version ?: -1L)
             }
         },
@@ -336,16 +379,18 @@ fun PlayingIndicator(modifier: Modifier = Modifier, color: Color = MaterialTheme
             label = "bar$delayMs"
         )
     }
-    Row(
-        modifier.size(20.dp).padding(2.dp),
-        horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.Bottom
-    ) {
-        bars.forEach { bar ->
-            Box(
-                Modifier.width(3.dp).height((5 + 11 * bar.value).dp)
-                    .clip(RoundedCornerShape(1.5.dp))
-                    .background(color)
+    // 动画值只在绘制阶段读取：不再逐帧修改 Box.height，避免滚动时反复测量当前曲目行。
+    Canvas(modifier.size(20.dp).padding(2.dp)) {
+        val barWidth = 3.dp.toPx()
+        val gap = 2.dp.toPx()
+        val left = (size.width - 3 * barWidth - 2 * gap) / 2
+        bars.forEachIndexed { index, bar ->
+            val height = (5 + 11 * bar.value).dp.toPx()
+            drawRoundRect(
+                color = color,
+                topLeft = Offset(left + index * (barWidth + gap), size.height - height),
+                size = Size(barWidth, height),
+                cornerRadius = CornerRadius(1.5.dp.toPx())
             )
         }
     }

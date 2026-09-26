@@ -6,6 +6,26 @@ scripts包含后端启动/检查、安卓构建、USB安装、demo启动、真�
 deploy包含systemd、环境变量和Nginx模板；现阶段没有自动部署到云端。
 现有操作说明见 [Ubuntu部署](../deployment.md) 与 [USB联调](../usb-testing.md)。
 
+### 脚本清单（2026-09-25 增补）
+
+| 脚本 | 用途 | 关键约束 |
+|---|---|---|
+| `scripts/start-demo.ps1` / `build-android.ps1` / `install-debug.ps1` | 演示后端、安卓构建、USB 装机（安装 + `adb reverse` + 启动） | 装机后如需核对版本，用 `pm path` 拉回 base.apk 比 SHA256（W1 轮出现过装机偏差） |
+| `scripts/check.ps1 -Scope server\|android\|docs\|all` | 统一门禁 | 安卓段固定 `cleanTestDebugUnitTest`（见陷阱 5.5）；Lint 报告可能被判 UP-TO-DATE 而不重写，取证看 `lint-results-debug.xml` 的 issues 计数 |
+| `scripts/check-doc-links.mjs` | Markdown 本地链接检查 | 纯文档轮也要跑 |
+| `scripts/load15.mjs` | 15 路并发读取负载（playback / throughput 两种模型分开报告） | 成员必须持 WS，否则被 60 秒清扫 |
+| `scripts/fault-proxy.mjs` | 延迟/断线/audio401 故障注入代理 | 端口 3001，配合 `adb reverse` |
+| `scripts/member-sim.mjs` | **脚本成员**：`create/join/resume/leave` 四个子命令，用于单机验收"房间动态"（成员进出、掉线、回来、房主转移） | 每个成员必须持 WS（服务端按离线 60 秒清扫纯 HTTP 成员）；`--hold` 到期或进程结束即"掉线"（不发 DELETE）；令牌只打印给调用方、不落文件；逐行 JSON 输出便于与手机界面动态逐条对照 |
+
+`member-sim.mjs` 的典型用法（真机验收场景见 [2026-09-25 批次 A 真机记录](../test-results/2026-09-25-device-batch-a/README.md)）：
+
+```powershell
+# 手机先建房并从诊断日志拿到房间码，然后用脚本成员模拟朋友加入/掉线/回来/离开
+node scripts/member-sim.mjs join   <房间码> "脚本小王" --hold 20 --target http://8.166.126.136:3000
+node scripts/member-sim.mjs resume <房间码> <令牌>   --hold 20 --target http://8.166.126.136:3000
+node scripts/member-sim.mjs leave  <房间码> <令牌>                --target http://8.166.126.136:3000
+```
+
 ## 本地构建与身份
 后端使用npm ci锁定依赖，安卓使用Wrapper；构建命令和工具版本写入报告。
 debug允许HTTP用于受控联调；发布配置使用HTTPS/WSS。
@@ -40,5 +60,7 @@ TLS与WS升级、Range响应、进程异常恢复和回滚分别检查。
 2026-09-21：本地构建/USB安装已通过；云端与停止脚本改进待实施。
 2026-09-22：统一检查入口补齐后端构建/测试、安卓单测/Debug/Lint 和 Markdown 本地链接检查；默认 -Scope all，三类检查可独立运行。
 
-## 部署状态（2026-09-24 更新）
+## 部署状态（2026-09-26 更新）
 **云端已部署且升级/回滚演练双向通过**（2026-09-23 晚，见 [m4-rollback-drill](../test-results/2026-09-23-m4-rollback-drill/README.md)），早期 SSH 公钥阻塞已关闭（见 [部署第 0 节](../deployment.md)）。版本目录方案 = `releases/<id>` + `server` 符号链接，升级/回滚命令与验收见 [deployment.md 第 5 节](../deployment.md)。
+
+2026-09-26：**release 20260926-1822 在产**（prev=20260924-0937）——09-26 后端修复（清扫清空 hostId + 首个上线成员立即接任）上云；42/42 解包校验、旧/新版本 `m4-deploy-verify.sh` 各 14/14、专项验证（HostA 掉线被清扫 → MemberB 加入即接任 hostId=MemberB）通过。见 [2026-09-26 云端部署](../test-results/2026-09-26-cloud-deploy/README.md)。

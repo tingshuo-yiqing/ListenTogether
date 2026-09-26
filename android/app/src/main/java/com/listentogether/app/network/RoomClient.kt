@@ -71,6 +71,9 @@ class RoomClient internal constructor(
     /** 仅用于首页地址栏预填的最近服务器地址；请求一律使用会话上下文里的地址，不读这个字段。 */
     var baseUrl: String = store.loadBaseUrl()
         private set
+    /** 最近一次房间重入提示，不包含或恢复任何旧成员凭证。 */
+    val lastRoom: LastRoom? get() = store.loadLastRoom()
+
     private var socket: WebSocket? = null
     private var reconnect: Job? = null
     private var syncJob: Job? = null
@@ -120,7 +123,7 @@ class RoomClient internal constructor(
             try {
                 val url = address.trim().trimEnd('/').toHttpUrl()
                 require(url.encodedPath == "/" && url.query == null && url.fragment == null && url.username.isEmpty() && url.password.isEmpty()) { "请输入服务器根地址，例如 https://music.example.com" }
-                require(BuildConfig.DEBUG || url.isHttps) { "发布版只支持 HTTPS" }
+                require(BuildConfig.DEBUG || BuildConfig.ALLOW_INSECURE_BENCHMARK || url.isHttps) { "发布版只支持 HTTPS" }
                 // 未写端口（okhttp 回填成协议默认 80/443）按项目约定补 3000：
                 // 口令分享可省略 :3000，粘贴后仍加入同一服务器；显式非默认端口（如 :8080）原样保留。
                 val root = (if (url.port == HttpUrl.defaultPort(url.scheme)) url.newBuilder().port(3000).build() else url)
@@ -130,6 +133,8 @@ class RoomClient internal constructor(
                 val route = if (code == null) "/api/rooms" else "/api/rooms/" + code.trim().uppercase().also { require(it.matches(Regex("[0-9A-F]{8}"))) { "邀请码为 8 位字符" } } + "/join"
                 val json = JSONObject(transport("POST", root + route, JSONObject().put("nickname", nickname), null))
                 val credentials = Credentials(json.getString("code"), json.getString("memberId"), json.getString("token"))
+                // 保存非敏感重入提示；进程重启后必须通过正常 join 获取全新令牌。
+                store.saveLastRoom(LastRoom(credentials.code, nickname.trim()))
                 // 会话从这一刻诞生：代次递增并绑定上下文，之后一切请求/回调都核对它。
                 val context = SessionContext(root, credentials, generation + 1)
                 generation = context.generation
