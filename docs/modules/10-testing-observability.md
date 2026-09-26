@@ -9,7 +9,7 @@ state/clock/error 与出站 sync/command，并用构造性漂移（多字段/缺
 realtime.test.ts 6 项钉住传输防线：消息级 20 条/秒第 21 条回 429、握手限连（同令牌+IP 超限 429、换源 IP 不受影响、无效令牌仍 401）、
 bufferedAmount 超 128KiB 时 close(1013)、15 秒无 pong 的 terminate（假 timer）；
 rooms.test.ts 7 项覆盖同 IP 存量房间配额（含回收释放与按 IP 隔离）、房间领域事件全生命周期与"不含令牌/昵称"红线、health 计数随连接变化；另验证房主清扫、首次上线立即接任与 60 秒宽限边界。
-android/app/src/test：本轮共 91 项（09-26），在 84 项基线上新增邀请边界 2 项、倍速策略 5 项；包含会话竞态、时钟、同步、播放策略、UI 纯逻辑与诊断边界。
+android/app/src/test：96 项（09-26 补充小轮口径，上轮 91 按文件归类少计 1、真实基线 92，本轮新增 SeekConfirmTest 4 项）；包含会话竞态、时钟、同步、播放策略、邀请编解码、UI 纯逻辑与诊断边界。
 诊断：debug 构建 DiagnosticsLog 已实现（连接/校时/播放事件 JSONL，单文件约20MB、实例创建起60分钟窗口，超限停止写入，不自动轮转，不含令牌）；DiagnosticsLogTest（8 项 JVM 单测）覆盖 20MB/60 分钟轮转停止、JSONL 行格式、令牌不出现在输出红线约束、禁用时不创建文件；DiagnosticsLog 边界可注入（时钟、目录、执行器），生产构造器不变。
 smoke-test.mjs：对运行后端执行HTTP、两个WS及真实Range验证。
 check-doc-links.mjs：扫描项目 Markdown 的本地链接；跳过外部 URL、锚点和不参与文档验证的构建/依赖目录。

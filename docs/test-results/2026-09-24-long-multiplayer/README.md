@@ -129,5 +129,5 @@
 
 - 主测：PHQ110 / APK E814F90E（装后回拉复算一致）/ **蜂窝网络全程**（≈120MB 流量）/ USB 采样 92 次零离线。
 - 云端：release 20260924-0937；曲库 24 首真实 + demo-load（挪至歌单末尾，70 分钟窗口内未触及）；测试房间空置后由系统 5 分钟回收，房间顺播至 demo-load 属预期（无人暂停则继续播）。
-- 证据文件：诊断全量 `deploy-artifacts/diag-final-20260924.jsonl`、采样 v2 `long-test-samples-v2-20260924.log`、解锁日志 `long-test-unlock-20260924.log`、收尾日志 `long-test-final-20260924.log`、驱动脚本 `.workbuddy/lt_drive.py`。
+- 证据文件：已随本目录归档——诊断全量 `evidence/diag-final-20260924.jsonl`、采样 v2 `evidence/long-test-samples-v2-20260924.log`、解锁日志 `evidence/long-test-unlock-20260924.log`、收尾日志 `evidence/long-test-final-20260924.log`；驱动脚本 `.workbuddy/lt_drive.py`（本机工作目录，不入库）。
 

@@ -1,0 +1,121 @@
+=== SAMPLING-V2 START 2026-09-24 11:20:03 ===
+11:20:03 DEV=ok wake=Dozing {state=PLAYING(3), position=18861, buffered position=87379, speed=1.0, updated=313639715, actions=7339995, custom actions=[], active item id=0, error=null}
+11:20:39 DEV=ok wake=Dozing {state=PLAYING(3), position=52485, buffered position=131082, speed=1.0, updated=313673343, actions=7339995, custom actions=[], active item id=0, error=null}
+11:21:15 DEV=ok wake=Dozing {state=PLAYING(3), position=90187, buffered position=174785, speed=1.0, updated=313711049, actions=7339995, custom actions=[], active item id=0, error=null}
+11:21:50 DEV=ok wake=Dozing {state=PLAYING(3), position=123395, buffered position=174785, speed=1.0, updated=313744247, actions=7339995, custom actions=[], active item id=0, error=null}
+11:22:26 DEV=ok wake=Dozing {state=PLAYING(3), position=160950, buffered position=218488, speed=1.0, updated=313781805, actions=7339995, custom actions=[], active item id=0, error=null}
+11:23:02 DEV=ok wake=Dozing {state=PLAYING(3), position=195591, buffered position=235676, speed=1.0, updated=313816445, actions=7339995, custom actions=[], active item id=0, error=null}
+11:23:38 DEV=ok wake=Dozing {state=PLAYING(3), position=231665, buffered position=235676, speed=1.0, updated=313852527, actions=7339995, custom actions=[], active item id=0, error=null}
+11:24:14 DEV=ok wake=Dozing {state=PLAYING(3), position=31921, buffered position=87353, speed=1.0, updated=313888625, actions=7339995, custom actions=[], active item id=0, error=null}
+11:24:49 DEV=ok wake=Dozing {state=PLAYING(3), position=67479, buffered position=131030, speed=1.0, updated=313924182, actions=7339995, custom actions=[], active item id=0, error=null}
+11:25:24 DEV=ok wake=Dozing {state=PLAYING(3), position=102161, buffered position=174759, speed=1.0, updated=313958857, actions=7339995, custom actions=[], active item id=0, error=null}
+11:26:00 DEV=ok wake=Dozing {state=PLAYING(3), position=136857, buffered position=218435, speed=1.0, updated=313993561, actions=7339995, custom actions=[], active item id=0, error=null}
+11:26:36 DEV=ok wake=Dozing {state=PLAYING(3), position=174518, buffered position=238863, speed=1.0, updated=314031219, actions=7339995, custom actions=[], active item id=0, error=null}
+11:27:11 DEV=ok wake=Dozing {state=PLAYING(3), position=210666, buffered position=238863, speed=1.0, updated=314067366, actions=7339995, custom actions=[], active item id=0, error=null}
+11:27:47 DEV=ok wake=Dozing {state=PLAYING(3), position=6453, buffered position=87353, speed=1.0, updated=314102411, actions=7339995, custom actions=[], active item id=0, error=null}
+11:28:22 DEV=ok wake=Dozing {state=PLAYING(3), position=40418, buffered position=131030, speed=1.0, updated=314136372, actions=7339995, custom actions=[], active item id=0, error=null}
+11:28:58 DEV=ok wake=Dozing {state=PLAYING(3), position=76614, buffered position=131030, speed=1.0, updated=314172569, actions=7339995, custom actions=[], active item id=0, error=null}
+11:29:34 DEV=ok wake=Dozing {state=PLAYING(3), position=111206, buffered position=174759, speed=1.0, updated=314207163, actions=7339995, custom actions=[], active item id=0, error=null}
+11:30:09 DEV=ok wake=Dozing {state=PLAYING(3), position=148899, buffered position=218462, speed=1.0, updated=314244855, actions=7339995, custom actions=[], active item id=0, error=null}
+11:30:44 DEV=ok wake=Dozing {state=PLAYING(3), position=183548, buffered position=256078, speed=1.0, updated=314279506, actions=7339995, custom actions=[], active item id=0, error=null}
+11:31:19 DEV=ok wake=Dozing {state=PLAYING(3), position=216719, buffered position=256078, speed=1.0, updated=314312678, actions=7339995, custom actions=[], active item id=0, error=null}
+11:31:55 DEV=ok wake=Dozing {state=PLAYING(3), position=252967, buffered position=256078, speed=1.0, updated=314348921, actions=7339995, custom actions=[], active item id=0, error=null}
+11:32:30 DEV=ok wake=Dozing {state=PLAYING(3), position=34226, buffered position=87353, speed=1.0, updated=314386376, actions=7339995, custom actions=[], active item id=0, error=null}
+11:33:06 DEV=ok wake=Dozing {state=PLAYING(3), position=67556, buffered position=131030, speed=1.0, updated=314419706, actions=7339995, custom actions=[], active item id=0, error=null}
+11:33:42 DEV=ok wake=Dozing {state=PLAYING(3), position=105190, buffered position=174759, speed=1.0, updated=314457341, actions=7339995, custom actions=[], active item id=0, error=null}
+11:34:17 DEV=ok wake=Dozing {state=PLAYING(3), position=139875, buffered position=218435, speed=1.0, updated=314492028, actions=7339995, custom actions=[], active item id=0, error=null}
+11:34:53 DEV=ok wake=Dozing {state=PLAYING(3), position=174492, buffered position=262164, speed=1.0, updated=314526650, actions=7339995, custom actions=[], active item id=0, error=null}
+11:35:28 DEV=ok wake=Dozing {state=PLAYING(3), position=210639, buffered position=262164, speed=1.0, updated=314562791, actions=7339995, custom actions=[], active item id=0, error=null}
+11:36:04 DEV=ok wake=Dozing {state=PLAYING(3), position=245309, buffered position=263418, speed=1.0, updated=314597463, actions=7339995, custom actions=[], active item id=0, error=null}
+11:36:39 DEV=ok wake=Dozing {state=PLAYING(3), position=19277, buffered position=87353, speed=1.0, updated=314634993, actions=7339995, custom actions=[], active item id=0, error=null}
+11:37:14 DEV=ok wake=Dozing {state=PLAYING(3), position=52486, buffered position=131030, speed=1.0, updated=314668204, actions=7339995, custom actions=[], active item id=0, error=null}
+11:37:50 DEV=ok wake=Dozing {state=PLAYING(3), position=90088, buffered position=174759, speed=1.0, updated=314705803, actions=7339995, custom actions=[], active item id=0, error=null}
+11:38:25 DEV=ok wake=Dozing {state=PLAYING(3), position=123354, buffered position=174759, speed=1.0, updated=314739068, actions=7339995, custom actions=[], active item id=0, error=null}
+11:39:01 DEV=ok wake=Dozing {state=PLAYING(3), position=160943, buffered position=218462, speed=1.0, updated=314776655, actions=7339995, custom actions=[], active item id=0, error=null}
+11:39:36 DEV=ok wake=Dozing {state=PLAYING(3), position=195611, buffered position=262164, speed=1.0, updated=314811321, actions=7339995, custom actions=[], active item id=0, error=null}
+11:40:12 DEV=ok wake=Dozing {state=PLAYING(3), position=230280, buffered position=288809, speed=1.0, updated=314845996, actions=7339995, custom actions=[], active item id=0, error=null}
+11:40:47 DEV=ok wake=Dozing {state=PLAYING(3), position=266431, buffered position=288809, speed=1.0, updated=314882147, actions=7339995, custom actions=[], active item id=0, error=null}
+11:41:23 DEV=ok wake=Dozing {state=PLAYING(3), position=12386, buffered position=87327, speed=1.0, updated=314917064, actions=7339995, custom actions=[], active item id=0, error=null}
+11:41:58 DEV=ok wake=Dozing {state=PLAYING(3), position=49469, buffered position=131030, speed=1.0, updated=314954144, actions=7339995, custom actions=[], active item id=0, error=null}
+11:42:34 DEV=ok wake=Dozing {state=PLAYING(3), position=84090, buffered position=174759, speed=1.0, updated=314988760, actions=7339995, custom actions=[], active item id=0, error=null}
+11:43:10 DEV=ok wake=Dozing {state=PLAYING(3), position=120211, buffered position=174759, speed=1.0, updated=315024883, actions=7339995, custom actions=[], active item id=0, error=null}
+11:43:45 DEV=ok wake=Dozing {state=PLAYING(3), position=154929, buffered position=218462, speed=1.0, updated=315059608, actions=7339995, custom actions=[], active item id=0, error=null}
+11:44:21 DEV=ok wake=Dozing {state=PLAYING(3), position=192579, buffered position=259108, speed=1.0, updated=315097252, actions=7339995, custom actions=[], active item id=0, error=null}
+11:44:56 DEV=ok wake=Dozing {state=PLAYING(3), position=225720, buffered position=259108, speed=1.0, updated=315130393, actions=7339995, custom actions=[], active item id=0, error=null}
+11:45:32 DEV=ok wake=Dozing {state=PLAYING(3), position=26, buffered position=1750, speed=1.04, updated=315163949, actions=7339995, custom actions=[], active item id=0, error=null}
+11:46:07 DEV=ok wake=Dozing {state=PLAYING(3), position=40427, buffered position=131082, speed=1.0, updated=315204064, actions=7339995, custom actions=[], active item id=0, error=null}
+11:46:43 DEV=ok wake=Dozing {state=PLAYING(3), position=73575, buffered position=131082, speed=1.0, updated=315237211, actions=7339995, custom actions=[], active item id=0, error=null}
+11:47:19 DEV=ok wake=Dozing {state=PLAYING(3), position=111238, buffered position=174785, speed=1.0, updated=315274876, actions=7339995, custom actions=[], active item id=0, error=null}
+11:47:54 DEV=ok wake=Dozing {state=PLAYING(3), position=145900, buffered position=218488, speed=1.0, updated=315309532, actions=7339995, custom actions=[], active item id=0, error=null}
+11:48:29 DEV=ok wake=Dozing {state=PLAYING(3), position=180575, buffered position=239595, speed=1.0, updated=315344213, actions=7339995, custom actions=[], active item id=0, error=null}
+11:49:05 DEV=ok wake=Awake {state=PLAYING(3), position=216830, buffered position=239595, speed=1.0, updated=315380460, actions=7339995, custom actions=[], active item id=0, error=null}
+11:49:41 DEV=ok wake=Awake {state=PLAYING(3), position=11773, buffered position=87405, speed=1.0, updated=315415244, actions=7339995, custom actions=[], active item id=0, error=null}
+11:50:17 DEV=ok wake=Awake {state=PLAYING(3), position=49491, buffered position=131082, speed=1.0, updated=315452954, actions=7339995, custom actions=[], active item id=0, error=null}
+11:50:53 DEV=ok wake=Awake {state=PLAYING(3), position=84160, buffered position=174811, speed=1.0, updated=315487623, actions=7339995, custom actions=[], active item id=0, error=null}
+11:51:28 DEV=ok wake=Awake {state=PLAYING(3), position=120339, buffered position=174811, speed=1.0, updated=315523805, actions=7339995, custom actions=[], active item id=0, error=null}
+11:52:03 DEV=ok wake=Awake {state=PLAYING(3), position=155000, buffered position=218514, speed=1.0, updated=315558462, actions=7339995, custom actions=[], active item id=0, error=null}
+11:52:39 DEV=ok wake=Awake {state=PLAYING(3), position=189626, buffered position=260022, speed=1.0, updated=315593089, actions=7339995, custom actions=[], active item id=0, error=null}
+11:53:14 DEV=ok wake=Awake {state=PLAYING(3), position=225940, buffered position=260022, speed=1.0, updated=315629406, actions=7339995, custom actions=[], active item id=0, error=null}
+11:53:50 DEV=ok wake=Awake {state=PLAYING(3), position=52, buffered position=2559, speed=1.04, updated=315663901, actions=7339995, custom actions=[], active item id=0, error=null}
+11:54:25 DEV=ok wake=Awake {state=PLAYING(3), position=36120, buffered position=87405, speed=1.0, updated=315699733, actions=7339995, custom actions=[], active item id=0, error=null}
+11:55:01 DEV=ok wake=Awake {state=PLAYING(3), position=70675, buffered position=131082, speed=1.0, updated=315734289, actions=7339995, custom actions=[], active item id=0, error=null}
+11:55:36 DEV=ok wake=Awake {state=PLAYING(3), position=23816, buffered position=87379, speed=1.0, updated=315770118, actions=7339995, custom actions=[], active item id=0, error=null}
+11:56:11 DEV=ok wake=Awake {state=PLAYING(3), position=61660, buffered position=131082, speed=1.0, updated=315807962, actions=7339995, custom actions=[], active item id=0, error=null}
+11:56:47 DEV=ok wake=Awake {state=PLAYING(3), position=96225, buffered position=174785, speed=1.0, updated=315842530, actions=7339995, custom actions=[], active item id=0, error=null}
+11:57:22 DEV=ok wake=Awake {state=PAUSED(2), position=116170, buffered position=174785, speed=0.0, updated=315862481, actions=7339997, custom actions=[], active item id=0, error=null}
+11:57:57 DEV=ok wake=Awake {state=PAUSED(2), position=116170, buffered position=174785, speed=0.0, updated=315862481, actions=7339997, custom actions=[], active item id=0, error=null}
+11:58:33 DEV=ok wake=Awake {state=PAUSED(2), position=116170, buffered position=174785, speed=0.0, updated=315862481, actions=7339997, custom actions=[], active item id=0, error=null}
+11:59:09 DEV=ok wake=Awake {state=PLAYING(3), position=136850, buffered position=218462, speed=1.0, updated=315982705, actions=7339995, custom actions=[], active item id=0, error=null}
+11:59:44 DEV=ok wake=Awake {state=PLAYING(3), position=174524, buffered position=234919, speed=1.0, updated=316020378, actions=7339995, custom actions=[], active item id=0, error=null}
+12:00:20 DEV=ok wake=Awake {state=PLAYING(3), position=210662, buffered position=234919, speed=1.0, updated=316056518, actions=7339995, custom actions=[], active item id=0, error=null}
+12:00:56 DEV=ok wake=Awake {state=PLAYING(3), position=10976, buffered position=87353, speed=1.0, updated=316091883, actions=7339995, custom actions=[], active item id=0, error=null}
+12:01:31 DEV=ok wake=Awake {state=PLAYING(3), position=46462, buffered position=131030, speed=1.0, updated=316127378, actions=7339995, custom actions=[], active item id=0, error=null}
+12:02:09 DEV=ok wake=Awake {state=PAUSED(2), position=85025, buffered position=174759, speed=0.0, updated=316165949, actions=7339997, custom actions=[], active item id=0, error=null}
+12:02:47 DEV=ok wake=Awake no-session
+12:03:23 DEV=ok wake=Awake no-session
+12:03:59 DEV=ok wake=Awake no-session
+12:04:36 DEV=ok wake=Awake no-session
+12:05:14 DEV=ok wake=Awake {state=PLAYING(3), position=182119, buffered position=210651, speed=1.04, updated=316349086, actions=7339995, custom actions=[], active item id=0, error=null}
+12:05:50 DEV=ok wake=Awake {state=PLAYING(3), position=8739, buffered position=87353, speed=1.0, updated=316385876, actions=7339995, custom actions=[], active item id=0, error=null}
+12:06:26 DEV=ok wake=Awake {state=PLAYING(3), position=43459, buffered position=131030, speed=1.0, updated=316420601, actions=7339995, custom actions=[], active item id=0, error=null}
+12:07:03 DEV=ok wake=Awake {state=PLAYING(3), position=79740, buffered position=131030, speed=1.0, updated=316456882, actions=7339995, custom actions=[], active item id=0, error=null}
+12:07:39 DEV=ok wake=Awake {state=PLAYING(3), position=117240, buffered position=174759, speed=1.0, updated=316494378, actions=7339995, custom actions=[], active item id=0, error=null}
+12:08:14 DEV=ok wake=Awake {state=PLAYING(3), position=151896, buffered position=218462, speed=1.0, updated=316529039, actions=7339995, custom actions=[], active item id=0, error=null}
+12:08:51 DEV=ok wake=Awake {state=PLAYING(3), position=189630, buffered position=221805, speed=1.0, updated=316566767, actions=7339995, custom actions=[], active item id=0, error=null}
+12:09:29 DEV=ok wake=Awake {state=PLAYING(3), position=5397, buffered position=87405, speed=1.04, updated=316604466, actions=7339995, custom actions=[], active item id=0, error=null}
+12:10:06 DEV=ok wake=Awake {state=PLAYING(3), position=43494, buffered position=131082, speed=1.0, updated=316642444, actions=7339995, custom actions=[], active item id=0, error=null}
+12:10:43 DEV=ok wake=Awake {state=PLAYING(3), position=79758, buffered position=131082, speed=1.0, updated=316678713, actions=7339995, custom actions=[], active item id=0, error=null}
+12:11:20 DEV=ok wake=Awake {state=PLAYING(3), position=117283, buffered position=174811, speed=1.0, updated=316716236, actions=7339995, custom actions=[], active item id=0, error=null}
+12:11:56 DEV=ok wake=Awake {state=PLAYING(3), position=151994, buffered position=218514, speed=1.0, updated=316750947, actions=7339995, custom actions=[], active item id=0, error=null}
+12:12:32 DEV=ok wake=Awake {state=PLAYING(3), position=189630, buffered position=262217, speed=1.0, updated=316788584, actions=7339995, custom actions=[], active item id=0, error=null}
+12:13:09 DEV=ok wake=Awake {state=PLAYING(3), position=224356, buffered position=305919, speed=1.0, updated=316823277, actions=7339995, custom actions=[], active item id=0, error=null}
+12:13:47 DEV=ok wake=Awake {state=PLAYING(3), position=262018, buffered position=349622, speed=1.0, updated=316860940, actions=7339995, custom actions=[], active item id=0, error=null}
+12:14:23 DEV=ok wake=Awake no-session
+12:14:58 DEV=ok wake=Awake no-session
+12:15:34 DEV=ok wake=Awake no-session
+12:16:09 DEV=ok wake=Awake no-session
+12:16:45 DEV=ok wake=Awake no-session
+12:17:20 DEV=ok wake=Awake no-session
+12:17:56 DEV=ok wake=Awake no-session
+12:18:32 DEV=ok wake=Awake no-session
+12:19:08 DEV=ok wake=Awake no-session
+12:19:43 DEV=ok wake=Awake no-session
+12:20:19 DEV=ok wake=Awake no-session
+12:20:55 DEV=ok wake=Awake no-session
+12:21:31 DEV=ok wake=Awake no-session
+12:22:07 DEV=ok wake=Awake no-session
+12:22:43 DEV=ok wake=Awake no-session
+12:23:19 DEV=ok wake=Awake no-session
+12:23:54 DEV=offline
+12:24:27 DEV=offline
+12:25:00 DEV=offline
+12:25:33 DEV=offline
+12:26:05 DEV=offline
+12:26:38 DEV=offline
+12:27:10 DEV=offline
+12:27:42 DEV=offline
+12:28:15 DEV=offline
+12:28:47 DEV=offline
+12:29:20 DEV=offline
+12:29:52 DEV=offline
+=== SAMPLING-V2-END 2026-09-24 12:30:24 ===

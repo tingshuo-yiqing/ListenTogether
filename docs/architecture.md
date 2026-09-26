@@ -18,14 +18,14 @@
 flowchart TB
     subgraph PHONE["安卓客户端 · Kotlin/Compose/Media3"]
         subgraph L1["表现层"]
-            UI["MainActivity · Compose<br/>TopBar / StatusBanner / NowPlayingCard<br/>MembersSection / PlaylistSection / JoinForm"]
+            UI["MainActivity · Compose<br/>TopBar / StatusBanner / MembersSection<br/>PlaylistSection / JoinForm<br/>RoomPlayer（MiniPlayer + PlayerSheet）"]
             THEME["ui/theme<br/>Color · Theme · 动态取色"]
         end
         subgraph L2["会话协调层"]
             RC["RoomClient<br/>状态机 · HTTP · WS · 重连"]
             CTX["SessionContext<br/>地址+身份+代次（不可变）"]
             MODELS["Models<br/>UiState / RoomState / ConnectionStatus"]
-            STORE["ConnectionStore<br/>仅存服务器地址"]
+            STORE["ConnectionStore<br/>服务器地址 · 最近房间码/昵称"]
         end
         subgraph L3["同步算法层（纯函数，无 Android 依赖）"]
             SM["SyncMath<br/>offset / target / needsSeek"]

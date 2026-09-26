@@ -1,0 +1,7 @@
+12:06:04 finalizer armed, sleeping 448s until 12:13:30
+12:13:34 before-stop media-session:       state=PlaybackState {state=PLAYING(3), position=248467, buffered position=305919, speed=1.0, updated=316847396, actions=7339995, custom actions=[], active item id=0, error=null}
+12:13:43 paused
+12:14:03 left room
+diag-20260924-110118.jsonl
+{"ok":true,"rooms":1,"onlineMembers":0,"wsConnections":0}
+12:14:05 finalizer done
