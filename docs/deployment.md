@@ -223,3 +223,53 @@ music-metadata 解析并缓存（audio 路由的 Range size 是每请求实时 s
 码率/时长表、公网 catalog API 5 首时长不变、Range 0-1023 返回 206 且 total 为新文件
 大小、无令牌 401。设计约束：中文文件名/标题只在文件内容（脚本、manifest）里流转，
 绝不进 ssh/scp/ffmpeg 的命令行参数（Windows 侧代码页转换会乱码，见陷阱 1.6）。
+
+### 6.1 独立封面
+
+本地先用 `node scripts/metadata-manager.mjs` 打开 `http://127.0.0.1:3100`，在歌曲编辑页选择
+「上传/替换封面」。管理器把图片写入 `media/covers/`，并在 `catalog.json` 写入 `cover` 相对路径；
+JPG/PNG/WebP 由浏览器缩放到最长边 1024px，服务端上限为 1MB。保存后重启本机后端，手机已有
+`coverVer` 缓存会在图片变化时重新下载。
+
+发布到云端时要把封面文件与 catalog 一起处理。可用
+`scripts/build-cloud-catalog.mjs --cover-catalog <本地media/catalog.json>` 按歌曲 ID 把本地
+`cover` 字段带入云端清单；脚本会先检查本地封面文件存在。生成的 catalog 与 `media/covers/`
+需作为同一批次上传到云端持久层，先备份原 catalog，确认 `/health` 无活动房间后再重启服务。
+`package-deploy.ps1` 会携带本地 ASCII 音频布局，不能用于这次云端曲库更新；云端原有中文音频文件名必须保留。
+
+### 6.2 元数据联网匹配（本机上云前的一步，可选）
+
+同一管理器还能按曲或批量向 **QQ 音乐 / 网易云音乐 / MusicBrainz** 取 `artist`/`album`/`genre`/`year` 候选：
+在歌曲页选源与置信度阈值后点「匹配这首」，对照表逐字段勾选再「应用所勾选字段」；顶栏「批量匹配缺字段」
+只补空、不覆盖已手填内容。写入仍走后端同款 `loadCatalog` 校验，失败自动回滚。
+
+- **出网范围**：只发歌名/歌手文本、只取回文本字段与封面地址；不下载音频、不需要任何平台登录 Cookie；
+  每源独立限速（QQ/网易云约 0.8 秒/请求，MusicBrainz 约 1.1 秒），批量为界面逐首串行。
+- **上云影响**：`album`/`genre`/`year` 目前是工具保留字段，服务端 `loadCatalog` 忽略未知键、catalog 下发也不含它们，
+  因此补齐这些字段**不会改变线上行为**；只有 `artist`（与 `cover`/`lyrics`）会被下发与显示。要随曲库一起生效，
+  仍按第 6 节流程上传 catalog 并 restart（重启清空内存房间）。
+- 实现与判定口径见 [模块 08](modules/08-library-audio.md) 与 `scripts/lib/metadata-sources.mjs` 头注释；
+  该模块的 31 项单测全部离线（`scripts/check.ps1 -Scope scripts`）。
+
+### 6.3 删除曲目（只作用于本机曲库，云端不从这里删）
+
+管理器每行有「删除」，顶栏有「多选删除」批量；`files=audio,cover,lyrics` 按类勾选。删除的硬约束是**闸门先行**：
+先整库 `loadCatalog` 自检（本机曲库本来就是坏的回 **409**，一个文件都不许动）→ 移除条目并过写校验（失败 **422**
+逐字节回滚）→ **才**把文件移进回收目录 `.workbuddy/media-trash/<批次>/<库内相对路径>`（gitignored，每批一份
+`manifest.jsonl` 记录被删条目原文与每个文件的来去，可手工放回）。工具**绝不 `unlink`**：`media/` 不在 git 里，
+删掉就没有第二个副本。被别的曲目共用的音频/封面/歌词按引用计数留在原地，`covers/` 之外的封面只删条目不动文件。
+
+- **云端不受影响**：本工具只监听 `127.0.0.1:3100`、只读写本机 `media/`，服务端仍只读下发，没有公网管理写接口。
+- **云端下架一首歌目前没有工具，也没有实测过的流程**（本轮未做云端删除，别把下面当成可照抄的手册）：
+  可行方向是服务器侧手工——先备份 `/opt/listen-together/media/catalog.json`、确认 `/health` 的 `rooms` 为 0，
+  再移除该 id 的条目、把对应文件移进隔离目录（不是直接删）、最后 restart（**会清空内存房间**）并用
+  `media-manage.sh verify` 核对剩余曲目。真要下架前先实测一遍并把结果登记进 test-results，再补成正式步骤。
+  已知副作用：正在播放该曲的成员会拿到音频 404 并本机暂停，属预期行为，因此下架只在无人使用时进行。
+
+### 6.4 云端可视化管理器（2026-09-28 已部署，取代上文“只作用于本机”的限制）
+
+管理服务 `listen-together-metadata` 使用 `deploy/metadata-manager.service`，入口是 `/opt/listen-together/metadata-manager/scripts/metadata-manager.mjs`；只监听云端127.0.0.1:3100，公网不开放管理端口。
+
+本机执行 `ssh -N -L 13100:127.0.0.1:3100 aliyun`，保持窗口运行，再访问 `http://127.0.0.1:13100`。此页面直接编辑云端 `/opt/listen-together/media`，上传、修改、删除都作用于云端。无人使用时操作，完成后检查编目，再 `systemctl restart listen-together` 使播放服务重新加载（会清空房间）。不要同时运行另一个管理器或media-manage.sh写同一曲库。
+
+专用账号listen-metadata拥有曲库，listen组保留读取权限；systemd写权限限media和metadata-state。缓存 `/opt/listen-together/metadata-state/cache.json`、回收目录 `/opt/listen-together/metadata-state/trash` 跨版本保留。管理器发布本身不重启播放服务，也不覆盖本地/云端清单。后续更新先在独立版本目录构建、夹具验收，再切metadata-manager链接并重启管理服务；首次版本停用可用 `systemctl disable --now listen-together-metadata`。本次[发布及备份证据](test-results/2026-09-28-metadata-release/README.md)。

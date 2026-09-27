@@ -7,7 +7,7 @@ import WebSocket from 'ws';
 import { buildApp } from '../src/app.js';
 import { Rooms } from '../src/rooms/store.js';
 import type { Track } from '../src/library/catalog.js';
-const track = (id = 'one', durationMs = 10000): Track => ({ id, title: id, durationMs, path: '', size: 10 });
+const track = (id = 'one', durationMs = 10000): Track => ({ id, title: id, durationMs, path: '', size: 10, artist: null, cover: null, coverVer: null, lyricsPath: null });
 test('room state: authorization, pause, seek, auto advance, replay', () => {
   let now = 1000; const store = new Rooms([track(), track('two')], () => now);
   const host = store.create('房主'); const room = store.get(host.code);

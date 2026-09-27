@@ -39,6 +39,21 @@
 - 规避：原生命令的 stdout/stderr **分开做文本重定向**（`1>out.log 2>err.log`），错误行保持原样；再用 Grep 工具搜 `e: file` 定位。已按此跑 `gradlew :app:compileDebugKotlin` 验证——同一次错误直接给出文件:行:列与未解析符号名。
 - **2026-09-25 深夜补充（后台任务的退出码）**：把 Gradle 挂到后台跑时，若包装命令结尾是 `tail`/`echo`，工具看到的退出码属于最后那条命令，**`BUILD FAILED` 也会报"exit code 0"**（本轮首轮门禁的 Lint 失败就是这样被掩盖成通过，靠翻日志才看到）。规避：包装里显式回写 `echo "GRADLE_EXIT=$?" >> 日志`，判定只读这一行；后台任务完成通知里的"成功"不能当作门禁结论。
 
+### 1.8 Windows 自带 `tar.exe` 按 ANSI 代码页解析 tar 头：UTF-8 中文文件名解成乱码、部分条目直接解包失败（2026-09-27 实测）
+- 现象：把云端曲库（`红日.mp3`、`背对背拥抱.mp3` 等中文名）在 Linux 侧 `tar -cf` 打包、用 Windows `tar -xf` 解到本地，**23 个条目只解出 20 个**，且文件名变成 `绾㈡棩.mp3`、`瀵屽＋灞变笅.mp3` 这类乱码；stderr 报 `tar: ./背\257\271背拥抱.mp3: Invalid empty pathname`。tar 本身在服务器上 `tar -tf` 列表完全正常，所以"包是好的"。
+- 根因：Windows 的 bsdtar 按**当前 ANSI 代码页**解释 tar 头里的路径字节，而 GNU tar 写进去的是 UTF-8 字节序列。多字节序列被按单字节代码页错误解码后既产生乱码，也可能拼出非法路径（内嵌反斜杠、控制字符）而被判为空路径丢弃。这是跨平台归档的经典坑，与"控制台显示乱码"（1.3）不是一回事——**后者只是显示，前者是数据真的坏了**。
+- 规避：**不要让中文文件名过 Windows 工具链**。在服务器侧用 `tar --transform` 把文件名统一换成 ASCII（本项目换成曲目 `id`：`s|^\./红日\.mp3$|./hong-ri.mp3|`，规则由 `catalog.json` 生成，中文只留在服务器上的规则文件里），本地解包后再由 `scripts/build-local-catalog.mjs` 把 catalog 的 `file` 字段映射回 ASCII 名。附：`tar --transform` 的 `sedfile=` 写法在部分环境报 `Unknown flag in transform expression`，改用**内联分号表达式** `--transform="s|…|…|;s|…|…|"` 更稳；`tar -xf` 的路径写 `D:/…` 正斜杠形式，反斜杠会被当转义。
+
+### 1.9 把带 CRLF 的 bash 脚本经 ssh stdin 送进 Linux：每条命令尾都多一个 `$'\r'`（2026-09-27 实测）
+- 现象：`$script | ssh aliyun "bash -s"` 执行本地写的临时脚本，业务输出全部正常（`ls`、`node -e` 都对），但 stderr 混着 `bash: line 18: $'\r': command not found`，且脚本中途某些判断莫名其妙；工具因此把整次调用标成失败。
+- 根因：脚本文件是 Windows 换行（CRLF），经 stdin 原样进远端 bash 后每个 `\r` 都被当成独立命令；`set -e` 下还可能提前中断。业务命令能跑是因为 `\r` 追加在行尾、多数命令忽略尾部空白。
+- 规避：管道前统一换行再送：`$script = (Get-Content x.sh -Raw) -replace "\`r\`n", "\`n"; $script | ssh host "bash -s"`。中文字符串同样只在脚本内容里流转，不要进命令行参数。
+
+### 1.10 PowerShell 5.1 的 `Get-Content`/`ConvertFrom-Json` 默认按 ANSI 读文件：UTF-8 中文 JSON 会被读坏（2026-09-27 实测）
+- 现象：`Get-Content .workbuddy/media-stage/catalog.json -Raw | ConvertFrom-Json` 报 `Invalid object passed in, ':' or '}' expected`，打印出来的内容是 `"title": "鏈変綍涓嶅彲"`——看上去像文件本身被写坏了，差点按"源文件损坏"重做一遍拉取。同一文件用 Node `readFileSync(p,'utf8')` 读出来完全正常，字节探针也显示是合法 UTF-8（`e6 9c 89 …`）。
+- 根因：Windows PowerShell 5.1 的 `Get-Content` 在**未显式指定编码**时按 ANSI（本机 GBK）解码；UTF-8 中文因此变成乱码，`"` 等字符还可能被解码成别的字节，JSON 解析随之失败。PowerShell 7+ 默认 UTF-8，所以同一条命令在两边结论相反。
+- 规避：**判定"文件是否损坏"必须看字节，不能看 PowerShell 的字符串**。用 `[System.IO.File]::ReadAllBytes()` + `New-Object System.Text.UTF8Encoding($false,$true)` 严格解码，或用 Node 读；读文本一律 `-Encoding UTF8`。凡"某个脚本报 JSON/文本坏了"而另一个语言读得好，先怀疑读取侧编码，再怀疑文件。
+
 ## 2. 真机与 adb
 
 ### 2.1 USB 重插清空 adb reverse
@@ -129,6 +144,11 @@
 - 根因：飞行模式切断整机射频（WiFi AP 含在内）；而热点主机的自身流量走蜂窝数据，`svc data disable` 只断数据面、热点 AP 保持开启。
 - 规避：需要短时断网时用 `adb shell svc data disable`（恢复 `svc data enable`），热点与其余射频不受影响；触发窗口要覆盖清扫 tick——70 秒可能恰好跨过 tick 不触发（实测 70s 一次失败、一次成功），**用 95 秒更稳**；重连后先「连接断开，正在重试」，重连拿到 401 才升级为过期横幅。
 
+### 2.17 设备掉线后以 `(no serial number) device` 回来：序列号枚举为空，但 `getprop ro.serialno` 仍正常（2026-09-27 实测）
+- 现象：一轮相册扫码验收中途设备从 `adb devices` 整条消失（不是 offline 抖动），重试第 3 次回来了，但列表显示 `(no serial number)	device product:PHQ110 ...`——**序列号字段为空**。此后带 `-s fbddbe8` 的每条命令都报 `device 'fbddbe8' not found`，看起来像设备换了身份。
+- 根因：USB 重新枚举时 adb 未能从设备取到序列号，该 transport 的 serial 为空；但设备内部 `ro.serialno` 没变，`adb shell getprop ro.serialno` 仍返回原值。序列号只是 adb 侧的标识，不是设备身份。
+- 规避：①此时**不要带 `-s`**——现场只有一台设备，`adb shell` / `adb install` 不带 `-s` 直接作用于唯一设备（本轮据此继续完成了验收）；②`adb reverse` 规则随掉线清空，必须重建；③要恢复带 `-s` 的用法就 `adb kill-server && adb start-server` 或在设备端重新确认 USB 调试授权；④设备"消失"先按连接问题处理（换线/换口/重插），不要怀疑装机或构建。
+
 ## 3. UI 自动化（uiautomator/input）
 
 ### 3.1 动态进度界面导致 dump 失效
@@ -158,6 +178,17 @@
 - 现象：一段"点曲目行 + 点播放"打完，`dumpsys media_session` 里状态纹丝不动（仍 PAUSED、pos=0、updated 不变），诊断随后刷出 `EOFException`。看上去像"播放按钮点了没反应"。
 - 根因：沙箱每次工具调用回收 adb server → `adb reverse` 规则随之消失 → 设备端 `127.0.0.1:3000` 没有转发者，应用立刻 EOF 进入"连接断开，正在重试"；**首页插入该横幅后整个内容区下移约 324px**，于是上一进程 dump 出来的坐标（曲目行 y≈1973、FAB y≈1181）在这一轮分别落到别的行和进度条上，等于点空/误点。同一进程内先 dump 再点则是准的。
 - 规避：**一个测试阶段一个进程**——`kill-server/start-server → 等设备就绪 → reverse → 设备端 curl health → force-stop/start 应用 → 建房 → dump 取坐标 → 操作 → 采样 → 导出诊断` 全部写在同一个脚本/同一次调用里；任何一步要用坐标都必须**在同一进程内、连接恢复成 Ready 之后**重新 dump。播放中不要 dump（SeekBar 动画会让 uiautomator 拿不到 idle，陷阱 3.1），改为在暂停态一次取齐坐标、播放中只用 media_session 判断。可复跑示例见 docs/test-results/2026-09-23-w1-recheck/w1_driver.py。
+- **2026-09-27 复发（同一现象的第二种触发源）**：首页出现"房间不存在或已过期"错误横幅后，「加入，一起听」按钮从 `[108,1707][972,1863]` 上移/下移到 `[108,1619][972,1775]`，按旧坐标 `y=1785` 点击**只差 4px 落空**，表现为"点了加入毫无反应、服务端日志里连请求都没有"。同时注意：横幅出现/消失的瞬间按钮位置就变，同一轮里前面 dump 的坐标会失效。规避同上——**每次点击前重新 dump 取坐标**，不要跨 dump 复用；坐标落空时先怀疑布局位移，再看网络。
+
+### 3.9 `adb shell input swipe` 起点落在系统手势区会把 APP 切走（2026-09-27 实测）
+- 现象：为触发歌词列表滚动手势，在 y≈1850–1950 之间做 `input swipe`，结果 APP 退到后台（`dumpsys activity` 显示前台变成短信应用），随后所有操作都打在别的应用上；回收站里那张截图上还留着上一个应用的内容。一度被误判成"歌词页崩溃/自动退出"。
+- 根因：PHQ110 用底部手势导航，屏幕最下方约 60–100px 是"上滑回桌面/悬停多任务"的手势区；`input swipe` 从该区域起手会被系统当导航手势消费。这与 2.11"底部区域 tap 被吞"同源，但 swipe 的后果更重（直接切走应用）。
+- 规避：滚动类滑动把起手点抬高到内容区中部（本项目歌词区用 `y=1900→1500` 就踩线，改成 `y=1800→1500` 安全），或先把界面滚动到目标控件可见再做短距滑动；每次滑动后**先 `dumpsys activity activities | grep topResumedActivity` 确认前台仍是本应用**再继续，发现被切走就 `am start -n com.listentogether.app/.MainActivity` 拉回（房间会话在内存里，拉回后仍在房）。
+
+### 3.10 自动化"从相册选图"时，自己的截屏会把相册首屏占满（2026-09-27 实测，代价约 1 小时）
+- 现象：验收"相册选二维码图片"功能时反复失败——每次 `screencap` 拉取诊断用的截图都会**同时存进设备相册**，几十张 `1080×2412` 的截图把"最近"首屏占满且顺序不断变化；按上一轮 dump 的坐标去点，点到的全是自己的截图。App 日志里解码失败（`bounds=1080x2412`，而待测二维码是 `720×720`），一度被误判成"解码器有 bug"，实际解码器一次就通过了（`bounds=720x720 ... decoded=65`）。
+- 根因：`adb shell screencap -p /sdcard/x.png` 写在共享存储根目录，媒体扫描器会把它当用户照片收录；而 `uiautomator dump` 出来的坐标是**点击那一刻**的网格，任何新增照片都会让整个网格平移。
+- 规避：①**截屏落到设备上时用一个不被媒体库收录的目录**（如 `/data/local/tmp/`，`run-as` 或 `adb shell` 均可写），或直接 `adb exec-out screencap -p > 本地.png` 不落设备盘；②已有污染先清理：`adb shell rm -f /sdcard/*.png /sdcard/*.xml`（只删自己推的临时文件，不要 `rm -rf` 整个 Pictures）；③选图类自动化必须**先 dump 再点**、且用"这个格的 content-desc 时间戳"核对到目标图，别复用上一轮坐标——本项目二维码图的时间戳就是推送时刻，可用来精确定位；④分辨"图错了"还是"代码错了"：把待测图**独立反解一次**（本轮用 `jsQR`，与生成端 `qrcode` 不同实现），图能解出而 App 解不出才是代码问题。
 
 ### 3.6 Compose 输入框：`input text` 长串只落首字符；改地址一律走存储层（2026-09-23 实测，补充 3.4）
 - 现象：`adb shell input text "http://127.0.0.1:3000"` 之后应用报 `Expected URL scheme 'http' or 'https' but no scheme was found for h`——地址框里只有 `h`。两个字符的昵称（`W1`）则正常。
@@ -214,6 +245,18 @@
 - 现象二（重建清零）：房间动态的 entries/previous/everOnline 用纯 `remember`，而 AndroidManifest 未锁方向、无 `configChanges`——旋转屏幕、切深色、改系统字号都会重建 Activity。`RoomClient` 是 Application 级单例，房间状态因此保住、界面不报任何错，但时间线归零；偏偏成员区展开状态是 `rememberSaveable`，于是出现"展开着却一条动态都没有"的自相矛盾界面。修法：需要跨重建存活的状态用 `rememberSaveable` + `listSaver`（Saver 的 Original 类型必须与状态一致，见 4.5），并把读取放在最小作用域——本轮返回 `State`，在成员区那个 `item` 里读 `.value`，避免每条动态重组整个房间页。
 - 判定口诀：**这个状态属于"进程 / 房间会话 / 页面"哪一层？** 属于房间会话的，必须把会话标识（token 或房间码）写进 `remember` 的 key；属于页面且用户看得见的，必须能跨配置变更存活，否则要么补 Saver，要么接受归零并保证文案自洽（"展开着但空白"就是不自洽）。同轮复核还指出：`JoinInput`（昵称/邀请码/地址）也还是纯 `remember`，旋转后输入会丢——本轮未改，留待后续。
 
+### 4.8 `null` 与 `""` 兼作"加载中/无内容"两个语义，会把失败态永久卡在"加载中"（2026-09-27 真机发现）
+- 现象：真机上切到一首"catalog 有 lyrics 引用但 .lrc 文件缺失"的歌（服务端正确返回 `404 歌词文件缺失，请联系管理员`），歌词区**停在「歌词加载中」两分钟以上不动**；同一位置本该显示「这首歌还没有歌词」。
+- 定位过程（可复用）：①埋点打印证明 `fetchLyrics` 60ms 就返回了 null 且 `value = null` 已执行；②在渲染分支再埋点，打印出 `render lyricText=null hasLyrics=true`——**控件拿到的是正确的 null，是渲染分支判断错了**。
+- 根因：`produceState` 的初值用 `if (track.hasLyrics) "" else null`（"" = 加载中，null = 没内容），但渲染分支写成"先判 `lyricText == null`，再在分支内按 `track.hasLyrics` 二分"。于是 hasLyrics=true 的曲目取值失败后（null）仍然落进"hasLyrics 为真"的那一边，永远显示「加载中」——**「这首歌还没有歌词」这句文案实际不可达**。
+- 规避：①同一个值不要兼职两种语义；本项目改为**显式判别**：`lyricText == ""` 才算 Loading，`lyricText == null` 一律算 NoLyrics（hasLyrics=true 时取值成功必有非空文本，所以 null 只可能是失败）。②更重要的是**把判定抽成纯函数**（`ui/LyricsState.kt` 的 `lyricsUiState`/`lyricsPlaceholderText`），Compose 侧只按枚举渲染——这样这条回归能用 JVM 单测钉死，不必靠真机反复试。③写纯函数测试时专门加一条"加载文案 ≠ 失败文案"的断言，这类"两个状态被压成一个"的缺陷正是它抓出来的（本轮它当场就抓出了修复第一版的同类错误）。
+
+### 4.9 歌词恢复只监听当前行：暂停歌曲手动翻页后永久留在远处（2026-09-27 真机复现）
+- 现象：云端《有何不可》暂停在 0:50，手动向后翻歌词，3 秒后仍停在后面的段落；「回到当前歌词」按钮已消失。旧包 `85484698…` 可复现。
+- 根因：倒计时只把 `manualPaused` 改回 false，自动滚动却是 `LaunchedEffect(current)`；暂停或长句期间 current 不变，恢复状态不会触发滚动。原先按最后一次触摸滚动事件延迟 500ms，也没有等待惯性滚动结束。
+- 规避：跟随流同时观察当前行与手动暂停状态，暂停发 null 取消旧滚动，恢复时即使行号不变也重新定位；等 `isScrollInProgress=false` 后再开始倒计时（本轮按用户确认改为 **3 秒**，移除「回到当前歌词」按钮）。`LyricsFollowTest` 钉住同一行恢复、翻看中跨行、重复采样、首行前取消四种行为。切歌用 `key(id, hasLyrics)` 重建整个歌词子树，因为 `produceState` 的 key 只重启 producer，**不会重新应用 initialValue 或重置列表状态**。
+- 验收必须补「歌曲暂停、当前行不变」场景；只在持续播放时等几秒，下一句变化会掩盖此缺陷。证据见 [云端真机补验](test-results/2026-09-27-cloud-device-followup/README.md)。
+
 ## 5. 协程与 JVM 单元测试
 
 ### 5.1 测试调度器与生产调度器语义不同
@@ -256,6 +299,16 @@
 - 根因：`DisplayNameTest.kt` 一个文件内含 `DisplayNameTest`(10) 与 `AvatarGlyphTest`(2) 两个测试类；JUnit XML 每个运行时类一份 `TEST-<类名>.xml`，按文件或按"文件数=类数"对账就会少计。
 - 规避：对账一律汇总 XML 属性（`tests/failures/errors/skipped` 逐文件累加）并与源码 `grep -c '@Test'` 全量核对（本仓 96=96）；一个文件多个测试类是合法形态，别把 XML 里的"多余类"当旧文件混入（结合 17:02 时间戳与 cleanTest 排除陈旧结果）。
 
+### 5.9 假通过：`runTest` 不会等待真实 `Dispatchers.IO`，测试全绿但被测代码一行没跑（2026-09-27 实测）
+- 现象：为"歌词下载失败要返回 null"写了 5 个用例，全部通过，看起来这条路径有回归保护了。加一行 `println` 才发现每个用例里 `session=false`——**会话根本没建立起来，5 个用例都是在"无会话直接 return null"这一步通过的**，被测的 404/网络失败分支一行都没执行。
+- 根因：`fetchLyrics` 用真实 OkHttp，`okHttpTransport` 内部是 `withContext(Dispatchers.IO)`；而 `runTest` 只驱动**测试调度器**上的任务，真实 IO 线程池上的工作它不等。于是 `join()` 的协程停在真实的 IO 调用上，测试直接往下走，`session` 仍是 null。用例"通过"是因为函数在最前面就返回了，与断言的语义无关。
+- 判别与规避：①**任何用真实网络/真实 IO 的单元测试，先断言前置状态真的建立了**（本轮若在 `join` 后加一句 `assertNotNull(client.state.value.credentials)` 就能立刻暴露）；②同理，断言要在意"函数为什么返回这个值"——"返回 null"既可能是被测分支，也可能是更早的守卫；③优先把逻辑抽成**纯函数**再用注入式假实现测试（5.4 的边界模式），真机行为另由 test-results 证据承载；④发现假通过后要**删掉那个用例**而不是留着充数——假保护比没有保护更危险。
+
+### 5.10 轮询"指令文件"时用字节偏移去切解码后的字符串，会把行首字符吃掉（2026-09-27 实测）
+- 现象：验收辅助工具（`host-remote.mjs` 的 `--cmds` 文件轮询）执行到 `select dan-che` 时日志打出 `> lect dan-che` → `未知指令: lect`，切歌静默失败；而单次写入时又完全正常。
+- 根因：偏移量按 `statSync().size`（**字节**）记，却用 `content.slice(offset)`（**UTF-16 码元**）去切解码后的字符串。文件开头的 UTF-8 BOM 占 3 字节但解码后是 1 个字符，偏移因此漂移 2 位，正好吃掉下一行开头的字符。
+- 规避：**不要混用字节与字符两种单位**。改为按"已执行的行数"记进度（每次全量读文件、切掉已执行的前 N 行），幂等且不受 BOM/多字节影响；写入侧用 ASCII 或无 BOM 编码，并在工具里加**执行回执文件**（`<cmds>.ack` 记录时间+原文），免得再靠服务端状态反推"指令到底有没有被看到"——本轮正是靠回执才确认是行首被吃、而不是指令没送到。
+
 ## 6. 设计与流程纪律
 
 - **行为约定优先**：UI 优化不得违反"服务端为播放唯一来源、明确点击才能解除本机暂停"（README）。乐观预览只改显示，不提前改播放器/房间状态。
@@ -283,6 +336,13 @@
 - **"看起来没变"的替换会吃掉行尾换行，把两个 import 并成一行（2026-09-25，本族镜像形态）**：一次本意是"原样保留"的替换去掉了 `import androidx.compose.foundation.layout.Arrangement` 行尾的换行，与下一行 `import ...layout.Box` 并成 `Arrangementimport ...layout.Box`，两个 import 同时失效。**编译错误报在使用处**（文件末尾 376/380 行 `Arrangement`/`Box` 未解析），与受损位置相距 350 行，第一眼极易误判成"新代码写错了"。规避：批量改 import 区后先自查——Grep 搜 `^import .+import ` 是否有并行（本轮用它 2 秒定位）；见到"未解析引用"先看 import 区，再动使用处代码。与上一条同源：编辑落地与意图不一致时，以文件实际内容为准，不以"我刚改了什么"为准。
 - **Windows 下 `fs.symlink` 的文件类型静默退化成普通文件（2026-09-24，本机实测）**：写"曲库拒绝库外符号链接"的回归用例时，`fs.symlinkSync(绝对目标, 链接路径)`（type 缺省或 `'file'`）**既没抛错也没建出链接**——`lstat().isSymbolicLink` 为 `false`、`isFile()` 为 `true`、`nlink=1`、`readlinkSync` 报 `EINVAL`，`realpathSync` 直接返回链接自己的路径（不解析目标）。后果具有欺骗性：被测的 `realpath + startsWith` 防护在本机会**放过**这类文件，看起来像"防线失效"，实际是链接压根没建出来（生产是 Linux，realpath 会正常解析）。规避：①需要符号链接证据时用**目录链接**——`fs.symlink(target, path, 'junction')`（Windows 走 junction 不需要管理员权限，POSIX 忽略 type，实为目录符号链接），实测 `realpathSync` 能解析到真实目标，逃逸用例据此编写；②判定"链接是否真的建立"必须看 `lstat().isSymbolicLink`，不要只看 `symlink()` 没报错；③这类"同一 API 跨平台语义不同且静默降级"的问题，最终结论要落在目标平台（Linux）上，本机只能证明"防护对已解析出的库外路径生效"。
 - **会话沙箱内 scp 被拦：`scp: pipe: Unknown error` exit 255（2026-09-23 LOAD-15 云端轮实测）**：PowerShell 工具沙箱内运行 `add-media.ps1`，转码/ffprobe/scp 前置全过，唯独 scp 上传报 `pipe: Unknown error`（exit 255）；同一会话中 Bash 通道（沙箱外执行）的 scp/ssh 全部正常。规避：①在此环境跑涉及 scp 的脚本前，先用最小 scp 命令探通道，失败即换 Bash 通道；②`add-media.ps1` 中断后的**续传路径**：转码产物在 `%TEMP%\lt-media\up-<id>.mp3`，手动完成 `scp 上传 → manifest（UTF-8 无 BOM，`id\t标题`）→ `media-manage.sh install <id> <临时名> <manifest>` → `-Restart` 段的 systemctl restart + health 轮询 → `media-manage.sh verify`；不要从头重跑浪费一轮转码。属陷阱 7"沙箱辅助进程初始化"的同族形态。
+- **Windows 下 `node --test <目录>` 会把目录当文件加载：报 MODULE_NOT_FOUND 而不是"没有测试"（2026-09-27 接入 scripts 门禁实测）**：`node --test scripts/lib` 直接以"找不到模块 scripts\lib"退出，看起来像测试文件坏了，实际是 Node 在 Windows 上不对目录做递归发现。规避：门禁一律用 glob 形式 `node --test "scripts/**/*.test.mjs"`（`check.ps1 -Scope scripts` 已按此固化）；写新门禁时**先确认失败模式是"0 个测试"还是"加载报错"**，前者会静默放行、后者才会拦人，两者的告警价值完全不同。
+- **国内音乐平台接口的现状与口径（2026-09-27 三源整合实测，参考本机 `百度之星/music_downloader` 的 provider 注释）**：①**必须带 `Referer`**——QQ `c.y.qq.com/soso/fcgi-bin/search_for_qq_cp` 无 `Referer: https://y.qq.com/` 时返回的不是 JSON，报错表现为"解析失败"而不像鉴权问题；②**这些端点会悄悄失效**：`client_search_cp` 已 HTTP 500、`musicu.fcg` 的 `SearchCgiService` 返回空列表/500003、网易云 `/api/search/get/web` 响应体被 AES 加密成 hex、`/song/media/outer/url?id=..mp3` 302 到 404——**"返回空"不等于"这首歌没收录"**，所以 lib 里对结构缺失一律抛错而不是回 null 候选；③**单位不一致**：QQ `pubtime` 是 epoch **秒**、网易云 `publishTime` 是**毫秒**且常为 0，`interval` 秒 vs `dt` 毫秒，混用会得到 1970 或四位数年份之外的垃圾，故归一函数只认 `durationMs`/四位年份，`epochYear(0)` 必须是 null；④**网易云榜首常是翻唱/AI 版本**，不能"取第一条"，必须让阈值参与决策（实测《句号》原唱在第 2 位）；⑤搜索类接口无需登录 Cookie，**音源/下载接口才需要**（`qm_keyst`/`MUSIC_U`）——本项目只取文本与封面地址，因此**绝不注入 Cookie**。
+- **缓存把"判定结果"和"判定参数"分开传，出口必须按当前参数重算（2026-09-27，由验证驱动当场抓出）**：`低于阈值就不给封面地址`这条规则原先只在**元数据源层**执行（当场查平台时按那次请求的阈值压掉 `coverUrl`），而管理器把整份结果连同 `coverUrl` 一起写进了缓存；阈值却是**每次请求带的参数**（界面可以调高再试）。结果：状态已经判成 `needs-review`，响应里仍带一个"点一下就存图"的封面地址。修法是在返回处按本次阈值再闸一次（`coverUrl: accepted ? … : null`）。规避要点：**任何"结果 + 参数"分开传的缓存，读出来之后必须用当次参数重新判定，不能假定写入时的判定在今天仍然成立**；同一规则在多层各写一遍时，要么收成一个函数，要么就用测试把最外层的口径钉住（本轮就是靠驱动里那句 `低于阈值时不给封面地址` 断言抓到的，不是靠读代码）。
+- **「空值即删」的写库语义遇到外部候选会静默丢字段（2026-09-27 夹具 E2E 抓出）**：`applyEdit` 为了支持"界面清空一个字段"，把空串/非法值统一当成删除。手工编辑时这是正确行为，但候选值来自外部平台：一条 `year: "不是数字"` 的脏数据经同一入口会把已有年份**清掉**而不是写入垃圾——夹具断言"垃圾值被拒"当场失败才发现。规避：同一写入函数被第二类调用方（自动化/外部数据）复用前，必须在新调用方入口加**独立的前置校验**（apply 路由现只接受非空字符串与 1800–2100 整数，"清空"这条语义根本不对外开放），并保留"清空只有手工编辑才有"的不对称性；别指望下游校验器兜住，因为它的语义就是"空=删"。
+- **`spawn(node, [脚本, ...])` 里 Node 自己的开关必须排在脚本路径之前（2026-09-27 离线驱动实测，代价是一次真实公网请求）**：给管理器加"出网必失败"的降级用例时，用 `--import` 预加载去替换子进程的 `globalThis.fetch`，但参数写成了 `[MANAGER, '--dir', …, '--import', url]`。Node 只解析脚本路径**之前**的开关，其后的全部进 `process.argv` 交给脚本——管理器把 `--import` 当成自己的陌生参数忽略，预加载从未执行，于是断言收到 200（一次**真**的 QQ 检索请求）而不是预期的 502。这类失效**不会报错**：进程照常起、照常监听，只有结果不对。规避：①凡用 `--import`/`--experimental-*`/`--env-file` 等 Node 开关做夹具，把它放在 spawn 参数数组的**最前面**；②"注入型"用例必须先验注入本身生效——本驱动的做法是让被注入的那条路径**不可能**给出成功结果（fetch 必抛 ⇒ 只能是 502），一旦看到 200 就说明桩没挂上；③验证夹具号称"不出网"时，失败输出里若出现真实平台域名（本轮是 `y.gtimg.cn`），即可当场确认出过网，据此在证据里如实登记那次请求及其影响面（只写进临时 `--cache`，真实缓存与 `media/` 未受影响）。
+- **目录归属判断不能靠拼分隔符比前缀，必须走统一的跨平台口径（2026-09-27 删除轮抓出）**：`managedCoverPath` 用 `path === resolve(COVER_DIR) + '\\' + rest` 这类判断决定"这张封面是不是本工具放进 `covers/` 的、可以回收"。在 Windows 上碰巧成立，在 POSIX 口径（`path.win32`/`path.posix` 混用、CI、未来迁到 WSL/Linux 跑工具）下反斜杠永远不出现，判断恒为假——表现不是报错，而是**"独立封面明明在盘上却认不出来"**：删除只清 catalog、图片永远留在库里变成孤儿，用户完全看不出异常。规避：①目录包含关系一律用同一个 `insideDir(root, target)`（`resolve` 后比 `relative()` 不含 `..` 且非绝对），不要让某一路径自己拼分隔符；②凡是"只处理我放进去的东西"这类安全边界，必须在夹具里造一条**边界外**的用例（本轮是手写的 `cover: 'stray.png'` 落在库根）——否则判断写反了也测不出来。
+- **删除一类资源时，"写库"与"动文件"的先后决定故障形态，共享资源必须按引用计数（2026-09-27 删除轮）**：曲库删除有两种失败态，严重性差一个量级：先移文件后写库 ⇒ 失败时"catalog 还引用着一份已经不存在的 MP3"，`loadCatalog` 启动即失败，**整个后端起不来**；先写库后移文件 ⇒ 失败时只剩"条目没了、文件还在"，是磁盘垃圾，不是可用性事故。所以顺序固定为：①先整库 `loadCatalog` 自检（库本来就是坏的回 **409**，一个文件都不许动、也不建空回收批次）→②移除条目并过 `writeAndValidate`（失败 **422** 逐字节回滚）→③**才**移文件。409/422/500 要分开登记语义（409=库本来就坏、422=这次写改坏了已回滚、500=非预期），界面据此决定是否留在可重试状态。另一半：多条目可以指向同一个文件（本轮夹具里两首共用 `.mp3`、两首共用封面、两首共用 `.lrc`），无脑移走会把另一首**当场变成坏条目**；删除前必须对**每一类**文件做引用计数（realpath 归一后比对，不能只比字符串），只回收独占文件，共用则留原地并在答复里点名"谁还在引用"。引用计数很容易只给"看起来会共享的那一类"实现（起初只有歌词有），漏掉的正是最贵的音频与封面——所以测试夹具要给三类各造一组共享关系，逐类断言。
 
 ## 9. 音频链路与播放取证（2026-09-23）
 
@@ -389,3 +449,18 @@
 - 现象：夜轮 label-lag.py 报 13 次“已暂停”，但留存 17/18/19 三张截图都显示“播放中”。
 - 根因：脚本忽略 uiautomator dump 失败并重复读取同一路径旧 XML；因此不能据此断言 PlaybackView 通路有缺陷（3.1 的具体再现）。
 - 规避：先删除旧转储、检查退出码与成功标志，失败标无效；动态页面优先截图，并核对采样所属包与时刻。本轮修复采样脚本并撤回过强归因，不把证据失效说成已真机修复播放器。
+
+## 10. 部署操作（2026-09-27 歌词上云实测补充）
+
+### 10.1 `npm ci` 报 `EACCES mkdir node_modules/...`：根因是 npm 缓存目录归属，不是包坏了
+- 现象：服务器侧以 `listen` 账号 `npm ci` 失败，stderr 先刷一串 `npm warn tar TAR_ENTRY_ERROR ENOENT: no such file or directory, open '…/node_modules/<各种包>/…'`（fastify、ajv、strtok3…五花八门），随后才是真正的错误 `npm error code EACCES / syscall mkdir / path /opt/listen-together/.npm`。**那串 ENOENT 只是缓存目录不可用后的连带噪声，指向的却是 node_modules 里的文件，极易误判成"包损坏/下载不完整"**。
+- 根因：`/opt/listen-together/.npm` 被 root 拥有（早期以 root 跑过 npm 留下的），`listen` 账号既不能写缓存也不能写日志；npm 在缓存不可写时对每个条目都报一次解包失败。
+- 规避：①`chown -R listen:listen /opt/listen-together/.npm`（或删掉让它重建）；②部署命令显式指定项目外缓存，避免踩到历史污染：`sudo -u listen env npm_config_cache=/tmp/lt-npm-cache npm ci …`；③**判读顺序**：先找 `npm error` 开头的行，再看 warnings——`TAR_ENTRY_ERROR` 这类批量 ENOENT 通常是次生噪声；④失败重跑前先 `rm -rf node_modules`，别在半成品上续装。
+- 附带（同一轮踩到）：脚本里带中文的 `echo` 经 PowerShell → `ssh "bash -s"` 管道传输会被串码，**连引号都可能被吃掉**，bash 报 `syntax error near unexpected token '('`。需要执行带中文的脚本时**先 scp 到服务器再 `bash` 执行**（服务器是 UTF-8 环境），或把脚本输出写成纯 ASCII；这与陷阱 1.9 同源，但后果更重（不只是报错，是脚本文本本身被改坏）。
+
+### 10.2 管理器发布审查发现的落盘与跨平台问题（2026-09-28）
+
+- 上传目录改成audio/后catalog仍写旧路径，上传全部校验失败；必须以真实上传端到端断言落盘与引用一致，不能只测手写夹具。
+- 删曲做了引用计数，替换/移除封面却漏掉，导致共享曲库损坏；所有清理入口复用同一引用检查，按真实路径归一。
+- async请求共享catalog与固定.tmp文件，多标签页会丢更新；单进程串行覆盖整个读改写校验流程，同时禁止外部并发写库。旧对象重新序列化不是逐字节回滚，要保留原Buffer，并报告恢复失败。
+- Python在Windows用write_text默认换行会产生CRLF，上传bash脚本报pipefail\r无效；写shell文件用write_bytes明确LF，上传前检查字节。首次失败在set语句，未发生部署变更；转换后成功。

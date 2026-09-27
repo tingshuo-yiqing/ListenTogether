@@ -17,13 +17,20 @@ export class Rooms {
   /** ip 来自 req.ip（trustProxy 仅信任回环，直连不可伪造）；仅用于存量配额与日志，不参与身份判定。 */
   create(name: unknown, ip = '') {
     const nickname = this.nickname(name);
-    if (this.roomsOf(ip) >= IP_ROOM_QUOTA) throw new Fault(429, `同一来源最多同时创建 ${IP_ROOM_QUOTA} 个房间，请先使用已有房间`);
+    // 文案要把"怎么恢复"讲清楚：房间空了以后会保留 5 分钟供掉线重连，之后自动回收并释放配额。
+    // 只说"最多 3 个房间"会让用户以为配额只增不减（2026-09-27 实测反馈）。
+    if (this.roomsOf(ip) >= IP_ROOM_QUOTA) {
+      throw new Fault(429, `同一来源最多同时创建 ${IP_ROOM_QUOTA} 个房间；空的房间保留 ${EMPTY_ROOM_MS / 60_000} 分钟后自动回收，请稍后重试或使用已有房间`);
+    }
     if (this.rooms.size >= ROOM_LIMIT) throw new Fault(503, '房间数量已达上限');
     let code: string; do { code = randomBytes(4).toString('hex').toUpperCase(); } while (this.rooms.has(code));
     const room: Room = { code, creatorIp: ip, hostId: '', members: [], trackId: this.tracks[0]?.id ?? null, playing: false, positionMs: 0, timestampMs: this.now(), version: 0, emptySince: this.now() };
     const credentials = this.add(room, nickname); room.hostId = credentials.memberId;
     this.rooms.set(code, room);
-    this.emit({ event: 'room.created', code, hostId: credentials.memberId });
+    // 事件带 creatorIp：配额是"按来源 IP 计数"的，出问题时必须能从日志直接看出是谁占了额度
+    // （2026-09-27 排查"配额为什么满"时，日志里没有 IP 只能靠时间线反推）。IP 仅用于排障，
+    // 不参与身份判定，也不下发给客户端。
+    this.emit({ event: 'room.created', code, hostId: credentials.memberId, creatorIp: ip });
     return credentials;
   }
   /** 当前 IP 的活跃房间数（遍历内存房间表，房间被 tick 回收后自然减少）。 */

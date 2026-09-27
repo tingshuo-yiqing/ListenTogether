@@ -7,7 +7,9 @@
 #   media-manage.sh install <id> </tmp/x.mp3> [manifest] 安装上传的临时文件：
 #                                                        旧 id → 按 catalog 映射的文件名原位替换（先把当前文件备份到 media-originals/<时间戳>/）
 #                                                        新 id → 需要 manifest（内容一行：id<TAB>中文标题），按"<标题>.mp3"落盘并追加 catalog 条目
-#   media-manage.sh verify                              用与后端相同的 music-metadata 解析 catalog，输出时长/大小/码率
+#   media-manage.sh verify                              用与后端相同的 music-metadata 解析 catalog，输出时长/大小/码率，并标注有无封面/歌词
+#   media-manage.sh lyrics <id> </tmp/x.lrc>            为已有歌曲挂接歌词：校验 .lrc 内容后写 media/lyrics/<id>.lrc，
+#                                                        并把 "lyrics":"lyrics/<id>.lrc" 写入 catalog 条目（后端按库内相对路径解析）
 #   media-manage.sh list                                输出 catalog.json 内容
 #
 # 设计约束：中文（标题/文件名）只允许在脚本文件与 manifest 文件内容里流转，
@@ -30,7 +32,7 @@ catalog_file_of() {
 }
 
 cmd="${1:-}"
-[ -n "$cmd" ] || die "缺少子命令：has | install | verify | list"
+[ -n "$cmd" ] || die "缺少子命令：has | install | lyrics | verify | list"
 
 case "$cmd" in
   has)
@@ -60,10 +62,39 @@ case "$cmd" in
           const md = await parseFile(p, { duration: true });
           const dur = md.format.duration || 0;
           const kbps = dur > 0 ? Math.round(st.size * 8 / dur / 1000) : 0;
-          console.log(`${e.id} | ${e.title} | ${e.file} | ${dur.toFixed(1)}s | ${(st.size / 1048576).toFixed(2)}MiB | ${kbps}kbps`);
+          const artist = e.artist || md.common.artist || "(无)";
+          const cover = e.cover
+            ? (fs.existsSync(path.join(dir, e.cover)) ? "独立" : "缺文件!")
+            : (md.common.picture && md.common.picture.length > 0 ? "ID3" : "无");
+          // 歌词以 catalog 引用 + 磁盘文件双重判定：引用了但文件丢了要能看出来
+          const lyrics = e.lyrics ? (fs.existsSync(path.join(dir, e.lyrics)) ? "有" : "缺文件!") : "无";
+          console.log(`${e.id} | ${e.title} | ${e.file} | ${dur.toFixed(1)}s | ${(st.size / 1048576).toFixed(2)}MiB | ${kbps}kbps | 歌手=${artist} | 封面=${cover} | 歌词=${lyrics}`);
         }
       })().catch(err => { console.error("ERROR:", err.message); process.exit(1); });
     ' "$MEDIA_DIR"
+    ;;
+  lyrics)
+    # 挂接歌词：id 必须已在 catalog；临时名沿用 ASCII 约定（/tmp/lt-up-<id>.lrc），
+    # LRC 正文（含中文）只从文件读取，不经命令行参数。
+    id="${2:-}"; tmp="${3:-}"
+    require_catalog
+    echo "$id" | grep -Eq '^[a-zA-Z0-9_-]{1,64}$' || die "非法 id：$id"
+    f="$(catalog_file_of "$id")"
+    [ -n "$f" ] || die "catalog 中无 id=$id（歌词只能挂到已上架歌曲）"
+    case "$tmp" in /tmp/*) ;; *) die "临时文件必须在 /tmp 下：$tmp" ;; esac
+    [ -f "$tmp" ] || die "临时文件不存在：$tmp"
+    size="$(stat -c %s "$tmp" 2>/dev/null || wc -c < "$tmp")"
+    [ "$size" -le 262144 ] || die "歌词超过 256KB（$size 字节），拒绝上架"
+    # 与后端 loadCatalog 同口径：至少含一行 [mm:ss] 时间戳才视为同步歌词
+    grep -qE '\[[0-9][0-9]:[0-9][0-9]' "$tmp" || die "歌词中没有 [mm:ss] 时间戳行，拒绝上架"
+    mkdir -p "$MEDIA_DIR/lyrics"
+    dest="$MEDIA_DIR/lyrics/$id.lrc"
+    # 落盘前去 UTF-8 BOM（Windows 侧编辑器常见），安卓解析器也容忍 BOM，双保险
+    sed '1s/^\xEF\xBB\xBF//' "$tmp" > "$dest"
+    chown root:listen "$dest" 2>/dev/null || true
+    chmod 644 "$dest"
+    node -e 'const fs=require("fs");const a=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));const e=a.find(x=>x.id===process.argv[2]);if(!e){console.error("ERROR: id 已消失");process.exit(1)}e.lyrics="lyrics/"+e.id+".lrc";fs.writeFileSync(process.argv[1],JSON.stringify(a,null,2)+"\n")' "$CATALOG" "$id"
+    echo "LYRICS id=$id bytes=$size catalog=lyrics/$id.lrc"
     ;;
   install)
     id="${2:-}"; tmp="${3:-}"; manifest="${4:-}"
@@ -104,6 +135,6 @@ case "$cmd" in
     rm -f "${tmp}.manifest" 2>/dev/null || true
     ;;
   *)
-    die "未知子命令：$cmd（支持 has | install | verify | list）"
+    die "未知子命令：$cmd（支持 has | install | lyrics | verify | list）"
     ;;
 esac

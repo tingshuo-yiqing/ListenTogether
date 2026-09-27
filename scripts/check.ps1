@@ -1,6 +1,6 @@
 ﻿[CmdletBinding()]
 param(
-    [ValidateSet('all', 'server', 'android', 'docs')]
+    [ValidateSet('all', 'server', 'scripts', 'android', 'docs')]
     [string]$Scope = 'all'
 )
 
@@ -37,6 +37,14 @@ if ($Scope -in @('all', 'server')) {
     Invoke-CheckedCommand (Join-Path $projectRoot 'server') 'npm.cmd' @('run', 'build')
     Invoke-CheckedCommand (Join-Path $projectRoot 'server') 'npm.cmd' @('test')
     Write-Output '后端构建与测试通过。'
+}
+
+if ($Scope -in @('all', 'scripts')) {
+    # 本机工具脚本（scripts/lib/*.test.mjs）的纯单测：全部离线，注入假传输不出网。
+    # 必须用 glob 形式而非目录形式——Windows 下 `node --test scripts/lib` 会把目录当文件加载而报
+    # MODULE_NOT_FOUND（Node 在 POSIX 路径分隔下才认目录），看起来像"没有测试"而不是"测试失败"。
+    Invoke-CheckedCommand $projectRoot 'node.exe' @('--test', 'scripts/**/*.test.mjs')
+    Write-Output '本机工具脚本单测通过（离线，不访问公网）。'
 }
 
 if ($Scope -in @('all', 'android')) {
