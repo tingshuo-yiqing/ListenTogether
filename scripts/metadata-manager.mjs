@@ -10,9 +10,9 @@
  *   上传新 MP3 入库、上传/替换/移除独立封面、删除曲目（条目走校验闸门，文件移进回收目录
  *   而非直接删除）、联网匹配外部元数据候选并按勾选受控写回。
  *   匹配源为 QQ 音乐 / 网易云音乐 / MusicBrainz（默认 QQ，华语覆盖最好），除匹配那一步
- *   只读出网外，只做本地文件读写，不接触运行中的后端。
+ *   出网（文字/歌词/封面）外，只做曲库文件读写，不接触运行中的后端。
  *
- * 出网边界：只调平台的搜索/详情接口取文字元数据与封面地址，不取音源、不带任何登录态、
+ * 出网边界：只调平台搜索/详情、LRCLIB公开歌词接口与受信图床，不取音源、不带任何登录态、
  *   不做批量爬取（一次界面动作对应若干首、每首 1–2 个请求）。平台接口属非公开实现，
  *   随时可能改；接口清单与失效记录集中在 lib/metadata-sources.mjs 顶部常量处。
  *
@@ -43,6 +43,8 @@ import {
   createMetadataSource, METADATA_SOURCES, DEFAULT_SOURCE,
   buildChanges, cacheKey, mergeLocalFields, readId3Tags, DEFAULT_MIN_SCORE,
 } from './lib/metadata-sources.mjs';
+
+import { findLyrics, fetchLimited, allowedCoverUrl, imageExtension, COVER_LIMIT } from './lib/metadata-assets.mjs';
 
 const SCRIPT_DIR = fileURLToPath(new URL('.', import.meta.url));
 const PROJECT_ROOT = resolve(SCRIPT_DIR, '..');
@@ -287,8 +289,12 @@ async function listTracks() {
 
 // ---- 可编辑字段白名单：写编目前统一收口，空串 → 删除该可选键 ----
 const OPTIONAL_STRING_FIELDS = ['artist', 'album', 'genre', 'lyrics'];
-// 联网候选能触及的字段。刻意不含 lyrics：歌词来源不在元数据源的职责里（另走 .lrc 与人工挂路径）。
-const APPLICABLE_FIELDS = ['artist', 'album', 'genre', 'year'];
+// 文字字段直接校验；封面和歌词只接受本进程签发且绑定曲目的资源候选票据。
+const APPLICABLE_FIELDS = ['artist', 'album', 'genre', 'year', 'cover', 'lyrics'];
+// 资源只接受本进程签发的候选票据，不接受客户端提供的任意下载地址或歌词正文。
+const assetCandidates = new Map();
+const ASSET_TTL_MS = 30 * 60 * 1000;
+let lastLyricsRequest = 0;
 
 function applyEdit(entry, body) {
   if (typeof body.title !== 'string' || !body.title.trim()) throw new Error('歌名不能为空');
@@ -343,7 +349,7 @@ async function writeSyncCache(cache) {
  * 低于 minScore 的候选照原样回显供人工判断，但不给 changes，界面据此禁掉"应用"——
  * 不给误写留通道，这是原 CLI 里 needs-review 不能自动落库那条纪律的界面版。
  */
-async function syncTrack(id, { source = DEFAULT_SOURCE, minScore = DEFAULT_MIN_SCORE, refresh = false } = {}) {
+async function syncTrack(id, { source = DEFAULT_SOURCE, minScore = DEFAULT_MIN_SCORE, refresh = false, includeLyrics = false } = {}) {
   const entries = await readCatalogEntries();
   const entry = entries.find(e => e.id === id);
   if (!entry) return { id, status: 'not-found', message: '歌曲不存在' };
@@ -358,19 +364,59 @@ async function syncTrack(id, { source = DEFAULT_SOURCE, minScore = DEFAULT_MIN_S
   let result = refresh ? null : cache[key];
   const usedCache = Boolean(result);
   if (!result) {
-    result = await SOURCE_CLIENTS[source].findMetadata(local, { minScore });
-    cache[key] = { ...result, cachedAt: new Date().toISOString() };
-    await writeSyncCache(cache);
+    try {
+      result = await SOURCE_CLIENTS[source].findMetadata(local, { minScore });
+      cache[key] = { ...result, cachedAt: new Date().toISOString() };
+      await writeSyncCache(cache);
+    } catch (err) {
+      if (!includeLyrics) throw err;
+      result = { candidate: null, score: 0, message: `文字来源暂不可用：${err.message}` };
+    }
   }
   const accepted = Boolean(result.candidate) && Number(result.score) >= minScore;
   const candidate = result.candidate || null;
   const changes = accepted ? buildChanges(entry, candidate, false) : {};
-  const status = !accepted ? 'needs-review' : (Object.keys(changes).length ? 'matched-change' : 'matched-no-change');
+  // 国内平台有时返回HTTP图床链接；只尝试升级HTTPS，仍需通过固定来源白名单。
+  const secureCover = typeof result.coverUrl === 'string' ? result.coverUrl.replace(/^http:/, 'https:') : null;
+  const coverUrl = accepted && allowedCoverUrl(secureCover) ? secureCover : null;
+  let lyrics = null;
+  if (includeLyrics) {
+    const profile = { title: entry.title, artist: local.artist || (accepted ? candidate.artist : ''), durationMs: track.durationMs };
+    const lyricsKey = 'lyrics-v1|' + JSON.stringify(profile);
+    const cached = cache[lyricsKey];
+    if (!refresh && cached && Date.now() - cached.at < 24 * 60 * 60 * 1000) lyrics = cached.value;
+    else {
+      try {
+        // 即使调用方绕开UI批量限速，也限制歌词请求间隔；失败不写缓存，下次可重试。
+        await new Promise(r => setTimeout(r, Math.max(0, lastLyricsRequest + 1000 - Date.now())));
+        lastLyricsRequest = Date.now();
+        lyrics = await findLyrics(profile);
+        cache[lyricsKey] = { at: Date.now(), value: lyrics };
+        await writeSyncCache(cache);
+      } catch (err) { lyrics = { status: 'unavailable', message: `歌词暂不可用，已跳过：${err.message}` }; }
+    }
+  }
+  for (const [token, value] of assetCandidates) {
+    if (Date.now() - value.at > ASSET_TTL_MS) assetCandidates.delete(token);
+  }
+  while (assetCandidates.size >= 500) assetCandidates.delete(assetCandidates.keys().next().value);
+  const assetToken = coverUrl || lyrics?.status === 'matched' ? randomUUID() : null;
+  if (assetToken) assetCandidates.set(assetToken, { id, at: Date.now(), snapshot: JSON.stringify(entry),
+    coverUrl, lyrics: lyrics?.status === 'matched' ? lyrics : null });
+  if (coverUrl && !track.cover) changes.cover = assetToken;
+  if (lyrics?.status === 'matched' && !entry.lyrics) changes.lyrics = assetToken;
+  const status = Object.keys(changes).length ? 'matched-change' : (accepted ? 'matched-no-change' : 'needs-review');
   return {
     id,
     status,
     source,
     sourceLabel: SOURCE_LABELS[source] || source,
+    metadataAccepted: accepted,
+    message: result.message,
+    assetToken,
+    lyrics,
+    hasCover: Boolean(track.cover),
+    hasLyrics: Boolean(entry.lyrics),
     score: Number(result.score) || 0,
     minScore,
     query: result.query,
@@ -387,7 +433,7 @@ async function syncTrack(id, { source = DEFAULT_SOURCE, minScore = DEFAULT_MIN_S
     // 封面地址必须按**本次请求的阈值**再闸一次：源层只在"当场查的那次"闸过，而缓存里的候选
     // 是按当时的阈值存下来的。界面可以把阈值调高重试，此时状态已判成 needs-review，
     // 若还递上封面地址就等于"这条候选没达标，但你可以一键把它的封面存进曲库"。
-    coverUrl: accepted ? (result.coverUrl || null) : null,
+    coverUrl,
   };
 }
 
@@ -616,7 +662,7 @@ async function handleRequest(req, res) {
       }
       try {
         return json(res, 200, await syncTrack(syncMatch[1], {
-          source, minScore, refresh: Boolean(body.refresh),
+          source, minScore, refresh: Boolean(body.refresh), includeLyrics: body.includeLyrics === true,
         }));
       } catch (err) {
         // 出网失败按"这一首失败"回 502，不抛 500：批量是界面逐首调用的，
@@ -649,21 +695,68 @@ async function handleRequest(req, res) {
       const newEntries = oldEntries.map(e => ({ ...e }));
       const entry = newEntries.find(e => e.id === applyMatch[1]);
       if (!entry) return json(res, 404, { message: '歌曲不存在' });
+      const resources = {};
+      for (const kind of ['cover', 'lyrics']) {
+        if (!(kind in picked)) continue;
+        const value = assetCandidates.get(picked[kind]);
+        if (!value || value.id !== entry.id || Date.now() - value.at > ASSET_TTL_MS
+            || value.snapshot !== JSON.stringify(oldEntries.find(e => e.id === entry.id))
+            || !(kind === 'cover' ? value.coverUrl : value.lyrics)) {
+          return json(res, 409, { message: '封面或歌词候选已过期或曲目已修改，请重新匹配' });
+        }
+        resources[kind] = value;
+      }
       // 批量补缺模式（onlyIfEmpty）：候选可能取自旧缓存，落库前以当前编目为准再过滤一遍，
       // 已有值的字段一律跳过——让界面上"不会覆盖你已手填的内容"这句是真话。
       if (body.onlyIfEmpty) {
         for (const k of Object.keys(picked)) {
           const cur = entry[k];
           if (typeof cur === 'string' ? cur.trim() : cur) delete picked[k];
+          if (k === 'cover' && !cur && (await loadCatalog(MEDIA_DIR)).find(t => t.id === entry.id)?.cover) delete picked[k];
         }
         if (!Object.keys(picked).length) {
           return json(res, 200, { ok: true, skipped: true, message: `${entry.id} 的候选字段已有值，已跳过` });
         }
       }
       // title 原样带上只为满足 applyEdit 的非空校验：候选标题不参与匹配写入（标题是我们自己填的）。
-      applyEdit(entry, { title: entry.title, ...picked });
-      await writeAndValidate(oldEntries, newEntries);
-      return json(res, 200, { ok: true, message: `已应用「${entry.title}」的 ${Object.keys(picked).join('、')}` });
+      const applied = [];
+      const failed = [];
+      const created = [];
+      const textFields = Object.fromEntries(Object.entries(picked).filter(([k]) => !['cover', 'lyrics'].includes(k)));
+      applyEdit(entry, { title: entry.title, ...textFields });
+      applied.push(...Object.keys(textFields));
+      try {
+        for (const kind of ['cover', 'lyrics']) {
+          if (!(kind in picked)) continue;
+          let path;
+          try {
+            const resource = resources[kind];
+            const data = kind === 'cover'
+              ? await fetchLimited(resource.coverUrl, COVER_LIMIT, allowedCoverUrl)
+              : Buffer.from(resource.lyrics.text, 'utf8');
+            const ext = kind === 'cover' ? imageExtension(data) : 'lrc';
+            const rel = `${kind === 'cover' ? 'covers' : 'lyrics'}/${entry.id}-${randomUUID()}.${ext}`;
+            path = join(MEDIA_DIR, rel);
+            await mkdir(dirname(path), { recursive: true });
+            await writeFile(path, data, { flag: 'wx' });
+            created.push(path);
+            entry[kind] = rel;
+            applied.push(kind);
+          } catch (err) {
+            if (path) await unlink(path).catch(() => {});
+            failed.push({ field: kind, message: err.message });
+          }
+        }
+        if (applied.length) await writeAndValidate(oldEntries, newEntries);
+      } catch (err) {
+        // 回滚失败时保留文件供人工恢复，避免进一步破坏可能仍引用新文件的编目。
+        if (!err.message?.includes('回滚失败')) for (const path of created) await unlink(path).catch(() => {});
+        throw err;
+      }
+      // 旧资源保留原地，避免替换时误删共享文件，也方便管理员回退。
+      return json(res, 200, { ok: failed.length === 0, applied, failed,
+        message: (applied.length ? `已应用「${entry.title}」的 ${applied.join('、')}` : '没有字段写入')
+          + (failed.length ? '；' + failed.map(f => `${f.field} 未应用：${f.message}`).join('；') : '') });
     }
     // 上传新歌曲（原始字节流，避免 multipart 解析；id/title 走自定义头，中文 URL 编码）
     if (req.method === 'POST' && url.pathname === '/api/upload') {
@@ -734,7 +827,7 @@ try {
   process.exit(1);
 }
 server.listen(PORT, HOST, () => {
-  console.log(`元信息管理器：http://${HOST}:${PORT}（Ctrl+C 停止）`);
+  console.log(`元信息管理器：http://${HOST}:${server.address().port}（Ctrl+C 停止）`);
   console.log('保存即写 catalog.json；运行中的后端需重启才会重新加载（重启清空内存房间）。');
   console.log(`「联网匹配」按所选源出网（QQ 音乐 / 网易云音乐 / MusicBrainz，各自限速见 lib/metadata-sources.mjs），候选只读，勾选后才写库；缓存见 CACHE_PATH。`);
   console.log(`「删除」把曲目移出 catalog 并把文件移进回收目录：${TRASH_DIR}\\<批次>\\<库内相对路径>（同批一份 manifest.jsonl 记录被删条目与文件去向，可手工放回）。`);

@@ -76,8 +76,8 @@ function seedCache() {
   ];
   const [a, b] = entries;
   const rows = [
-    mk(a, 'qq', { title: '有何不可', artist: '许嵩', album: 'QQ-ALBUM', genre: '', year: 2009, durationMs: 242000 }, 1.0, 'https://example.invalid/qq.jpg'),
-    mk(a, 'netease', { title: '有何不可', artist: '许嵩', album: 'NE-ALBUM', genre: '', year: 2011, durationMs: 242000 }, 0.95, 'https://example.invalid/ne.jpg'),
+    mk(a, 'qq', { title: '有何不可', artist: '许嵩', album: 'QQ-ALBUM', genre: '', year: 2009, durationMs: 242000 }, 1.0, 'https://y.gtimg.cn/fixture-qq.jpg'),
+    mk(a, 'netease', { title: '有何不可', artist: '许嵩', album: 'NE-ALBUM', genre: '', year: 2011, durationMs: 242000 }, 0.95, 'https://p1.music.126.net/fixture-ne.jpg'),
     mk(a, 'musicbrainz', { title: '有何不可', artist: '许嵩', album: 'MB-ALBUM', genre: 'MB-GENRE', year: 2009, durationMs: 242000, releaseId: 'rel-1' }, 0.9, null),
     // 低于阈值的缓存条目：候选照回，但不给 changes、也不给封面（"不给误写留通道"）
     mk(b, 'qq', { title: '单车', artist: '某翻唱', album: 'LOW-ALBUM', genre: '', year: 1999, durationMs: 0 }, 0.5, 'https://example.invalid/low.jpg'),
@@ -167,9 +167,9 @@ try {
     syncMB.body?.candidate?.album === 'MB-ALBUM' && syncMB.body?.candidate?.genre === 'MB-GENRE', syncMB.body?.candidate);
   check('缓存命中即不出网（三个响应都没有真的去查平台）',
     [syncQQ, syncNE, syncMB].every((r) => r.body?.usedCache === true), '见上三条');
-  check('达标候选的 changes 只含缺失字段（album/year），不覆盖已有 artist',
-    JSON.stringify(Object.keys(syncQQ.body?.changes || {}).sort()) === '["album","year"]', syncQQ.body?.changes);
-  check('QQ 封面地址透传给界面', syncQQ.body?.coverUrl === 'https://example.invalid/qq.jpg', syncQQ.body?.coverUrl);
+  check('达标候选的 changes 只含缺失字段（album/year/cover），不覆盖已有 artist',
+    JSON.stringify(Object.keys(syncQQ.body?.changes || {}).sort()) === '["album","cover","year"]', syncQQ.body?.changes);
+  check('QQ 封面地址透传给界面', syncQQ.body?.coverUrl === 'https://y.gtimg.cn/fixture-qq.jpg', syncQQ.body?.coverUrl);
 
   const low = await api('POST', '/api/tracks/track-b/sync', { source: 'qq' });
   check('低于阈值 → needs-review 且 changes 为空（不给误写留通道）',

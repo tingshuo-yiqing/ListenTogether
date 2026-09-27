@@ -273,3 +273,9 @@ JPG/PNG/WebP 由浏览器缩放到最长边 1024px，服务端上限为 1MB。�
 本机执行 `ssh -N -L 13100:127.0.0.1:3100 aliyun`，保持窗口运行，再访问 `http://127.0.0.1:13100`。此页面直接编辑云端 `/opt/listen-together/media`，上传、修改、删除都作用于云端。无人使用时操作，完成后检查编目，再 `systemctl restart listen-together` 使播放服务重新加载（会清空房间）。不要同时运行另一个管理器或media-manage.sh写同一曲库。
 
 专用账号listen-metadata拥有曲库，listen组保留读取权限；systemd写权限限media和metadata-state。缓存 `/opt/listen-together/metadata-state/cache.json`、回收目录 `/opt/listen-together/metadata-state/trash` 跨版本保留。管理器发布本身不重启播放服务，也不覆盖本地/云端清单。后续更新先在独立版本目录构建、夹具验收，再切metadata-manager链接并重启管理服务；首次版本停用可用 `systemctl disable --now listen-together-metadata`。本次[发布及备份证据](test-results/2026-09-28-metadata-release/README.md)。
+
+### 6.5 匹配封面和歌词直接保存（2026-09-28）
+
+刷新管理页面，选歌→「匹配这首」→预览→勾选「封面」「歌词」→「应用所勾选字段」，无需另存图片再上传。歌词统一尝试LRCLIB，未命中或请求失败跳过；纯文本候选会标注无时间轴。批量补缺也支持这两项，已有资源默认保留；占位歌词已有引用时需单曲主动勾选替换。候选30分钟后或管理器重启后失效，重新匹配即可。
+
+当前管理器20260928-metadata-02，前版01保留。更新只重启管理器；手机使用更新后的曲库仍需安排听歌后端重启，且既有歌词缓存不会因文件替换自动失效。本轮没有发布播放后端或改变上述限制。[发布记录](test-results/2026-09-28-metadata-assets/README.md)。

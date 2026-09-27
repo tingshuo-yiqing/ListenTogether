@@ -90,3 +90,5 @@ Debug诊断JSONL已实现（限60分钟或20MB，用户主动测试时采集）�
 2026-09-24（工具轮）：新增 protocol.test.ts（2 项）把协议文档变成可执行契约；`scripts/check.ps1` 的安卓段改为
 `:app:cleanTestDebugUnitTest :app:testDebugUnitTest`，避免测试任务被 Gradle 判 UP-TO-DATE 而跳过实跑（门禁的"测试通过"
 必须来自本轮执行，见 [陷阱清单](../development-pitfalls.md) 与 verification.md）。
+
+2026-09-28：scripts档现37项离线测试，新增metadata-assets.test.mjs（含启动真管理器的临时曲库集成用例，须先构建server/dist）；封面/歌词来源全部注入，不访问公网。原驱动85项，Chrome页面夹具与真实平台只读抽查分开登记：[资源应用验证](../test-results/2026-09-28-metadata-assets/README.md)。

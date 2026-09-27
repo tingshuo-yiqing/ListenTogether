@@ -249,9 +249,9 @@
       </div>
     </details>
     <div class="footer-note">
-      说明：保存/上传/封面/删除只修改本机曲库文件；正在运行的后端需重启才会重新加载（重启清空内存房间）。
-      删除不抹文件——条目与文件一起进回收目录 <code class="url">.workbuddy/media-trash/&lt;批次&gt;/</code>（附 manifest.jsonl），照它可放回。
-      云端上架请走 add-media.ps1 + media-manage.sh（见 docs/deployment.md 第 6 节）。
+      说明：保存/上传/封面/删除修改页面顶部所示曲库（通过云端隧道访问时就是云端曲库）；正在运行的后端需重启才会重新加载（重启清空内存房间）。
+      删除不抹文件——条目与文件一起进管理器配置的回收目录（删除结果会显示完整路径）（附 manifest.jsonl），照它可放回。
+      维护前确认无人听歌，完成后重启听歌后端加载编目。
     </div>
   </div>
 </main>
@@ -270,7 +270,7 @@
     <div class="warn">
       文件不会被直接抹掉：连同 catalog 条目一起移进回收目录，manifest.jsonl 记下被删条目原文与每个文件的来去，
       想放回照它抄回原位即可。<br>
-      共用同一份 .lrc 的歌曲，其歌词文件会保留；改动要重启后端才生效；云端曲库不受本操作影响。
+      共用的音频、封面、歌词会保留；操作作用于页面顶部所示曲库。请在无人使用时维护，完成后重启听歌后端加载编目。
     </div>
     <div class="actions">
       <button class="danger" id="del-go">确认删除</button>
@@ -408,6 +408,8 @@ function select(id) {
   if (id !== currentId && !confirmDiscard()) return;
   dirty = false;
   currentId = id;
+  syncRequest++;
+  $('btn-sync').disabled = false;
   renderList();
   const t = tracks.find(x => x.id === id);
   if (!t) return;
@@ -433,8 +435,8 @@ function select(id) {
   if (!t.hasCover) $('cover-tip').textContent = '当前没有封面';
   $('btn-cover-remove').disabled = t.coverSource !== 'file';
   const i = t.id3;
-  $('id3-ref').innerHTML = `<b>ID3 参考值</b>（文件内嵌标签，手填留空时的兜底来源）<br>` +
-    `艺术家：${i.artist || '—'} ｜ 专辑：${i.album || '—'} ｜ 流派：${i.genre || '—'} ｜ 年份：${i.year || '—'}<br>` +
+  $('id3-ref').textContent = `ID3 参考值（文件内嵌标签，手填留空时的兜底来源）\n` +
+    `艺术家：${i.artist || '—'} ｜ 专辑：${i.album || '—'} ｜ 流派：${i.genre || '—'} ｜ 年份：${i.year || '—'}\n` +
     `文件：${t.file}（${fmtSize(t.effective.size)}）｜ 时长：${fmtDuration(t.effective.durationMs)}｜ 生效艺术家：${t.effective.artist || '—'}`;
 }
 
@@ -529,6 +531,7 @@ $('btn-upload').onclick = async () => {
 // ---- 联网匹配元数据（MusicBrainz）----
 // 候选值来自外部源，属不可信文本：一律用 textContent / dataset 建行，绝不拼 innerHTML。
 const SYNC_FIELDS = [['artist', '艺术家'], ['album', '专辑'], ['genre', '流派'], ['year', '年份']];
+let syncRequest = 0;
 let batchResults = [];   // 批量匹配结果，供「一键补缺」取 changes
 let batchRunning = false;
 
@@ -538,7 +541,7 @@ function el(tag, text, style) {
   if (style) n.setAttribute('style', style);
   return n;
 }
-function missingFieldCount(t) { return SYNC_FIELDS.filter(([k]) => !t[k]).length; }
+function missingFieldCount(t) { return SYNC_FIELDS.filter(([k]) => !t[k]).length + (!t.hasCover ? 1 : 0) + (!t.lyrics ? 1 : 0); }
 function thresholdOf(input) {
   const v = input.value === '' ? null : Number(input.value);
   if (v === null || !Number.isFinite(v) || v < 0 || v > 1) throw new Error('置信度阈值必须是 0 到 1 之间的数字');
@@ -566,12 +569,11 @@ function renderSync(r) {
   if (!r.candidate) {
     statusEl.textContent = `[${r.sourceLabel || r.source || '未知源'}] ` +
       (r.message || '没有匹配到候选') + (r.query ? '（检索词：' + r.query + '）' : '');
-    return;
   }
-  const accepted = r.status === 'matched-change' || r.status === 'matched-no-change';
+  const accepted = r.metadataAccepted === true;
   const line = el('div', null, 'margin-bottom:8px');
   line.appendChild(scoreSpan(r.score, accepted));
-  line.appendChild(el('span', ` ${accepted ? '已达阈值' : '低于阈值 ' + r.minScore + '，仅供人工比对，不可应用'}｜` +
+  line.appendChild(el('span', ` ${accepted ? '已达阈值' : '文字候选未达阈值 ' + r.minScore + '，文字不可应用；歌词独立匹配'}｜` +
     (r.sourceLabel || r.source || '未知源') + '｜' +
     (r.usedCache ? '命中缓存' : '本次新查') + '｜检索词 ' + (r.query || '—'), 'font-size:12px;color:var(--muted)'));
   resultEl.appendChild(line);
@@ -588,7 +590,7 @@ function renderSync(r) {
   let selectable = 0;
   for (const [key, label] of SYNC_FIELDS) {
     const cur = r.local ? r.local[key] : '';
-    const next = r.candidate[key];
+    const next = r.candidate?.[key];
     if (next === null || next === undefined || next === '') continue;
     const same = String(cur ?? '') === String(next);
     const tr = document.createElement('tr');
@@ -612,11 +614,32 @@ function renderSync(r) {
     tr.appendChild(candCell(next, same ? 'same' : 'new'));
     table.appendChild(tr);
   }
+  function resourceRow(key, label, current, candidate) {
+    const tr = document.createElement('tr');
+    const box = document.createElement('td');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.dataset.field = key; cb.dataset.value = r.assetToken;
+    cb.checked = Boolean(r.changes?.[key]);
+    box.appendChild(cb); tr.appendChild(box);
+    tr.appendChild(candCell(label)); tr.appendChild(candCell(current, 'old'));
+    tr.appendChild(candCell(candidate, 'new')); table.appendChild(tr); selectable++;
+  }
+  if (r.coverUrl) resourceRow('cover', '封面', r.hasCover ? '已有封面（勾选将替换）' : '无', '候选图片，勾选后直接下载并保存');
+  if (r.lyrics?.status === 'matched') {
+    resourceRow('lyrics', '歌词', r.hasLyrics ? '已有歌词（勾选将替换）' : '无',
+      'LRCLIB · ' + (r.lyrics.kind === 'synced' ? '带时间轴' : '纯文本，无逐行跟随'));
+  }
   resultEl.appendChild(table);
+  if (r.lyrics?.status === 'matched') {
+    const details = document.createElement('details');
+    details.appendChild(el('summary', '预览匹配到的歌词'));
+    details.appendChild(el('pre', r.lyrics.text.slice(0, 2000), 'white-space:pre-wrap;max-height:200px;overflow:auto'));
+    resultEl.appendChild(details);
+  } else if (r.lyrics) resultEl.appendChild(el('div', r.lyrics.message || '没有匹配到歌词，已跳过', 'color:var(--muted);margin-top:8px'));
 
   if (r.coverUrl) {
     const note = el('div', null, 'margin-top:8px;font-size:12px');
-    note.appendChild(el('span', '候选封面（不会自动下载，需要请右键另存后用上方「上传封面」）：', 'color:var(--muted)'));
+    note.appendChild(el('span', '候选封面（勾选上方「封面」，再点「应用所勾选字段」即可保存）：', 'color:var(--muted)'));
     note.appendChild(document.createElement('br'));
     // 直接给缩略图：候选封面本来就是给人眼确认用的，只有一条裸链接看不出是不是对的图。
     // no-referrer：平台图床多按 Referer 防盗链，不带反而更容易加载出来。
@@ -627,7 +650,7 @@ function renderSync(r) {
     img.setAttribute('style', 'max-width:120px;max-height:120px;border-radius:8px;border:1px solid var(--border);margin:6px 0;display:block;background:#eef2f6');
     img.onerror = () => { img.replaceWith(el('span', '（预览加载失败，可点开下方链接查看原图）', 'color:var(--muted)')); };
     note.appendChild(img);
-    const a = el('a', r.coverUrl);
+    const a = el('a', '查看候选封面原图');
     a.href = r.coverUrl;
     a.target = '_blank';
     a.rel = 'noopener';
@@ -635,33 +658,38 @@ function renderSync(r) {
     note.appendChild(a);
     resultEl.appendChild(note);
   }
-  statusEl.textContent = r.status === 'matched-no-change' ? '候选与当前值一致，无需写入' : '';
-  $('btn-apply-sync').disabled = !(accepted && selectable > 0);
+  statusEl.textContent = r.message || (selectable ? '勾选要应用的字段，封面与歌词会直接保存；已有资源默认不勾选。' : '没有可应用的候选');
+  $('btn-apply-sync').disabled = selectable === 0;
 }
 
 $('btn-sync').onclick = async () => {
   if (!currentId) return;
+  if (dirty) return toast('请先保存修改，再匹配', false);
+  const requestedId = currentId;
+  const requestNo = ++syncRequest;
   let minScore;
   try { minScore = thresholdOf($('s-min-score')); } catch (e) { return toast(e.message, false); }
   const statusEl = $('sync-status');
   $('btn-sync').disabled = true;
   $('btn-apply-sync').disabled = true;
-  statusEl.textContent = '匹配中…（按所选来源限速，通常 1–2 秒）';
+  statusEl.textContent = '匹配中…（同时尝试歌词，来源不通会自动跳过）';
   $('sync-result').innerHTML = '';
   try {
-    const r = await api('/api/tracks/' + encodeURIComponent(currentId) + '/sync', {
+    const r = await api('/api/tracks/' + encodeURIComponent(requestedId) + '/sync', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ source: $('s-source').value, minScore, refresh: $('s-refresh').checked }),
+      body: JSON.stringify({ source: $('s-source').value, minScore, refresh: $('s-refresh').checked, includeLyrics: true }),
     });
+    if (requestedId !== currentId || requestNo !== syncRequest) return;
     statusEl.textContent = '';
     renderSync(r);
   } catch (e) {
-    statusEl.textContent = '匹配失败：' + e.message;
-  } finally { $('btn-sync').disabled = false; }
+    if (requestNo === syncRequest) statusEl.textContent = '匹配失败：' + e.message;
+  } finally { if (requestNo === syncRequest) $('btn-sync').disabled = false; }
 };
 
 $('btn-apply-sync').onclick = async () => {
   if (!currentId) return;
+  if (dirty) return toast('请先保存修改，再重新匹配', false);
   const fields = {};
   for (const cb of $('sync-result').querySelectorAll('input[type=checkbox]:checked')) {
     const key = cb.dataset.field;
@@ -675,7 +703,7 @@ $('btn-apply-sync').onclick = async () => {
     const r = await api('/api/tracks/' + encodeURIComponent(currentId) + '/apply', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fields }),
     });
-    toast(r.message || '已写入');
+    toast(r.message || '已写入', !r.failed?.length);
     await refresh();
   } catch (e) { toast('写入失败：' + e.message, false); $('btn-apply-sync').disabled = false; }
 };
@@ -718,11 +746,11 @@ $('btn-batch-go').onclick = async () => {
     try {
       const r = await api('/api/tracks/' + encodeURIComponent(t.id) + '/sync', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source, minScore, refresh: refreshCache }),
+        body: JSON.stringify({ source, minScore, refresh: refreshCache, includeLyrics: true }),
       });
       batchResults.push(r);
       const writable = r.changes ? Object.keys(r.changes).length : 0;
-      batchRow(`${t.id} ${t.title}：${r.status}${writable ? '（可补 ' + Object.keys(r.changes).join('、') + '）' : ''}`, r.status);
+      batchRow(`${t.id} ${t.title}：${r.status}${writable ? '（可补 ' + Object.keys(r.changes).join('、') + '）' : ''}${r.lyrics?.message ? '；' + r.lyrics.message : ''}`, r.status);
     } catch (e) {
       batchRow(`${t.id} ${t.title}：查询失败 ${e.message}`, 'network-error');
     }
@@ -748,7 +776,8 @@ $('btn-batch-apply').onclick = async () => {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fields: r.changes, onlyIfEmpty: true }),
       });
-      if (res.skipped) { skipped++; batchRow(`${r.id}：已有值，跳过`, 'skipped'); }
+      if (res.failed?.length) { failed++; batchRow(res.message, 'local-error'); }
+      else if (res.skipped) { skipped++; batchRow(`${r.id}：已有值，跳过`, 'skipped'); }
       else { done++; batchRow(res.message, 'matched-change'); }
     } catch (e) {
       failed++;
