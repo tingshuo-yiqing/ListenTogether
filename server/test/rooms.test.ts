@@ -7,7 +7,7 @@ import { Rooms, IP_ROOM_QUOTA } from '../src/rooms/store.js';
 import type { ServerEvent } from '../src/events.js';
 import type { Track } from '../src/library/catalog.js';
 
-const track = (id = 'one', durationMs = 10000): Track => ({ id, title: id, durationMs, path: '', size: 10 });
+const track = (id = 'one', durationMs = 10000): Track => ({ id, title: id, durationMs, path: '', size: 10, artist: null, cover: null, coverVer: null, lyricsPath: null });
 async function until(predicate: () => Promise<boolean> | boolean) {
   const end = Date.now() + 5000;
   while (!(await predicate())) { if (Date.now() > end) throw new Error('timeout'); await new Promise(resolve => setTimeout(resolve, 20)); }
@@ -19,7 +19,10 @@ test('per-IP room quota: 4th active room rejected, released after empty rooms ex
   let now = 0; const store = new Rooms([track()], () => now);
   for (const name of ['a', 'b', 'c']) store.create(name, '203.0.113.7');
   assert.equal(store.roomsOf('203.0.113.7'), IP_ROOM_QUOTA);
+  // 文案必须讲清"怎么恢复"：空房保留 5 分钟后自动回收、配额随之释放。
+  // 2026-09-27 线上真实反馈：只说"最多 3 个房间"会让用户以为配额只增不减。
   assert.throws(() => store.create('d', '203.0.113.7'), /最多同时创建 3 个房间/);
+  assert.throws(() => store.create('d', '203.0.113.7'), /5 分钟后自动回收/);
   assert.equal(store.roomsOf('203.0.113.7'), IP_ROOM_QUOTA);            // 被拒的请求不占额度
   assert.ok(store.create('other', '198.51.100.9').code);                // 配额按 IP 隔离
   // 空房 5 分钟回收的语义不变，回收后额度自动释放（不按历史累计）。
@@ -36,6 +39,7 @@ test('HTTP room quota is keyed by the request IP', async t => {
   const rejected = await create('203.0.113.7');
   assert.equal(rejected.statusCode, 429);
   assert.match(rejected.json().message, /最多同时创建 3 个房间/);
+  assert.match(rejected.json().message, /自动回收/, '配额文案必须说明空房会自动回收，否则用户以为配额只增不减');
   assert.equal((await create('198.51.100.9')).statusCode, 200);
 });
 
@@ -62,6 +66,9 @@ test('structured events cover room lifecycle without leaking tokens or nicknames
   assert.equal(transfer.from, host.memberId);
   assert.equal(transfer.to, guest.memberId);
   assert.equal(events.find(event => event.event === 'room.deleted')!.reason, 'empty-timeout');
+  // room.created 必须带建房来源 IP：配额是按 IP 计数的，缺了它就没法从日志判断"额度被谁占了"
+  // （2026-09-27 排查真实反馈时正是卡在这里）。
+  assert.equal(events.find(event => event.event === 'room.created')!.creatorIp, '203.0.113.7');
   const serialized = JSON.stringify(events);
   for (const secret of [host.token, guest.token, 'NickAlpha', 'NickBeta']) assert.ok(!serialized.includes(secret), '事件日志泄漏了令牌或昵称');
   assert.doesNotMatch(serialized, /token|authorization|bearer/i);

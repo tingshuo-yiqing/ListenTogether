@@ -1,8 +1,19 @@
 # 一起听歌 · 当前交付与验收记录
 
 项目：D:\ListenTogether
-更新日期：2026-09-28
+更新日期：2026-09-28（元数据链路真机验收 + 云端曲库同步 + release 20260928-1718；同日：工作区三次清理、曲库删除轮、管理器三轮与歌词默认替换）
+更新日期：2026-09-28（元数据链路真机验收 + 云端曲库同步 + release 20260928-1718；同日：曲库删除轮、管理器三轮与歌词默认替换）
 定位：**进度唯一事实来源**。当前状态看「状态一览」，待办看「尚待验收」；每轮交付以追加「本轮新增」小节的方式登记，测试细节由 docs/test-results/<日期-场景>/ 承载，更早的历史轮次已压缩为「交付历史索引」。
+
+## 本轮新增（元数据链路真机验收 + 云端曲库同步 + release 20260928-1718，2026-09-28 傍晚）
+
+按用户指令「无线调试测元数据脚本：封面显示、歌词乱码」→「用云服务器测」→「media 本地重构完，云端还没同步」交付。真机当场抓到**歌词乱码真实缺陷**并闭环修复；封面从未在云端启用（部署缺口）随新 release 打开。证据：[2026-09-28 元数据真机验收](test-results/2026-09-28-metadata-device-check/README.md)。
+
+- **歌词乱码（真机抓到 → 根因 → 修复 → 回归通过）**：《有何不可》第 4 行「起」字渲染为 U+FFFD。取证：云端 `he-bu-ke.lrc`/`te-bie-de-ren.lrc` 盘上字节已坏（2 文件 3 行），本地原件全净；09-27 12:27 的上云 tar 包**内已含坏字节**——根因是 `fetch-lrc.mjs` 用 `data += chunk` 逐块独立解码 https 响应 Buffer，跨块汉字整体变 U+FFFD（陷阱 10.4）。修复：`setEncoding('utf8')`；脚本门禁 37/37。云端坏字节已随同步被净本取代（坏文件留档 `media-originals/lyrics-corrupt-backup-20260928/`）；客户端按曲目 id 缓存歌词且无版本失效（既有挂账），本轮清缓存后重新下载验证净本渲染。
+- **云端曲库同步（用户选定 21 首口径）**：云端 catalog 仅 21 首——《红日》《忘情水》为用户经云端管理器删除，保持剔除。本地重构布局（`audio/<id>.mp3` ASCII 名 + covers/lyrics）上云：旧平铺 mp3/covers/lyrics/旧 catalog 全量移入 `media-originals/media-flat-backup-20260928/`；合并保留云端 artist/album/year；《爱情转移》封面从云端取回按本地命名落盘 `covers/ai-qing-zhuan-yi.jpg`。音频抽样 md5 本地=云端（纯改名非转码）。本地 `media/catalog.json` 同步为 21 首口径（23 首合并版存档 .workbuddy）。
+- **release 20260928-1718（prev=20260927-1240 可回滚）**：封面在产版是 `const cover = null` 置空停用（09-27 部署时刻意），真实现（commit 12cb8de）从未发版——本轮 server-only 打包上云（tarball SHA256 `65ac5e50…`；本地服务端 30/30 + tsc 0；服务器 npm ci→build→prune→切链接→restart），基线 **14/14**，dist 复核置空覆盖已移除、loadCatalog 产出 19/21 封面。两次 restart 均只清掉本轮自建的测试房间。
+- **真机验收（PHQ110 无线 adb，装机锚回拉 `A586F93C…` 与当前 HEAD 重建逐位一致）**：21 首、歌手副行齐全；**19/21 歌单行/迷你条/播放页大封面真实专辑图**（《单车》《倔强》无独立封面按设计占位）；乱码修复行两处均完整；seek 2:10 当先行加粗跟随正确、繁简混排无乱码（lrclib 内容原样）；连续 9 次下一首切《特别的人》逐曲刷新；`dumpsys` PLAYING 1.0x。听感、双人同屏仍挂起；测试房间已退出。
+- **边界**：通知栏歌手/专辑（第三轮）、`lyricsVer` 缓存失效挂账未动；本地与云端现已同布局同步，后续增删曲目需再走同步。
 
 ## 本轮新增（工作区三次清理，2026-09-28，无代码改动、无新代码 hash）
 
@@ -10,7 +21,136 @@
 
 - **删除项（均 gitignore 覆盖、冗余/可再生，回收约 784MB，项目体积约 998MB → 214MB，git 跟踪文件零删除）**：①`.workbuddy/` 476MB → 4.5MB——删除 09-26 云端曲库上云的三个暂存（`tmp-lt-media.tar` / `tmp-lt-media-ascii.tar` / `media-stage` 各 133MB，本地 `media/` 完整 + 云端在产，纯冗余）、`cloud-device-followup/`（41MB，09-27 设备跟进 session 残留：两个过期 APK 副本 + 截图，docs 引用扫描零命中）、`deliverable-b1e80573.apk`（20MB 旧 session 交付副本）、`shots/`（14MB session 截图，证据已归档 docs/test-results/）、09-27 部署暂存与快照（deploy-stage-*/deploy2-stage-*/snapshot-*，<1MB）；②`android/app/build/`（313MB）全清后全量重建。
 - **保留项**：`.workbuddy/memory/` 与可复跑驱动脚本（标准明文永不删）、`qrtool/`（二维码验证可复跑工具）、metadata/organize 脚本与 catalog 备份（09-27 个人曲库工作流，<1MB）、**`media/` 133MB 用户曲库本地副本**（云端 `/opt/listen-together/media` 在产 + `media-originals/` 有备份，本地用途不确定，按标准第 2 条保留并标注）、`demo-media/`（含本地唯一副本个人音频）、`docs/test-results/` 证据链、`server/`、`android/.gradle`（5.7MB 不值得动）。
-- **门禁（实跑）**：全量重建后 `cleanTestDebugUnitTest → testDebugUnitTest → assembleDebug → lintDebug` BUILD SUCCESSFUL（3m22s，53/54 任务实跑），单测 **96/96 实跑、0 失败/错误/跳过**（XML 报告逐个统计），Lint 通过，`app-debug.apk` 再生 `a9289e82…`（代码未变，装机锚仍为 **517A776B…**，再生副本字节不同属 Gradle 正常非确定性）；`git status` 0 变更。
+- **门禁（实跑）**：全量重建后 `cleanTestDebugUnitTest → testDebugUnitTest → assembleDebug → lintDebug` BUILD SUCCESSFUL（3m22s，53/54 任务实跑），单测 **96/96 实跑、0 失败/错误/跳过**（XML 报告逐个统计），Lint 通过，`app-debug.apk` 再生 `a9289e82…`；`git status` 0 变更。（注：本轮时点装机锚为 517A776B…，当日晚间元数据轮后更新为 A586F93C…，见上方真机验收节。）
+
+## 本轮新增（单曲匹配到歌词即默认勾选，应用即替换旧歌词，2026-09-28 晚）
+
+按用户指令「修改掉这个设置，匹配到歌词后就可以替换掉旧的歌词」+「预览歌词现在能预览就不用再加」交付，只改本机 `scripts/` 与文档。**口径**：`/sync` 新增可选 `onlyIfEmpty`（补缺口径，已有值不进 `changes`）；单曲「匹配这首」不带它，故 LRCLIB 一命中就把 `lyrics` 报为默认勾选，本曲已引用歌词也照报，点「应用所勾选字段」即替换；批量「一键补缺」在 `/sync` 与 `/apply` 两端都带 `onlyIfEmpty: true`，已有歌词不动，界面那句「不会覆盖你已手填的内容」仍是真话。封面维持已有值不自动勾（换图须人工确认），歌词与封面的不对称是刻意的。**替换只换指针**：新文本另起 `lyrics/<id>-<uuid>.lrc`（`wx` 独占创建），catalog 改指它，旧 `.lrc` 原地保留（可能被别的曲目共用，也便于手工改回），写库照旧过整库 `loadCatalog`、失败逐字节回滚并撤销新文件。上一轮「已有歌词要在单曲候选中主动勾选」的表述自本轮起只对批量生效。**验证**：`check.ps1 -Scope scripts` **37/37**（真实管理器用例已改写：单曲口径 `changes.lyrics` 等于本次票据、`onlyIfEmpty` 口径为 undefined，并新增替换回归——指针换新文件且旧文件内容原样在盘）；离线驱动 **85/85** 复跑（其 `/sync` 不带 `includeLyrics`，不受影响）；Chrome UI 驱动 `docs/test-results/2026-09-28-metadata-assets/browser-check.mjs` 的模拟服务已按真实口径回 `changes` 并新增四条断言，实跑 PASS（`candidate-ui.png` 由该驱动重写）；另用真实浏览器在临时 1 首曲库走完「选已有歌词的曲 → 匹配这首 → 歌词框默认勾选 → 应用 → toast 已应用」，盘上核对 catalog 指向新 `.lrc`、`old.lrc` 内容未变。**未做**：未改服务端/协议/安卓，未碰真实 `media/`（验证全在一次性夹具，跑完即删）；**云端管理器 `listen-together-metadata` 仍是 20260928-metadata-02（旧口径），要生效需另发一版**；客户端歌词缓存按曲目 id 存、换歌词不自动失效（既有 `lyricsVer` 挂账）。证据：[元数据资源直用记录](test-results/2026-09-28-metadata-assets/README.md) 文末「追加小轮」。
+
+## 本轮新增（歌词候选与封面一键应用，2026-09-28）
+
+管理器匹配表新增「封面」「歌词」，勾选后直接下载/写文件/关联编目，无需先另存再上传；批量补缺包含二者，已有资源不自动覆盖。歌词独立尝试LRCLIB，按歌名/歌手/时长匹配，优先时间轴；未命中或失败跳过，不影响其他字段。资源票据绑定曲目与快照，限域名/超时/大小，整库校验失败回滚；换曲丢弃旧响应。脚本测试本机与Linux各37/37、原驱动85/85；Chrome实跑单曲/批量/换曲交互通过。云端真实抽查歌词synced 2138字节、封面JPG 58284字节，未应用生产曲库。管理器已升级20260928-metadata-02（prev 01），仅重启管理器，未重启听歌后端或发布APK。详见[验收记录](test-results/2026-09-28-metadata-assets/README.md)。
+
+## 本轮新增（元数据管理器审查与上云，2026-09-28）
+
+管理器已以独立服务 `listen-together-metadata` 部署，版本 `20260928-metadata-01`，仅监听云端 `127.0.0.1:3100`，通过 SSH 隧道访问。修复上传 audio/ 引用、共享封面清理、并发覆盖与非标准 JSON 字节回滚；补 Host/Origin 校验和回收批次防逃逸/防覆盖。服务端30/30、脚本31/31、管理器离线驱动85/85；Linux重跑31/31与85/85。生产23首清单发布前后逐字节相同，未同步本地音乐/封面，未重启播放后端（仍20260927-1240），未发布APK。独立管理账号与持久缓存/回收目录已经配置。详见[发布证据](test-results/2026-09-28-metadata-release/README.md)。此前“管理器只在本机、云端没有该工具”的范围描述自本轮起被本条取代；云端修改后仍需另行重启听歌后端。
+
+## 本轮新增（曲库删除：单曲 + 批量，文件进回收目录可放回，2026-09-27 深夜）
+
+按用户指令「这个脚本上没有删除音乐的功能，请你加上」交付。删除只在**本机可视化管理器**里做（`node scripts/metadata-manager.mjs`），云端曲库仍走 `scripts/add-media.ps1` + 服务器侧 `media-manage.sh`，本轮未碰服务端、协议、安卓。
+
+- **接口**：`DELETE /api/tracks/:id?run=<批次名>&files=audio,cover,lyrics`。`files` 白名单外的 kind（含 `master` 之类臆造值）直接 400；批次名带路径穿越（`run=..%2Fescape`）400；不存在的 id 404。答复逐首回报 `{moved,skipped,failed,trashDir}`，**每一类文件都说明去向或为什么没动**，不做静默。
+- **顺序是硬约束：闸门先行**。删除必须①先整库 `loadCatalog` 自检 →②移除条目并过 `writeAndValidate`（失败 422 逐字节回滚）→③**这之后**才动文件。反过来的话，"catalog 还引用着一份已经不存在的 MP3"会让后端下次启动直接失败。为此新增 **409** 分支：曲库当前校验不通过时回复「曲库当前校验不通过，未改动任何文件（请先修好曲库再删）」，并断言一个空批次目录都不留（没动文件就不该留痕）。409/422/500 三种失败口径分开：409=库本来就是坏的、422=这次写把它改坏了已回滚、500=非预期错误。
+- **文件一律移入回收目录，绝不 `unlink`**：`TRASH_DIR/<批次>/<库内相对路径>`（默认 `.workbuddy/media-trash`，新增 `--trash` 可挪根，夹具据此把回收目录放在曲库**之外**）+ 每批次一份 `manifest.jsonl`，记录被删条目**原文**、每个文件的 `from`/`to`、`skipped` 原因、`failed` 报错。放回不靠记忆重填字段。跨分区/权限受限时（EXDEV/EPERM/EACCES）退化为复制后删原文件；移文件失败只进 `failed[]` 如实上报，条目删除照常成立（绝不出现"目录里还有条目、文件已消失"的半途状态）。
+- **三类文件都按引用计数决定归属**（音频/独立封面/歌词同一套 `otherReferrers`）：只有**独占**的文件才随曲目进回收目录；被别的曲目共用的留在原地并在 `skipped` 里点名"谁还在引用"（例如「track-c 仍指向同一个音频文件，文件保留」）。这是把删除做对的关键——两首指向同一个 `.mp3` 或同一张封面时，无脑移走会把另一首当场变成坏条目。另外：`covers/` 之外的封面路径（手滑填错）**只删条目不动文件**，工具只回收自己放进去的东西。
+- **界面**：顶栏「多选删除」进入勾选态（逐首复选框 + 底部选择条），每行也有单曲「删除」。对话框里先逐首列出「标题 ｜ 歌手 ｜ id ｜ 音频 / 独立封面 / 歌词」再按类勾选（本批没有该类就显示「本批没有」并置灰），确认后才发请求；批量逐首独立成败、带进度行，**失败的首留在对话框里并重新启用「确认删除」以便重试**，全部成功才关窗。批量共用一个批次名（`ui-<时间戳 36>`），一轮删除在回收目录里是一个可整体放回的批次。删除前若编辑器有未保存内容会先走 `confirmDiscard()`。动态文本仍用 `textContent` 渲染。
+- **门禁与验证**：`scripts/lib/metadata-sources.test.mjs` 等离线单测 **31/31**（`scripts/check.ps1 -Scope scripts`；此前文档记的 29 是并发会话新增 ID3 两项前的口径，已按实跑更正）；**可复跑离线驱动** `docs/test-results/2026-09-27-metadata-sources/manager-offline-check.mjs` 由 6 组扩至 **8 组 / 77 项断言（77/77 通过）**，新增第 [8] 组专测删除：夹具里 track-a 与 track-b 共用一份 `.lrc`、track-a 与 track-c 共用一张走接口上传的独立封面、track-c 与 track-d 共用同一个音频文件、track-d 的 `cover` 手写指向库根 `stray.png`——4 组共享关系一次跑齐"闸门 409 不动任何文件 / 共用留文件并点名 / 最后一份引用消失才随曲目进回收目录并保留库内相对路径 / covers/ 外只删条目 / 没有独立封面如实说明 / manifest 行数与内容 / 删到空库管理器仍正常服务"。**驱动当场抓出两个真实缺陷**：①`managedCoverPath` 原先用 `resolve(COVER_DIR) + '\\'` 拼前缀判断归属，在 POSIX 口径下永远为假，表现为"独立封面明明在却认不出来"，改为与歌词同源的 `insideDir()` 统一跨平台目录比较；②引用计数原先只有歌词有，封面与音频漏掉。浏览器实跑（一次性拷 4 首真实曲库到临时目录起管理器）：批量删 2 首（共用的 `covers/he-bu-ke.jpg` 先留后走）、单曲删《痴心绝对》并**取消勾选音频**→ `audio/chi-xin-jue-dui.mp3` 原地不动、把 catalog 改成指向不存在的 mp3 制造坏库 → 界面出现红色 409 行且对话框不关、确认删除重新可点。证据：[元数据源整合](test-results/2026-09-27-metadata-sources/README.md)（同一证据目录追加「删除曲目」小节）。陷阱回填第 7 节两条（目录归属判断必须走同一个跨平台口径；删除这类"先写库还是先动文件"的顺序坑与 409/422 语义分工）。收口时复跑：`scripts` **31/31**、离线驱动 **77/77**、`check-doc-links` 通过，并顺手复跑**未改动**的服务端测试确认基线 **30/30**（HEAD 与模块 10 的口径一致，无漂移）。
+- **未覆盖（如实标注）**：本轮**没有截图证据**——浏览器自动化侧 `take_screenshot` 报 `NATIVE_BROWSER_VIEWPORT_UNAVAILABLE`，改用可访问性快照 + `evaluate_script` + 盘上 `find` 核对文件去向。界面只跑完上述三条路径，**删到空库后的界面观感**（空状态提示）未单独目视，仅接口级断言 `GET /api/tracks` 返回 0 首且继续服务。未做真机（本轮不涉及安卓），未部署云端。
+- **工作区状态提醒（并发会话遗留，非本轮改动）**：入库模板 `media/catalog.json` 当前是**本机 23 首真实编目**（`audio/` 前缀布局）而不是此前登记的 `[]`；上一小节"已还原为 `[]`"的表述因此过期。本轮删除功能**没有改动真实曲库**（所有删除动作都发生在临时夹具里）。要恢复"模板为空"的口径需另行确认，不擅自回退。
+
+## 本轮新增（元数据抓取并入可视化管理器 + 三源匹配，2026-09-27 晚）
+
+按用户指令「整合爬取音乐数据的脚本和元数据可视化脚本，方便管理」+「来源可以是 QQ 音乐或网易云音乐」+「删掉 CLI，只留界面」交付。元数据管理从此只有一个入口：`node scripts/metadata-manager.mjs`。
+
+- **删除 CLI**：`scripts/fetch-metadata.mjs` 已移出仓库（本机留档 `.workbuddy/fetch-metadata.removed-from-repo.mjs`，gitignored），它的抓取/打分/缓存能力全部并入共享模块，**文件不复存在，勿按旧记录去找**。原「元数据自动匹配脚本，只读预览」小节随之作废，历史证据保留在 [test-results/2026-09-27-metadata-fetcher](test-results/2026-09-27-metadata-fetcher/README.md)。
+- **新增共享模块 `scripts/lib/metadata-sources.mjs`**：三个源归一到同一候选形状与**同一套打分/阈值**——`qq`（默认，`search_for_qq_cp` 一次请求拿全标题/歌手/专辑/年份/时长/封面）、`netease`（`api/cloudsearch/pc`，主接口失败退旧接口，两条都不通把两个原因一起抛出）、`musicbrainz`（唯一能给出可读流派的源）。国内平台不返回数值相关度，故按**结果名次**推导（榜首满分、榜尾衰减），已用测试钉住「网易云榜首是翻唱时必须选中原唱」。每源独立限速队列（MB 1.1s、QQ/网易云 0.8s），出网只取搜索文本与封面地址，**不下载音频、不带登录 Cookie、不做批量爬站**。
+- **管理器新增三条接口**：`GET /api/sources`（源清单，界面下拉由注册表驱动，加源只改 lib）、`POST /api/tracks/:id/sync`（`source`/`minScore`/`refresh`；未知源与非法阈值直接 400，出网失败按单首 502 返回以便批量继续；缓存键含源名，避免「QQ 无候选」被当成「网易云无候选」）、`POST /api/tracks/:id/apply`（勾选后落库；候选值先验类型——`year` 必须是 1800–2100 整数，杜绝 `applyEdit` 的空值即删语义把字段悄悄清掉；`onlyIfEmpty` 在写前按当前编目再挡一层覆盖）。
+- **界面新增**：单曲「🌐 联网匹配元数据」（源选择 + 阈值 + 忽略缓存重查 + 候选对照表 + 逐字段勾选）与顶栏「批量匹配缺字段」（串行、带 ETA、`onlyIfEmpty` 只补空）。候选一律用 `textContent` 渲染（外部文本不可信），应用只读 `dataset` 值而非表格显示文字；**切换曲目会清掉上一首候选**，否则勾选框残留会把旧候选写进新歌。低于阈值不给封面地址。
+- **门禁与验证**：新增离线单测 `scripts/lib/metadata-sources.test.mjs` **29 项**（注入 `request`/`sleep`/`now`，全程不碰公网；同日 ID3 读取两项并入同一文件后现口径 **31/31**），`scripts/check.ps1` 新增 `-Scope scripts` 档（Windows 下必须用 `--test scripts/**/*.test.mjs` glob 形式）。夹具端到端由一次性脚本升级为**留存在证据目录、可复跑的离线驱动** `docs/test-results/2026-09-27-metadata-sources/manager-offline-check.mjs`（起真管理器进程 + 临时曲库 + `--cache` 挪开真实缓存，全程不出网），**起步 6 组 / 37 项断言，当日累加至 8 组 / 77 项（本轮删除轮复跑 77/77）**：三源缓存互不污染、达标候选只补缺失字段、低于阈值不给 `changes` 也不给封面、apply 的脏值/越界/空串全部 400 且曲库一字节未变、`onlyIfEmpty` 只补真空缺、整库校验失败回 422 并逐字节回滚且管理器继续服务、出网失败（第 [7] 组（原 [6]，UX 轮插入歌词组后顺延）用 `--import` 预加载把该实例的 `globalThis.fetch` 换成必抛，仍零公网）回 502 而非 500 且不写缓存、批量其余各首照常。**驱动当场抓出一个真实缺陷**：「低于阈值不给封面地址」原先只在源层按当时的阈值执行，缓存里的旧 `coverUrl` 会绕过界面后来调高的阈值继续可点——已在 `syncTrack` 返回处按本次阈值再闸一次（教训：缓存存的是判定结果、判定参数却随请求变化）。真实 23 首曲库三源实测：QQ《有何不可》→自定义/2009、《单车》→Shall We Dance? Shall We Talk!/2001、《痴心绝对》→李圣杰/痴心绝对/2002，网易云《句号》→摩天动物园/2019，MusicBrainz→自定义/2009；夹具曲库上浏览器实跑「匹配→勾选→应用」，落盘后逐字段对账 `catalog.json`（`he-bu-ke` 得到 `album: 自定义` / `year: 2009`），并确认切到其他曲目时候选表清空、应用按钮转灰。**只改本机脚本与文档**：未改服务端、协议、安卓，未部署云端，`media/catalog.json` 入库模板当时已还原为 `[]`（**现已不成立**：同日 media 分区重构轮把它写成了本机 23 首真实编目，见本节开头「工作区状态提醒」）。证据：[元数据源整合](test-results/2026-09-27-metadata-sources/README.md)。陷阱回填第 7 节五条：`node --test` 在 Windows 必须用 glob 形式、国内平台接口现状（Referer 必需 / 失效端点 / 秒与毫秒 / 网易云榜首常是翻唱）、"空值即删"语义遇到外部候选会静默丢字段、缓存里存判定结果而判定参数随请求变化、`spawn(node,…)` 里 Node 开关（`--import`）必须排在脚本路径之前否则静默失效。
+
+- **未覆盖（如实标注）**：浏览器里只实跑了单曲「匹配→勾选→应用」与换曲清空，**批量匹配区只做到接口级**（逐首 `/sync` + `onlyIfEmpty` 应用有夹具断言，未在界面上跑完一整轮并看 ETA 进度）；三源在真实 23 首全库的**逐首命中率没有统计**（只做了 5 组抽查）；未做真机（本轮不涉及安卓）。重跑本机真机前要先 `node scripts/build-local-catalog.mjs` 重新装配曲库——入库模板当时已还原 `[]`；**该状态现已不成立**——同日 media 分区重构轮把本机 `media/catalog.json` 写成了 23 首真实编目，本轮复跑时已是那份真实编目（详见本节开头的「工作区状态提醒」）。
+- **边界**：`album`/`genre`/`year` 目前是工具保留字段，服务端 `loadCatalog` 忽略未知键、catalog 下发不含它们，补齐后**不改变线上行为**（第三轮才消费）。
+
+## 本轮新增（独立封面管理，2026-09-27）
+
+- **本地管理器已支持封面上传**：`scripts/metadata-manager.html` 增加上传/替换/移除控件；浏览器把大图缩放到最长边 1024px 并压到 1MB 内，服务端按 JPG/PNG/WebP 文件头再次校验。
+- **曲库格式**：`catalog.json` 可选 `cover` 相对路径，文件落在 `media/covers/`；服务端独立图片优先，没有独立图片时回退 MP3 内嵌 ID3。`coverVer` 使用图片内容哈希加文件时间，替换后 Android 的现有缓存键自动变化。
+- **安全与回滚**：封面路径与歌词一样做 realpath 根目录校验；上传写入新文件、更新 catalog 并通过同一套 `loadCatalog` 校验，失败删除新文件并恢复旧清单；移除后仍可回退到 ID3 封面。
+- **验证**：服务端 `npm run build` 通过；服务端 **30/30** 测试通过（新增独立封面加载/版本与路径/格式边界测试）；临时曲库对管理器上传→列表→字节读取→移除全流程 smoke 通过。安卓未改源码，无需重装现有 APK。详见 [封面管理记录](test-results/2026-09-27-cover-manager/README.md)。
+- **边界**：本轮只完成本机管理闭环，未把封面文件发布到云端，也未做真机真实封面目视；云端发布需要把 `media/covers/` 与 catalog 一并上传并在无人使用时重启（会清空内存房间）。
+
+## 本轮新增（云端真机补验 + 歌词跟随修复，2026-09-27 下午）
+
+- **真机发现并修复**：旧包 `85484698…` 的《有何不可》暂停在 0:50，手动翻歌词后等待仍停在后续段落。根因是恢复只改 `manualPaused`，滚动却只监听当前行变化；暂停/长句不换行时永远不归位。新增 `LyricsFollow.kt` 目标流，同时观察当前行与手动暂停状态；恢复同一行也定位，暂停取消旧动画。切歌通过 `key(id, hasLyrics)` 重建取值与列表状态。
+- **用户确认的最终交互**：删除「回到当前歌词」提示/按钮；手势与惯性滚动停止 **3 秒**后自动回到当前句，继续翻看重新计时。最终真机截图确认无按钮；提前采样与继续翻看都未回位，稳定后歌词区域与初始当前句逐像素一致（平均差 0.0）。中间包的 500ms/按钮验证不作为最终交互结论。
+- **云端歌词设备门槛关闭**：手机连接公网 `20260927-1240`，备份并清除单首旧缓存后重新下载，2,147 字节与云端 HTTP 响应 SHA256 一致；渲染、播放跟随（0:50→1:26）、滚动后切歌、无时间轴占位通过。媒体会话 PLAYING/1.0x；设备媒体音量为 0，本轮不宣称听感验收。
+- **相机新入口回归关闭**：右上角扫码→来源弹窗→相机 Activity，用户实际对准电脑二维码并确认识别；恢复 USB 后取证已入同一云端房间（2 人、23 首）。首次相机权限分支未重测。
+- **门禁与交付**：新增 `LyricsFollowTest` 4 项，安卓 **127/127**，失败/错误/跳过均 0；Lint **0**（发现并清理相册解码器 `UseKtx` 警告，最终报告重新生成）；Debug + R8 benchmark 构建成功。最终 debug **`A586F93C7E7487A8ACB67A4A82170D4AE4F2AF5EBA020DEA42AD9AA826D2E13F`**（20,489,954 字节，**已装机并回拉字节数/哈希一致**）；benchmark **`E7053FE570CDB67C248ED0EF89029601ED4D0B5862F4839EB836B5C7C9D4FDB1`**（未装机）。本轮只改安卓与文档，未改协议/后端、未部署，后端单测未重跑。
+- **收尾与边界**：仅创建一个测试房间，手机与脚本房主均已退出，空房按既有机制 5 分钟回收；未关闭热点、未开飞行模式。2 倍字号、小屏、双真机、听感/触感等仍挂起。「回到当前歌词」按钮点击项随用户删除按钮而作废。陷阱回填 4.9。证据：[云端真机补验与歌词修复](test-results/2026-09-27-cloud-device-followup/README.md)。
+
+## 本轮新增（修补上云：配额文案澄清 + 建房来源 IP 进日志，release 20260927-1240，2026-09-27 白天）
+
+用户反馈「为什么显示同一来源最多创建三个房间？难道之前创建的都没有清掉吗？」。排查结论：**配额机制正常，是我的部署验收把额度占满**；但反馈暴露两个真实问题，本轮修掉并上云。
+
+- **排查证据**：云端日志时间线显示——用户房间在我部署 restart 时已清空；随后我的三个验收空房（12:27:47 / 12:28:02 / 12:28:15）占满配额；12:29:48 建房成功证明第 1 个已回收；12:32:47→12:34:49 四条 `room.deleted reason=empty-timeout` 证明**空房 5 分钟回收机制正常工作**。机制：空房保留 5 分钟供掉线重连（`EMPTY_ROOM_MS`），配额按「同来源 IP 同时活跃房间 ≤3」计，不按历史累计，restart 清空全部房间。
+- **修复 ①（文案）**：429 文案由「同一来源最多同时创建 3 个房间，请先使用已有房间」改为「…；**空的房间保留 5 分钟后自动回收**，请稍后重试或使用已有房间」——原文案没提自动回收，用户合理误以为配额只增不减。「5 分钟」由 `EMPTY_ROOM_MS / 60_000` 推导，避免常量与文案不同步。
+- **修复 ②（诊断）**：`room.created` 事件增加 `creatorIp`。排查时日志里没有来源 IP、只能靠时间线反推；现可直接看出额度被谁占。`src/events.ts` 的红线注释显式登记该例外（仅排障用、不下发客户端、不参与身份判定）。
+- **回归测试**：`rooms.test.ts` 增加「文案必须含『5 分钟后自动回收』」（store 层 + HTTP 层各一处）与「`room.created` 必须带 `creatorIp`」断言；事件红线测试（禁令牌/昵称）保持通过。
+- **门禁与验收**：服务端 `tsc` 0 错误 + **28/28**；release `20260927-1240`（prev `20260927-1226` 可回滚；tarball SHA256 `d9f0e2f8…` 服务器侧一致）；构建产物含新文案与 `creatorIp`；公网实测第 4 次建房返回新文案，日志出现 `"creatorIp":"182.102.17.83"`；部署基线 `m4-deploy-verify.sh` **14/14**（配额回收后复跑）。**只改服务端，无需重装 APK**（429 文案由服务端下发）。证据：[修补上云记录](test-results/2026-09-27-cloud-patch-quota-message/README.md)。
+
+## 本轮新增（后端上云：release 20260927-1226 歌词管线 + 7 字段曲库，2026-09-27 白天）
+
+用户指示「上云」。把元数据第一二轮的后端改动与 23 份歌词部署到试用实例，替换 `20260926-1822`。**restart 清空内存房间**（部署前云端 1 个活动房间，用户已授权）。
+
+- **部署内容**：①后端打包为 `listen-together-20260927-1226-server-only.tar.gz`（61,953 字节，SHA256 `2020ef25…`），服务器侧 `npm ci` → `tsc` → `prune --omit=dev`；②`media/lyrics/` 23 个 `.lrc` 解到持久层；③云端 catalog 由 3 字段升为 4 字段（**只追加 `lyrics` 引用**，保留中文 `file` 名、不补 artist），由新增 `scripts/build-cloud-catalog.mjs` 在本地生成。
+- **为什么不走 `package-deploy.ps1`**：该脚本会把本地 `media/` 整体打进包，而本地 catalog 是 `<id>.mp3` 的 ASCII 布局，直接部署会**覆盖云端中文名曲库**。本轮手动只打 `server/`，歌词与 catalog 单独安装；脚本未改（其设计面向"曲库随包发布"的首次部署）。
+- **验收证据**：①部署基线脚本 `m4-deploy-verify.sh` 云端执行 **pass=14 fail=0**（建房/令牌、catalog、401、音频全量与 Range 三态与 416、WS 握手与 401 拒绝、收尾）；②公网歌词专项：catalog 7 字段 23 首、`hasLyrics` **23/23**、无路径泄漏、`lyrics/he-bu-ke` 200 `text/plain; charset=utf-8` + `private, no-store` + 中文原样、`lyrics/chi-xin-jue-dui` 1777 字节公网复核、占位歌词 200、不存在 404、无令牌 401、音频 200 `audio/mpeg`；③服务器侧逐条 stat 校验 `lyrics refs ok=23 bad=0`，`dist/routes/` 含 audio/cover/lyrics 三个 js；④符号链接与 `current-version.txt` 一致（`id=20260927-1226 / prev=20260926-1822`，prev 目录真实存在可回滚），旧 catalog 已备份至 `media-originals/catalog-<时间戳>/`。
+- **部署中解决的问题**：`npm ci` 报 `EACCES` 的**根因是 `/opt/listen-together/.npm` 缓存归属 root**（连带一堆指向 node_modules 的 `TAR_ENTRY_ERROR ENOENT` 噪声，极易误判为包损坏）——已 `chown` 修复并改用项目外缓存；另：带中文的脚本经 PowerShell→ssh 管道会被串码（连引号都被吃掉），改为 scp 上传后云端执行。陷阱回填 **10.1**。
+- **未做（如实标注）**：**设备端对云端新后端的歌词冒烟未做**——验收时用户正在使用手机（前台为其他应用），未强制重启其 APP 打断使用。设备 `baseUrl` 已是云端地址，退出重入房间即可看到歌词。云端 catalog 仍无 `artist` 字段（最小改动；字段缺失时安卓显示为空、不占行高，行为安全），如需补齐用 `build-cloud-catalog.mjs` 去掉 `--no-artist` 重新生成 + 重传 + restart。
+- **回滚**：`ln -sfn /opt/listen-together/releases/20260926-1822/server /opt/listen-together/server` + `systemctl restart listen-together`，并把 `current-version.txt` 的 `id=` 改回实际在产版本（见部署手册第 5 节）。证据：[2026-09-27 后端上云](test-results/2026-09-27-cloud-deploy-lyrics/README.md)。
+
+## 本轮新增（首页与扫码交互调整 + 相册扫码，2026-09-27 白天）
+
+用户连续四批反馈，一次交付。**只动 `android/app`**：未改 `server/`、未改协议、未部署云端。
+
+- **扫码入口移到右上角**：首页「加入房间」分支的整行按钮删除，改为顶栏右上角图标（`Icons.Outlined.QrCodeScanner`，content-desc「扫描邀请二维码」）；只在未入房且处于加入分支时出现，入房后同一位置由「显示邀请二维码」接管——同一位置承载"我去扫别人"与"别人扫我"两面。
+- **新增相册选图扫码**（用户点名的"不能扫本地文件"）：新增 `ui/LocalQrDecoder.kt`——用 **ZXing core** 直接解码（zxing-android-embedded 只提供相机取景框，没有扫本地图能力）；两段式读取（先 `inJustDecodeBounds` 算 `inSampleSize` 再解码，避免 4000px 原图整读 OOM）+ 三档缩放兜底（原尺寸 / 0.5 / 0.25，小于 16px 丢弃）。入口改为底部弹窗 `ScanSourceSheet`：「用相机扫描」（保留实时扫）与「从相册选择图片」（`GetContent("image/*")`，**不申请存储权限**，解码在 `Dispatchers.IO`）。
+- **首页标语删除**：「此刻，一起听」+「和朋友分享同一段旋律」整块移除，进入即见表单。
+- **邀请二维码弹窗改匀称**：删除二维码下方的解释文字；标题由 AlertDialog 默认 `headlineSmall` 收为 `titleMedium`；二维码横向留 12dp。
+- **验证**：**用户真机实测相册选图扫码成功入房**；自动化侧用 `jsQR`（与生成端 `qrcode` 不同实现）对设备截屏独立反解，读出完整口令，证明弹窗内二维码可扫性未受排版改动影响。相册扫码路径另有一次 App 侧日志实证（`bounds=720x720` → 解出 65 字符 → 房间码与地址正确填入表单）。
+- **门禁（实跑）**：`cleanTestDebugUnitTest → testDebugUnitTest → lintDebug → assembleDebug → assembleBenchmark` **BUILD SUCCESSFUL**；单测 **123/123、0 失败/错误/跳过**（19 个测试类；新增 `LocalQrDecoderTest` 5 项——采样率与缩放档位是纯函数，直接决定"二维码截图能不能被解出"，真实解码路径依赖 Android 图形栈、由真机覆盖并在单测注释里写明）；Lint 报告先删再生、`<issue ` 计数 **0**。
+- **交付锚**：debug `854846985C5420A68CF05E677267FC9185CA0B6317432197181D8B46538BB77E`（20,489,954 字节，**已装机且回拉一致**）；benchmark `AE3DFF35B16FE3570ACFB7AF2C36063F1DA8447DFAD0AF0437BB604D2C28A6B8`（未装机）。证据：[2026-09-27 首页与扫码交互](test-results/2026-09-27-home-scan-ux/README.md)。
+- **验收过程教训（已回填陷阱 3.10）**：自动化"从相册选图"时自己的 `screencap` 会把相册首屏占满且网格持续平移，反复点错图（日志 `bounds=1080x2412` 即铁证），一度误判为解码器缺陷。清理后一次通过。
+- **未覆盖**：**相机实时扫**在新入口下的回归（需真人对准屏幕，本轮未自动化）；云端部署（用户明确「先别动云端」，故试用环境仍无歌词——非缺陷）。
+
+## 本轮新增（元数据第二轮真机验收 + 歌词状态缺陷修复，2026-09-27 凌晨）
+
+用户指示「请你装机验收一下，现在我连接 USB」。本轮完成元数据第二轮的真机门槛（歌词页 + 占位封面），**并在验收中发现并修复一个真实缺陷**。设备 PHQ110 `fbddbe8`（USB 一次识别成功，全程未抖动）。为不动公网，按用户选择把云端 23 首曲库拉到本地、起本机后端，设备经 `adb reverse` 以**成员**身份跟听（新增 `scripts/host-remote.mjs` 由电脑侧当房主控制）。
+
+- **曲库落地（不碰云端）**：云端打包时用 `tar --transform` 把中文名换成曲目 id（Windows 自带 tar 按 ANSI 解析 tar 头会把中文名解成乱码甚至解包失败，**陷阱 1.8**），scp 下载 138,987,520 字节逐位一致，本机解包 23/23 成功；新增 `scripts/build-local-catalog.mjs` 把 catalog 的 `file` 映射为 `<id>.mp3` 并挂 `lyrics` 引用（23/23），缺文件即失败不产半成品。
+- **服务端（本机真实曲库）**：tsc 0 错误、**28/28 通过**；catalog 7 字段 23 首、`hasLyrics` 23/23、artist 由 ID3 兜底解析（李圣杰/陈奕迅/G.E.M. 邓紫棋）；`/lyrics` 200/404/401 三档与 `text/plain; charset=utf-8`+`private, no-store` 实测符合协议；响应无路径泄漏。
+- **占位封面**：歌单行 44dp、MiniPlayer 44dp、展开页 180dp 三处统一 `CoverPlaceholder` 真机目视通过。
+- **歌词页真机通过**：真实歌词渲染、**逐行跟随**（5 次采样进度 0:55→1:37 高亮行与时间轴逐一对齐）、**手动翻看暂停跟随**（歌词停在列表末尾不跟）、**松手后自动恢复**（4 秒后对齐回当前行）、**「回到当前歌词」按钮出现**（滑动后 300ms 抢拍证实）、切歌重载歌词、无时间轴占位（单车）、无歌词占位、文件恢复后正常渲染。附带：播放跟听链路 `dumpsys media_session` PLAYING/1.04x、自动切下一首、播放动效条连拍 3 帧像素各异。**未覆盖**：「回到当前歌词」未在 sheet 内完成一次干净点击（首次点击落在按钮下方致 sheet 收起，跳回效果已发生）。
+- **发现并修复缺陷（本轮主要代码产出）**：catalog 有 `lyrics` 引用但磁盘 `.lrc` 缺失（服务端正确 404）时，歌词区**卡在「歌词加载中」超过两分钟**。定位靠两处埋点：producer 60ms 内返回 null 并已赋值，渲染分支读到 `lyricText=null hasLyrics=true`——**问题在判断而非取值**。根因：`produceState` 用 `""`/`null` 兼职"加载中/没内容"两种语义，渲染却在 `null` 分支里又按 `track.hasLyrics` 二分，导致「这首歌还没有歌词」**实际不可达**。修复：新增 `ui/LyricsState.kt` 纯函数（`lyricsUiState`/`lyricsPlaceholderText`）显式区分 `Loading`（仅 `""`）/`NoLyrics`（`null` 一律归此）/`NoTimeline`/`Ready`，`LyricsSection` 改为按枚举渲染；新增 `LyricsStateTest` **7 项**（含"加载文案 ≠ 失败文案"断言，该断言当场抓出修复第一版的同类错误）。陷阱回填 **4.8**。
+- **门禁（实跑）**：安卓 `cleanTestDebugUnitTest → testDebugUnitTest → lintDebug → assembleDebug → assembleBenchmark` **BUILD SUCCESSFUL**（5m48s）；单测 **118/118、0 失败/错误/跳过**（18 个测试类，基线 111 + 7）；Lint 报告**先删再生**、`<issue ` 计数 **0**；debug/benchmark 均构建成功。
+- **交付锚**：debug `7C503FDD5853BD252705EA527B6B5D5FE4B7F3EA10E72EE8E5241E2C1046BF9A`（20,484,498 字节，**已装机**，`pm path` 回拉字节+SHA256 逐位一致）；benchmark `3945E4C83E21597B1D5D6910764F7FA35077D2094B0002138B6E3B4F6AE576E0`（未装机）。上一轮 `b1e80573…` 因本轮修复**已被取代**。证据：[2026-09-27 真机验收](test-results/2026-09-27-metadata-r2-device/README.md)。
+- **未覆盖（如实标注）**：**云端仍未部署**（新后端 `/lyrics`、21 个真实 `.lrc`、云端 catalog 的 `lyrics` 引用均未上云；`add-media.ps1` 歌词通道未补），需 restart 清房间、等用户开窗；真实封面渲染（服务端提取临时停用）、歌词长列表快滑、2 倍系统字号、小屏布局、双人真机同屏均未覆盖。
+
+## 本轮新增（歌曲元数据第二轮：歌词管线 + 封面统一静态占位，2026-09-26 深夜）
+
+按用户指令「先生成已存在歌曲的歌词文件，封面现在统一占位。再开始第二轮」落地。封面按 AskUserQuestion 确认口径为**暂时停用提取、回退为静态占位**（数据流零影响，骨架保留一行即恢复）；歌词来源经用户授权改用公开 lrclib.net 批量抓取（覆盖设计稿"仅人工维护来源"约束）。WS 协议与 state Schema 仍然不动。
+
+- **歌词文件生成**（`scripts/fetch-lrc.mjs`）：按 `id<TAB>标题<TAB>时长[<TAB>歌手]` 从 lrclib.net 搜带时间戳歌词，**21/23 命中**；「单车」「红日」经查确无 synced 条目（非临时故障），写入说明性占位 `.lrc`（`; 未在 lrclib.net 匹配到…`），产物在 `media/lyrics/`。503/繁忙响应单帧重试，无时长回退搜索。
+- **封面临时停用**（`server/src/library/catalog.ts`）：`cover`/`coverVer` 强制置 null（注释标注删掉即恢复），`hasCover` 恒 false → 安卓跳过网络路径，`/cover` 路由在位但一律 404；UI 统一 `CoverPlaceholder`（渐变圆角 + 列表图标，`ui/CoverView.kt` 新增），歌单行 44dp、MiniPlayer 44dp、PlayerSheet 180dp 三处使用。
+- **服务端歌词管线**：Track 加内部字段 `lyricsPath`；catalog.json 可选 `lyrics` 相对路径，启动校验（realpath 仍在曲库根内、`.lrc`、≤256KB，违规启动失败）；新增 `GET /api/rooms/:code/lyrics/:id`（`server/src/routes/lyrics.ts`，Bearer 鉴权，404 语义：歌曲不存在 / 该歌曲没有歌词 / 歌词文件缺失，`text/plain; charset=utf-8` + private no-store）；catalog 下发扩至 7 字段（追加 `hasLyrics`，路径不出服务端）。
+- **上架脚本**（`scripts/media-manage.sh`）：新 `lyrics` 子命令——id 必须在 catalog、≤256KB、必须含时间戳行、BOM 剥离、写 `catalog.json` 引用；`verify` 输出补 歌手/封面/歌词 三列。dry-run 验证通过。
+- **安卓歌词**：`network/LrcCache.kt`（cacheDir/lyrics 按 id 缓存）+ `RoomClient.fetchLyrics`（hasLyrics 才拉、Bearer、失败 null）；`ui/LrcParser.kt` 纯函数 `parseLrc`（BOM/多时间标签/元数据行拒绝/排序）与 `indexAt`（二分游标）；PlayerSheet 内 `LyricsSection`——produceState 加载态、`animateScrollToItem` + contentPadding 近似居中跟随、手动翻看暂停跟随 + 500ms 恢复 + 「回到当前歌词」按钮（`ui/RoomPlayer.kt`）。
+- **门禁（实跑）**：服务端 tsc 0 错误 + **28/28**（新增 lyrics.test.ts 5 项、catalog 歌词校验 6 分支）；安卓 `cleanTest` 后 **111/111 实跑、0 失败/错误/跳过**（新增 LrcTest 11 项 + ModelsTest hasLyrics 断言）、Lint 0、Debug APK 构建成功。
+- **当前交付锚（未装机）**：debug `b1e805735979558b4456abeb552141a7f821c50f1228a33ff2f80f133777d1ea`；已装机基线 **517A776B…** 不变。第三轮（专辑字段、通知歌手、lyricsVer 缓存失效）未开工。**未覆盖（如实标注）**：真机目视（占位封面观感、歌词页渲染/跟随/回到当前）；云端部署（新后端未上云、21 个 `.lrc` 未 scp、云端 catalog.json 未加 lyrics 引用、restart 清房间需用户开窗）；`add-media.ps1` 歌词通道未补。证据：[本轮记录](test-results/2026-09-26-track-metadata-r2/README.md)。
+
+## 本轮新增（歌曲元数据第一轮：服务端 ID3 + 封面接口 + 安卓解析/封面/歌手，2026-09-26 深夜）
+
+按 [track-metadata-design.md](track-metadata-design.md) 第一轮方案落地，不做专辑字段、不做通知歌手。第二轮（歌词）按方案留到下轮。
+
+- **服务端 Track 模型扩展**（`server/src/library/catalog.ts`）：新增 `artist: string|null`、`cover: {mime,data}|null`、`coverVer: number|null`（音频文件 mtimeMs）。`artist` 按"catalog.json 可选 artist > music-metadata.common.artist > null"取值；提取 MP3 内嵌封面（`common.picture[0]`），>1MB 跳过保护内存（设计稿 23 首全库封面常驻约 1–2MB）。catalog.json 支持可选 `artist` 字段（手填优先级最高，覆盖乱码 ID3）。
+- **catalog 下发扩展**（`server/src/app.ts`）：从 3 字段扩到 6 字段——`{id,title,durationMs,artist,hasCover,coverVer}`，`hasCover=false` 时 `coverVer` 仍下发为 null。WS 协议与 state JSON Schema 不动（详见 docs/protocol.md）。
+- **新增封面路由**（`server/src/routes/cover.ts`）：`GET /api/rooms/:code/cover/:id`——成员令牌鉴权、404 + 业务错误体、无封面/歌曲不存在都按既有错误约定（`{"message":"该歌曲没有封面"}`）、`Cache-Control: private, max-age=86400`、mime 按 ID3 原始值。
+- **服务端测试**（`server/test/catalog.test.ts`、`server/test/cover.test.ts`）：手填 artist 优先 / 无 ID3 时 null 语义 / 越界路径校验不受影响 / cover 鉴权、404 错误体、缓存头、字节一致；与现有协议与目录防护测试共 **26/26 通过**（含 catalog 防护、路由集成、协议 schema 等）。
+- **安卓解析**（`network/Models.kt`）：`Track` 加 `artist: String? = null`、`hasCover: Boolean = false`、`coverVer: Long? = null`（默认值保证旧测试/调用方零改动）；`Track.parse` 读三个新字段、`isNull` 判空、空串归 null。`RoomClient.kt` 改用 `Track.parse`。新增 `ModelsTest` 4 项（已知字段、null 字段、缺省回退、空 artist 归 null）。
+- **封面字节缓存**（`network/CoverCache.kt` + `RoomClient.fetchCover`）：cacheDir/covers/`<id>-<coverVer>` 文件 IO；`fetchCover(track)` 会话内用 OkHttp + Bearer 拉取并解码 Bitmap；缓存命中同步返回、未命中走网络、失败统一 null（UI 静默回退）。`CoverCache(dir: File)` 无 Android 依赖便于单测。
+- **UI 改造**：①`ui/CoverView.kt::rememberCoverBitmap`——`produceState` 按 `(id,coverVer)` 重启；先等 `credentials != null` 再拉取，避免未入房空跑。②`MainActivity.kt PlaylistRow` 左侧 44dp 封面缩略图（无封面回退序号/动效条），歌名下方加歌手副行（`bodySmall`/`onSurfaceVariant`，artist 空不占行高）；行高 56dp 不变，双行靠 padding 内缩。③`ui/RoomPlayer.kt MiniPlayer` 左侧 44dp 封面；`PlayerSheet` 顶部 180dp 圆角封面 + 歌名 + 歌手副行。两处都接入 `rememberCoverBitmap`。
+- **门禁（实跑）**：服务端 `npm run build`（tsc 0 错误）+ `npm test`（26/26 通过，5 项新增）；安卓 `:app:cleanTestDebugUnitTest :app:testDebugUnitTest :app:assembleDebug :app:lintDebug` 全绿——单测 **100/100 实跑、0 失败/错误/跳过**（基线 96 + ModelsTest 4）；Lint 0；Debug APK 构建成功；`check-doc-links.mjs` 全量通过。
+- **当前交付锚（未装机）**：debug `43A29FB6749280d309c4b38b6d9a2a4a24a1e6648d6bbf2c41c8a9502cb90c29`（上一轮 517A776B 仍属 UI 收尾，未装机留基线）。本轮缺真机验证：封面与歌手副行在 PHQ110 上的目视、扫码/手势/大字号仍挂起。证据：[本轮记录](test-results/2026-09-26-track-metadata-r1/README.md)。
 
 ## 本轮新增（工作区二次清理 + 清理标准定型，2026-09-26 深夜，无代码改动、无新 hash）
 
@@ -93,7 +233,7 @@
 - 双机同步（2）遵照用户要求继续挂起。
 - `:app:assembleBenchmark` 构建成功（R8 已运行）；未执行单元测试，也未完成设备帧耗时采集。旧 `proguard-rules.pro` 文件缺失的构建警告已补空规则文件。
 
-## 当前状态一览（2026-09-26）
+## 当前状态一览（2026-09-27）
 
 | 阶段 | 状态 | 说明 |
 |---|---|---|
@@ -103,6 +243,9 @@
 | M3 稳定性 | ✅ 完成 | 通知栏实际点击/短时息屏/蓝牙断开/音频焦点/401 全过；**M3-LONG 已完成（2026-09-24：真实音乐 70 分钟 + 息屏 30 分钟 + 多人进出，见本轮新增）** |
 | M4 云端部署 | ✅ 完成 | 四项部署门槛全部关闭（见下） |
 | 0.2.0 收尾 | 进行中 | 转入试用反馈驱动的修复循环；2026-09-24 后端防线 E-05/E-09/Q-3 **已上云**（release 20260924-0937） |
+| 首页与扫码交互（试用反馈） | ✅ 真机通过 | 首页精简、右上角扫码、相册扫码已通过；**09-27 下午相机实扫也已由用户确认，并取证成功入房**。首次相机权限分支本轮未重测 |
+| 元数据第二轮（歌词 + 封面） | ✅ 歌词真机通过 / ✅ 云端歌词已部署 / 🟡 封面本地闭环 | 后端 `20260927-1240`；**09-27 下午云端冷缓存歌词冒烟通过，修复暂停翻页后不归位**。最终交互为无返回按钮、停止滚动 3 秒自动回位；本轮新增本地封面上传/替换/移除与服务端图片恢复，云端封面发布和真机真实图片目视待补 |
+| 本机曲库管理工具（唯一入口） | ✅ 本机闭环 | `node scripts/metadata-manager.mjs`：手工编辑、音频/封面上传、三源联网匹配、批量补空、**删除（单曲 + 批量，文件进回收目录可放回）**。门禁：离线单测 **31/31** + 可复跑离线驱动 **77/77（8 组）** + 浏览器实跑。**只作用于本机 `media/`**，云端曲库仍走 `add-media.ps1` + 服务器 `media-manage.sh`；无截图证据（自动化侧视口不可用） |
 | 09-25 夜轮（入房恢复 + QR + 性能变体） | ✅ 门禁 + 6 项真机场景 / ⏸ 扫码与双人待补 | 86→84 项单测实跑、Lint 0；`9C480583` 与 R8 包 `08607981` 装机并回拉一致；预填/配置恢复/重新加入/回收失败/二维码反解/HTTP 放行全过；**R8 歌单滑动掉帧 0.16%–0.77%（debug 7.66%–2.08%）**；扫码入房、双人同屏、空歌单/大字号未覆盖；删状态文案后的终稿 `BCF3DE16` 未装机 |
 | 09-25 晚试用反馈首轮 | ✅ 装机与基础布局 / ✅ 性能基准已补 | 歌单固定标题与独立滚动、播放动效仅重绘；移除头像选择/房间动态/歌曲首字封面；86 项单测与 Lint 0；PHQ110 已装机，布局通过；当时 debug 包 27.27%/13.38% 掉帧已由夜轮 A/B 澄清为 debug 口径，R8 实测 1% 量级 |
 | 0.3.0 一起听体验（批次 A，历史） | ✅ 真机验收通过 | 房间动态流 + 伪封面 + 歌单跟随 + 触感/无障碍 + 头像 emoji；100 项单测实跑、Lint issues=0；**2026-09-25 下午 PHQ110 真机 6 项场景通过**（真机抓到并修复 1 处展开页半屏回归；触感标人工手感、10 分钟淡出未覆盖），见 [批次 A 真机记录](test-results/2026-09-25-device-batch-a/README.md) |
@@ -116,15 +259,19 @@ M4 四项部署门槛（2026-09-23 晚全部关闭）：
 
 关键锚点：
 
-- 当前交付锚 **517A776B05C30EEBF2E7A0E2B68FE315F959748F0C3C8057FC20B975B69D98A3**（09-26 补充小轮：seek 确认单调时钟 + 重新加入昵称合成；96 项单测实跑、Lint 0；**已装机 PHQ110 并完成本轮真机复测**，`pm path` 回拉一致）；benchmark 锚 **764D0FE19B27DEC71EA629115297CE1D74911DF1E782F775A2282F149239F1B8**（R8，未装机）。
+- 当前交付锚 **A586F93C7E7487A8ACB67A4A82170D4AE4F2AF5EBA020DEA42AD9AA826D2E13F**（09-27 下午：歌词恢复修复、无按钮三秒回位；127 单测、Lint 0；**已装机 PHQ110 并回拉一致、最终交互真机通过**）；benchmark **E7053FE570CDB67C248ED0EF89029601ED4D0B5862F4839EB836B5C7C9D4FDB1**（未装机）。本轮中间包 `54A52F8A…` 含 500ms/返回按钮，已被最终包取代。
+- 上一交付锚 **854846985C5420A68CF05E677267FC9185CA0B6317432197181D8B46538BB77E**（09-27 白天：首页与扫码交互调整 + 相册选图扫码；123 单测、Lint 0；已装机）；benchmark **AE3DFF35B16FE3570ACFB7AF2C36063F1DA8447DFAD0AF0437BB604D2C28A6B8**（未装机）。
+- 上一交付锚 **7C503FDD5853BD252705EA527B6B5D5FE4B7F3EA10E72EE8E5241E2C1046BF9A**（09-27 凌晨：元数据第二轮 + 歌词状态缺陷修复；118 项单测、Lint 0；已装机并真机验收通过，已被 85484698 取代）；同源码 benchmark **3945E4C8…**（未装机）。
+- 更早交付锚 **517A776B05C30EEBF2E7A0E2B68FE315F959748F0C3C8057FC20B975B69D98A3**（09-26 补充小轮：seek 确认单调时钟 + 重新加入昵称合成；96 项单测、Lint 0；已装机并真机复测通过）；同源码 benchmark **764D0FE1…**（未装机）。
+- 元数据第二轮初版锚 **b1e80573…**（歌词管线 + 封面静态占位；111 项单测）**已被 7C503FDD 取代**——该含歌词状态缺陷（catalog 有 lyrics 引用但 `.lrc` 缺失时歌词区卡在「加载中」），09-27 凌晨真机验收发现并修复。
 - 上一轮交付锚 **EC5FCF0A987D10087CE88CEC228CF4509CDCC5B4E6D06E0CC79662005A4C4870**（遗留逐项修复轮；91→更正为 92 项单测口径、Lint 0；**未装机**）；benchmark **F943E3CA4942B84E23169CF0927A07BE11D607329F27DA86B27225F894E2438B**。
 - 上上轮交付锚 **BCF3DE1630969684B05BB6552E26925F76E34C0039C78B212F950CA250027AFE**（夜轮改动 + 删除状态文案后的终稿；84 项单测实跑、Lint issues=0；未装机，已被 517A776B 覆盖）。**在机版本现为 `517A776B…`**（09-26 补充小轮，本轮真机复测通过，`pm path` 回拉一致）；性能对照包 benchmark(R8) 在机 `08607981…`，`764D0FE1…` 未装机。夜轮登记过的候选锚 `E984FF40…`/`A201AE4A…` 未跑门禁、未装机，已被取代。上一真机验收锚 **80CF7629C3BB7416CC82F4728F5A9F6CA240269948D4D6D26CE1D13E2B92625E**（歌单精简版）基础布局通过、滚动掉帧待优化——本轮 A/B 已证明该数据是 debug 口径，R8 构建实测 0.16%–0.77%。
 - 上一装机 APK 锚 **D882D18632E04E28887DD8D87181410CE1115098838E6C8729B5B9A77D2E4767**（0.3.0 批次 A 终稿 + 真机修复：批次 A 全部内容 + `PlayerSheet` 改 `skipPartiallyExpanded`；100 项单测、Lint issues=0；**已装机 PHQ110 并完成 6 项真机验收**，装机后 `pm path` 拉回 base.apk 复核 SHA256 逐位一致）。
 - 上一稿 **F5827821…**（批次 A 复核稿，未装机）：真机验收暴露出展开页半屏回归，被 D882D186 覆盖。
 - 上一在机版本 **C685CE0ADE0B7E3288BB13465B74D0A5D65D421A42A79D8415D2E4C9ED67B30E**（反馈二小轮：顶栏去房间码 + 删保存长图；当时未跑门禁，本轮开工补跑门禁得到同一 hash，欠账已关闭，见下）。
 - 上一交付锚 **011DD835CF111A9DB8B352E206B00A341962EC5D5722D3D8830AC54BFEF1910E**（试用反馈轮：通知栏/展开页上一首下一首 + 顶栏收拢 + 口令隐端口 + 去搜索；74 项单测、Lint 0；真机部分实测通过，详见下）。
-- 云端：release **20260926-1822** 在产（prev=20260924-0937 保留，20260922-2159/20260923-2157 亦在 releases/）；入口 `http://8.166.126.136:3000`。TLS 路线 A 已决策：**维持 IP 明文**（试用 ECS 无法备案、备案拦截按域名跨任意端口生效、Let's Encrypt 不签裸 IP），正式化留待转包年包月备案或迁香港。
-- 云端曲库 23 首真实音乐（96.5 分钟，192k；2026-09-24 按试用反馈移除 demo-load 负载测试音，备份在 media-originals/20260924-221628/，云端负载重测需先恢复——见 [陷阱 8.10](development-pitfalls.md)）。
+- 云端：release **20260927-1240** 在产（歌词管线 + 7 字段曲库 + 配额文案澄清与 `creatorIp`；prev=`20260927-1226` 可回滚，其前 `20260926-1822` 等亦在 `releases/`）；云端 `media/lyrics/` 23 个 `.lrc`、catalog 已挂 `lyrics` 引用。入口 `http://8.166.126.136:3000`。TLS 路线 A 已决策：**维持 IP 明文**（试用 ECS 无法备案、备案拦截按域名跨任意端口生效、Let's Encrypt 不签裸 IP），正式化留待转包年包月备案或迁香港。
+- 云端曲库 23 首真实音乐（96.5 分钟，192k；2026-09-24 按试用反馈移除 demo-load 负载测试音，备份在 media-originals/20260924-221628/，云端负载重测需先恢复——见 [陷阱 8.10](development-pitfalls.md)）。云端 catalog 目前**无 `artist` 字段**（最小改动，不影响安卓显示）。
 - 后端防线 E-05（WS 握手限连）/E-09（同 IP 建房配额 ≤3）/Q-3（事件日志 + health 计数）**已于 2026-09-24 上午上云并通过 14 项验证与新防线专项验证**；升级失败注入仍未做。
 - 剩余待办与恢复条件：M2 双机（缺设备）/ M3-LONG（≥70 分钟窗口）/ TLS 正式化（用户决策）/ 补测项（蜂窝公网、弱网注入、真实令牌作废、升级失败注入），详见 [路线图与验收标准](next-development-plan.md)。
 
@@ -343,7 +490,12 @@ M4 四项部署门槛（2026-09-23 晚全部关闭）：
 
 | SHA256 | 日期 | 内容 | 单测 | 真机状态 |
 |---|---|---|---|---|
-| 517A776B05C30EEBF2E7A0E2B68FE315F959748F0C3C8057FC20B975B69D98A3 | 09-26 下午 | 当前交付锚：EC5FCF0A 基 + seek 确认单调时钟（`seekConfirmed` 纯函数）+ 重新加入昵称合成 | 96 | **已装机 PHQ110 并真机复测通过**（`pm path` 回拉一致；seek 三场景/过期重入闭环/扫码入房，见 [设备复测](test-results/2026-09-26-device-retest/README.md)） |
+| 854846985C5420A68CF05E677267FC9185CA0B6317432197181D8B46538BB77E | 09-27 白天 | **当前交付锚**：首页与扫码交互调整——扫码入口移到右上角、新增相册选图扫码（`LocalQrDecoder`）、删首页标语、邀请二维码弹窗改匀称 | 123 | **已装机 PHQ110 且回拉逐位一致**；用户实测相册选图扫码成功入房；截屏经 `jsQR` 独立反解确认码可扫；相机实时扫新入口未回归（需人工） |
+| AE3DFF35B16FE3570ACFB7AF2C36063F1DA8447DFAD0AF0437BB604D2C28A6B8 | 09-27 白天 | 同源码 R8 benchmark，性能测试专用、不分发 | 123（debug 侧计） | 构建通过，未装机 |
+| 7C503FDD5853BD252705EA527B6B5D5FE4B7F3EA10E72EE8E5241E2C1046BF9A | 09-27 凌晨 | 元数据第二轮（歌词管线 + 占位封面）+ 歌词状态缺陷修复（`LyricsState` 纯函数：区分加载中/无歌词/无时间轴） | 118 | **已装机 PHQ110 并真机验收通过**（`pm path` 回拉字节+SHA256 一致；歌词渲染/逐行跟随/手动翻看暂停/自动恢复/三种占位/占位封面全部实测，见 [本轮记录](test-results/2026-09-27-metadata-r2-device/README.md)）；已被 85484698 取代 |
+| 3945E4C83E21597B1D5D6910764F7FA35077D2094B0002138B6E3B4F6AE576E0 | 09-27 凌晨 | 同源码 R8 benchmark，性能测试专用、不分发 | 118（debug 侧计） | 构建通过，未装机 |
+| b1e805735979558b4456abeb552141a7f821c50f1228a33ff2f80f133777d1ea | 09-26 深夜 | 元数据第二轮（歌词管线 + 封面静态占位），**未装机** | 111 | **已被 7C503FDD 取代**：该包含歌词状态缺陷（404 的曲目卡在「加载中」）。字节副本留在 `.workbuddy\deliverable-b1e80573.apk`（本机留档，不入库） |
+| 517A776B05C30EEBF2E7A0E2B68FE315F959748F0C3C8057FC20B975B69D98A3 | 09-26 下午 | 上一交付锚：EC5FCF0A 基 + seek 确认单调时钟（`seekConfirmed` 纯函数）+ 重新加入昵称合成 | 96 | **已装机 PHQ110 并真机复测通过**（`pm path` 回拉一致；seek 三场景/过期重入闭环/扫码入房，见 [设备复测](test-results/2026-09-26-device-retest/README.md)） |
 | 764D0FE19B27DEC71EA629115297CE1D74911DF1E782F775A2282F149239F1B8 | 09-26 下午 | 同源码 R8 benchmark，性能测试专用、不分发 | 96（debug 侧计） | 构建通过，未装机 |
 | EC5FCF0A987D10087CE88CEC228CF4509CDCC5B4E6D06E0CC79662005A4C4870 | 09-26 | 遗留修复：邀请提示/解析边界、实际播放倍速复位 | 91（口径后更正为 92） | 未装机；代码基随 517A776B 装机复测覆盖；Lint 0，见 legacy-fixes |
 | F943E3CA4942B84E23169CF0927A07BE11D607329F27DA86B27225F894E2438B | 09-26 | 同源码 R8 benchmark，性能测试专用、不分发 | 91（debug 侧计） | 构建通过，未装机 |
@@ -382,12 +534,20 @@ M4 四项部署门槛（2026-09-23 晚全部关闭）：
 > 09-25 夜轮的 hash 演进：**E984FF40 / A201AE4A**（夜轮实现会话登记，未跑门禁）→ **9C480583 / 08607981**（补门禁与 Lint 修复，**已装机并做真机验收**）→ **BCF3DE16 / 9E17F291**（删除播放状态文案后的终稿，未装机）。
 
 ## 尚待真机与云端验收
+- [x] **相机实时扫新入口回归：已关闭（09-27 下午）**：用户实际对准屏幕并确认识别，设备随后进入同一云端房间；已有相机权限，首次授权分支未重测。见 [本轮记录](test-results/2026-09-27-cloud-device-followup/README.md)。
+- [x] **首页与扫码交互调整：已关闭**（09-27 白天）：删首页标语、扫码入口移右上角、邀请二维码弹窗改匀称均真机目视通过；**相册选图扫码经用户实测成功入房**。见 [本轮记录](test-results/2026-09-27-home-scan-ux/README.md)。
+- [x] **元数据第二轮设备门槛：已关闭**（09-27 凌晨，debug `7C503FDD…` 装机 PHQ110，本地后端 + 本地真实曲库）：歌词渲染/逐行跟随（5 次采样对齐）/手动翻看暂停跟随/松手自动恢复/「回到当前歌词」按钮出现/切歌重载/无时间轴占位/无歌词占位/文件恢复后正常渲染、占位封面三处目视、播放跟听链路与自动切歌——全部实测通过；**期间发现并修复歌词状态缺陷**（404 卡「加载中」）。未覆盖：「回到当前歌词」未在 sheet 内完成干净点击、歌词快滑、2 倍字号、小屏。见 [本轮记录](test-results/2026-09-27-metadata-r2-device/README.md)。
+- [x] **设备端云端歌词冒烟：已关闭（09-27 下午）**：冷缓存重新下载与云端哈希一致，渲染、跟随、切歌、无时间轴占位通过；期间修复暂停歌曲翻页后不归位。最终交互为无按钮、停止滚动三秒自动回位，见 [本轮记录](test-results/2026-09-27-cloud-device-followup/README.md)。
+- [x] **元数据第二轮云端门槛：已关闭**（09-27 白天）：新后端 + 23 个 `.lrc` + catalog `lyrics` 引用已部署（release 20260927-1226），基线 14/14、歌词专项全过（catalog 7 字段、`hasLyrics` 23/23、歌词 200/404/401 三档、无路径泄漏）。见 [后端上云记录](test-results/2026-09-27-cloud-deploy-lyrics/README.md)。
+- [ ] **封面云端发布与真机图片目视**：本地管理器上传/替换/移除已完成并通过临时曲库 smoke；待选择云端窗口后把 `media/covers/` 与带 `cover` 字段的 catalog 发布、重启并在手机歌单/MiniPlayer/展开页确认真实图片。
+- [ ] **曲库删除的两项补验**：①本机删除的**截图证据**缺失（自动化视口不可用，只有可访问性快照 + 盘上文件核对），"删到空库后的界面观感"未目视；②**云端下架一首歌没有工具也没有实测流程**（见部署手册 6.3），真要下架前先实测一遍再登记。
+- [ ] **元数据第二轮云端门槛（已关闭，见上）** 遗留可选项：云端 catalog 补 `artist`（当前无该字段，安卓显示为空不占行高）——需要时用 `scripts/build-cloud-catalog.mjs` 去掉 `--no-artist` 重新生成、重传并 restart。- [ ] 元数据第三轮未开工（专辑字段、通知栏歌手、`lyricsVer` 缓存失效——`.lrc` 被替换后本机按 id 缓存不感知）。
 - [x] EC5FCF0A/517A776B 代码基真机回归：**已关闭**——同一代码基随 debug `517A776B…` 装机（09-26 傍晚复测通过：邀请入口/扫码、seek 三场景无假横幅、播放 1.0x 前进），见 [设备复测记录](test-results/2026-09-26-device-retest/README.md)；唯**倍速追赶后实际复位**未做专项注入测量（省电场景难复现，保持挂起项，随弱网注入补测）。
 - [x] 09-26 房主清扫与 connect 补位修复：**已上云**（release 20260926-1822，专项验证 HostA 掉线被清扫 → MemberB 加入即接任；设备端对新后端入房冒烟未做，见 [云端部署记录](test-results/2026-09-26-cloud-deploy/README.md)）。
 - [x] 09-26 界面提示精简（BCF3DE16 代码基）：**已装机并目视**——同一精简界面随 `517A776B…` 于 09-26 傍晚装机，复测含展开页与房间页截图（MiniPlayer 只剩歌名、状态仅由横幅/图标承载）；BCF3DE16 单包不再单独目视。
 - [x] **`InviteCode.HINT` 文案失真**：09-26 按本轮遗留修复请求改为「打开 App 扫描邀请二维码，或手动输入房间码加入」，旧口令仍兼容；新包未装机。
 - [x] 09-25 夜轮真机验收（在机 `9C480583…` + benchmark `08607981…`，PHQ110 / Android 14 / 云端）：预填不静默入房、`rememberSaveable` 跨重建存活、Expired 横幅「重新加入房间」换发新令牌、房间回收后的表单内联错误、邀请二维码反解（四行、无 `:3000`、无令牌）、benchmark 放行 HTTP 并播放成功；**歌单滑动帧耗时同条件 A/B：R8 0.77%/0.16% vs debug 7.66%/2.08%**——上一轮 27.27%/13.38% 属 debug 口径，不代表用户构建。见 [night-acceptance](test-results/2026-09-25-night-acceptance/README.md)。
-- [ ] 夜轮未覆盖项：**相机扫码入房**（需人工对准屏幕）、**双人同屏与成员展开 180dp 滚动**（同机两客户端被 ColorOS 断网，需本机后端 + `adb reverse` + `scripts/member-sim.mjs`）、空歌单、2 倍系统字号、小屏布局、emoji/代理对昵称真机目视（`input text` 打不进非 ASCII，仅单测覆盖）、滚动中切歌不抢滚动、人工手感。
+- [ ] 剩余设备补测：**双人同屏与成员展开 180dp 滚动**（不能用同机两包替代双机）、空歌单、2 倍系统字号、小屏布局、emoji/代理对昵称真机目视、歌单滚动中切歌不抢滚动、人工手感。相机扫码已于 09-27 下午关闭；歌词快滑/滑动后切歌已自动化覆盖，人工手感仍待确认；歌词返回按钮点击项随按钮删除作废。
 - [ ] 09-25 晚歌单精简版（80CF7629…）：已装机并确认固定标题、独立滚动和成员展开；当时记的滚动掉帧（连续 27.27%、带停顿 13.38%）已由夜轮 A/B 澄清为 debug 口径，R8 实测 1% 量级；剩余待补项并入上一条。
 - [x] 手机实际创建房间、选歌、播放、暂停、拖动进度；用户确认有声音。
 - [x] 断线重连状态机：服务器死亡→退避重连→404 过期→退出重新入房（2026-09-21 真机故障注入）。
@@ -428,6 +588,8 @@ M4 四项部署门槛（2026-09-23 晚全部关闭）：
 
 ## 测试记录入口（docs/test-results/）
 
+- [2026-09-27 云端真机补验与歌词跟随修复](test-results/2026-09-27-cloud-device-followup/README.md)：相机实扫、冷缓存云端歌词、暂停歌曲翻页恢复、无按钮三秒回位；最终 `A586F93C…` 已装机，127 单测、Lint 0。
+
 | 记录 | 内容 |
 |---|---|
 | [2026-09-21-m1-session-device](test-results/2026-09-21-m1-session-device/README.md) | M1 真机复测：状态机全链路、诊断 JSONL |
@@ -455,5 +617,6 @@ M4 四项部署门槛（2026-09-23 晚全部关闭）：
 | [2026-09-25-night-acceptance](test-results/2026-09-25-night-acceptance/README.md) | 夜轮装机验收：门禁与 Lint 修复、两包装机回拉、6 项真机场景、二维码反解、**R8 vs debug 帧耗时同条件 A/B**、播放态显示疑点与未覆盖项清单（含 adb 环境限制） |
 | [2026-09-26-device-retest](test-results/2026-09-26-device-retest/README.md) | 设备复测：`517A776B` 装机回拉（截断陷阱）、云端真实曲库 seek 三场景回归、过期重入闭环（成员+房主）、二维码反解 + 人工扫码、`member-sim` 进出、24 码元昵称边界、热点约束与断网手段修正 |
 | [2026-09-26-cloud-deploy](test-results/2026-09-26-cloud-deploy/README.md) | 后端上云 release 20260926-1822：42/42 校验、旧/新版本 14/14 自检、房主清扫→首个上线成员接任专项验证、prev 回滚点保留 |
+| [2026-09-27-metadata-sources](test-results/2026-09-27-metadata-sources/README.md) | 元数据三源并入可视化管理器 + **曲库删除**（闸门先行 / 回收目录 / 三类文件引用计数）；离线单测 31/31 + 可复跑离线驱动 77/77（8 组）+ 浏览器实跑 |
 
 历史过程记录：[2026-09-21 播放测试](archive/playback-test-2026-09-21.md)（操作过程、状态采样与问题处理，已归档）；W1/W2 交接单 [handover-2026-09-23](archive/handover-2026-09-23.md)（卡顿根因完整分析，已归档）。

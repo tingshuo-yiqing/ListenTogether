@@ -1,0 +1,20 @@
+[
+  {
+    "swipeMs": 180,
+    "waitSeconds": 3,
+    "bounds": "[96,1734][984,1806]",
+    "pass": true
+  },
+  {
+    "swipeMs": 90,
+    "waitSeconds": 3,
+    "bounds": "[96,1734][984,1806]",
+    "pass": true
+  },
+  {
+    "swipeMs": 350,
+    "waitSeconds": 3,
+    "bounds": "[96,1734][984,1806]",
+    "pass": true
+  }
+]

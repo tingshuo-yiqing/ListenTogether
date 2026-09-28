@@ -1,8 +1,35 @@
+import { createHash } from 'node:crypto';
 import { readFile, realpath, stat } from 'node:fs/promises';
 import { resolve, sep } from 'node:path';
 import { parseFile } from 'music-metadata';
 
-export type Track = { id: string; title: string; durationMs: number; path: string; size: number };
+const COVER_MAX_BYTES = 1024 * 1024;
+const LYRICS_MAX_BYTES = 256 * 1024;
+
+/** 管理器与服务端共用的图片边界：只接受 Android BitmapFactory 能稳定解码的三种格式。 */
+function coverMime(data: Buffer): string | null {
+  if (data.length >= 3 && data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff) return 'image/jpeg';
+  if (data.length >= 8 && data.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) return 'image/png';
+  if (data.length >= 12 && data.toString('ascii', 0, 4) === 'RIFF' && data.toString('ascii', 8, 12) === 'WEBP') return 'image/webp';
+  return null;
+}
+
+/** 内容哈希加少量文件时间，替换同一路径的图片时客户端缓存键必然有机会变化。 */
+function coverVersion(data: Buffer, mtimeMs: number): number {
+  const digest = Number.parseInt(createHash('sha256').update(data).digest('hex').slice(0, 10), 16);
+  return digest * 4096 + (Math.round(mtimeMs) % 4096);
+}
+
+/** 独立封面优先、ID3 内嵌封面回退；图片字节启动时读取并常驻内存，>1MB 跳过/拒绝。 */
+export type CoverArt = { mime: string; data: Buffer };
+export type Track = {
+  id: string; title: string; durationMs: number; path: string; size: number;
+  artist: string | null;
+  cover: CoverArt | null;
+  coverVer: number | null;
+  lyricsPath: string | null;   // 新增：库内 .lrc 绝对路径（仅服务端使用，绝不下发）
+};
+
 export async function loadCatalog(directory: string): Promise<Track[]> {
   const root = await realpath(directory);
   const entries: unknown = JSON.parse(await readFile(resolve(root, 'catalog.json'), 'utf8'));
@@ -21,6 +48,52 @@ export async function loadCatalog(directory: string): Promise<Track[]> {
     const metadata = await parseFile(path, { duration: true });
     const durationMs = Math.round((metadata.format.duration ?? 0) * 1000);
     if (!info.isFile() || durationMs <= 0) throw new Error(`无法读取歌曲时长：${entry.id}`);
-    return { id: entry.id, title: entry.title, path, size: info.size, durationMs };
+    // 歌手：手填 > ID3 common.artist（music-metadata 处理常见编码，仍乱码时手填覆盖即可）。
+    const manualArtist = typeof (entry as Record<string, unknown>).artist === 'string'
+      ? ((entry as Record<string, unknown>).artist as string).trim() || null : null;
+    const artist = manualArtist ?? (typeof metadata.common.artist === 'string' && metadata.common.artist.trim()
+      ? metadata.common.artist.trim() : null);
+    // 封面：catalog 的独立文件优先，便于管理器替换图片而不重写 MP3；没有独立文件时
+    // 回退到 ID3 APIC。两种来源都限制在 1MB 内，避免启动时把异常大图常驻内存。
+    const manifestCover = (entry as Record<string, unknown>).cover;
+    let cover: CoverArt | null = null;
+    let coverVer: number | null = null;
+    if (typeof manifestCover === 'string' && manifestCover.trim()) {
+      const coverPath = await realpath(resolve(root, manifestCover.trim()));
+      if (!coverPath.startsWith(root + sep)) throw new Error('只允许曲库内的封面图片');
+      const lower = coverPath.toLowerCase();
+      if (!lower.endsWith('.jpg') && !lower.endsWith('.jpeg') && !lower.endsWith('.png') && !lower.endsWith('.webp')) {
+        throw new Error('只允许 JPG、PNG 或 WebP 封面');
+      }
+      const coverInfo = await stat(coverPath);
+      if (!coverInfo.isFile() || coverInfo.size > COVER_MAX_BYTES) throw new Error(`封面文件无效或超过 1MB：${entry.id}`);
+      const data = await readFile(coverPath);
+      const mime = coverMime(data);
+      if (!mime) throw new Error(`封面不是有效的 JPG、PNG 或 WebP：${entry.id}`);
+      cover = { mime, data };
+      coverVer = coverVersion(data, coverInfo.mtimeMs);
+    } else {
+      const picture = metadata.common.picture?.[0];
+      if (picture && picture.data.length <= COVER_MAX_BYTES) {
+        const data = Buffer.from(picture.data);
+        const mime = coverMime(data);
+        if (mime) {
+          cover = { mime, data };
+          coverVer = coverVersion(data, info.mtimeMs);
+        }
+      }
+    }
+    // 歌词：catalog.json 可选 lyrics（库内相对路径）。与 mp3 同一套 realpath 防逃逸；
+    // 只接受 .lrc、≤256KB，写坏路径让服务启动失败，而不是运行期 500。
+    let lyricsPath: string | null = null;
+    const lyricsField = (entry as Record<string, unknown>).lyrics;
+    if (typeof lyricsField === 'string' && lyricsField.trim()) {
+      const lp = await realpath(resolve(root, lyricsField.trim()));
+      if (!lp.startsWith(root + sep) || !lp.toLowerCase().endsWith('.lrc')) throw new Error('只允许曲库内的 LRC');
+      const linfo = await stat(lp);
+      if (!linfo.isFile() || linfo.size > LYRICS_MAX_BYTES) throw new Error(`歌词文件无效或超过 256KB：${entry.id}`);
+      lyricsPath = lp;
+    }
+    return { id: entry.id, title: entry.title, path, size: info.size, durationMs, artist, cover, coverVer, lyricsPath };
   }));
 }

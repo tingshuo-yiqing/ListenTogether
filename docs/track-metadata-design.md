@@ -1,6 +1,11 @@
-# 歌曲元数据扩展方案（设计稿，未实施）
+# 歌曲元数据扩展方案（第一轮/第二轮已落地）
 
-状态：**设计稿**，2026-09-26。本文只定方案与边界，不含任何已实施承诺；落地进度以 `verification.md` 为准。
+状态：**已实施（第一、二轮）**，2026-09-26。落地进度与口径以 `docs/verification.md` 为准。
+- 第一轮（Track 扩展 + ID3 歌手提取 + catalog 下发 + 封面接口 + 安卓封面/歌手副行）已实施；按用户指示**未做专辑字段与通知栏歌手**；
+- 封面管理已补齐：catalog 支持独立 `cover` 相对路径，服务端优先读独立图片、无独立图片时回退 ID3；本地管理器支持浏览器压缩后上传、替换和移除；安卓已有 `coverVer` 缓存按图片版本刷新。
+- 第二轮（`.lrc` 上架通道 + `/lyrics/:id` 接口 + 安卓 LrcParser/LrcCursor 纯函数与播放页滚动歌词）已实施；歌词来源经用户授权改为 lrclib.net 批量抓取（替代本文原"仅人工维护授权来源"约束，21/23 首命中，单车/红日无同步歌词为占位文件）；
+- 元数据抓取已并入可视化管理器（2026-09-27）：`scripts/lib/metadata-sources.mjs` 提供 QQ 音乐 / 网易云 / MusicBrainz 三源匹配（共用一套打分与阈值），`scripts/metadata-manager.mjs` 界面上按曲或批量出候选、勾选后写库；原命令行同步器 `scripts/fetch-metadata.mjs` 已删除。封面仍由管理器上传落盘，歌词继续复用 `fetch-lrc.mjs`。
+- 第三轮（专辑、编目自动生成、通知栏歌手等）仍未开始。
 读完本文需要的背景：`docs/protocol.md`（v1 协议与 JSON Schema 纪律）、`docs/deployment.md` 第 6 节（曲库上架）。
 
 ## 0. 目标与非目标
@@ -10,7 +15,8 @@
 非目标：
 - 不改变 WS 协议与播放同步逻辑（state 消息仍只引用 `trackId`，schema 一个字段不动）。
 - 不支持 MP3 以外的音频格式（`.mp3` 校验、转码管线、`audio/mpeg` 都保持现状，属另一条线）。
-- 不做在线搜歌、下载源、管理后台 HTTP 写接口；写编目仍走脚本 + 重启。
+- 不做在线搜歌、下载源、公网管理后台 HTTP 写接口；本地管理器只监听回环地址，写编目仍需重启后端。
+- 元数据联网匹配仅用于本地人工复核与按曲补字段；不抓网页、不下载音频、不带登录 Cookie，不能替代曲库上架或云端部署流程。
 - 不引入数据库；`catalog.json` 仍是曲库唯一事实来源。
 
 ## 1. 现状（2026-09-26 核对）
@@ -35,8 +41,8 @@ export type Track = {
   id: string; title: string; durationMs: number; path: string; size: number;  // 已有
   artist: string | null;            // 新增：歌手，ID3 或手填
   album: string | null;             // 新增：专辑
-  cover: { mime: string; data: Buffer } | null;  // 新增：内嵌封面字节，启动时提取、常驻内存
-  coverVer: number | null;          // 新增：封面版本 = 音频文件 mtimeMs，客户端缓存键
+  cover: { mime: string; data: Buffer } | null;  // 新增：独立文件优先、ID3 回退，启动时常驻内存
+  coverVer: number | null;          // 新增：图片内容版本，客户端缓存键
   lyricsPath: string | null;        // 新增：库内 .lrc 文件绝对路径（仅服务端使用）
 };
 ```
@@ -48,7 +54,7 @@ catalog 下发字段（固定 7 个，未知值为 `null`，便于文档作为�
   "artist": "歌手", "album": "专辑", "hasCover": true, "hasLyrics": false }
 ```
 
-`coverVer` 也一并下发（`hasCover=false` 时为 `null`）：客户端封面缓存键 = `id + coverVer`，音频被替换后 mtime 变化，缓存自然失效。`path`/`size`/`cover`/`lyricsPath` 仍不出服务端。
+`coverVer` 也一并下发（`hasCover=false` 时为 `null`）：客户端封面缓存键 = `id + coverVer`，图片替换后版本变化，缓存自然失效。`path`/`size`/`cover`/`lyricsPath` 仍不出服务端。
 
 ## 3. 数据来源与优先级
 
@@ -58,7 +64,7 @@ catalog 下发字段（固定 7 个，未知值为 `null`，便于文档作为�
 |---|---|---|---|
 | title | `catalog.json` 必填 | — | 现状不变 |
 | artist / album | `catalog.json` 可选 `artist` / `album` | `parseFile().common.artist / .album` | 同一次 parseFile 顺手取，零额外 IO |
-| cover | — | `parseFile().common.picture[0]` | 同上；单张 >1MB 跳过（内存保护）；mime 按原始值（image/jpeg、image/png）下发 |
+| cover | `catalog.json` 可选 `cover`（库内相对路径） | `parseFile().common.picture[0]` | 独立图片优先；JPG/PNG/WebP，单张 ≤1MB；无独立图片才读 ID3 |
 | lyrics | `catalog.json` 可选 `lyrics`（库内相对路径） | 无自动来源 | 必须以 `.lrc` 结尾、`realpath` 后必须在库根内（与 mp3 同一套防护）、≤256KB |
 
 标签质量兜底：老旧 MP3 的 ID3 可能是 GBK 编码或乱码——`music-metadata` 处理常见编码，仍乱码时在 `catalog.json` 手填覆盖即可；这正是保留手填优先级的原因。
@@ -93,9 +99,19 @@ catalog 下发字段（固定 7 个，未知值为 `null`，便于文档作为�
 ## 7. 上架与管理流程
 
 - `media-manage.sh install` 的 manifest 从两列（id、标题）扩为**可选四列**（id、标题、歌手、专辑），两列输入继续兼容；歌手/专辑缺省时服务端自动读 ID3，**大多数情况下 manifest 根本不用填新列**。
-- `media-manage.sh verify` 输出每首的歌手/专辑/有无封面/有无歌词，上架后一眼可查。
+- `media-manage.sh verify` 输出每首的歌手/专辑/有无封面/有无歌词，上架后一眼可查；本地 `scripts/metadata-manager.mjs` 提供图片上传、替换和移除。
 - `.lrc` 上架：`add-media.ps1` 增加 scp `/tmp/lt-up-<id>.lrc` + `media-manage.sh lyrics <id> </tmp/x.lrc>` 子命令（写盘 + 更新编目条目 + 校验），沿用"中文只经文件内容流转"的既有约束。
 - 编目条目自动生成：install 时把 ID3 里读到的歌手/专辑**直接写进 catalog.json 条目**（服务器上 node 一行即可），后续人工只在标签不可信时修——"更好管理"主要落在这里。
+
+### 7.1 元数据联网匹配（管理器内，原 CLI 已并入）
+
+`node scripts/metadata-manager.mjs`（`http://127.0.0.1:3100`）读取 `media/catalog.json` 与音频 ID3，把当前曲的"歌名 + 歌手 + 时长"送进所选元数据源做候选匹配。**2026-09-27 起该能力只在界面里提供，命令行同步器 `scripts/fetch-metadata.mjs` 已删除**，抓取/打分/缓存的唯一实现是 `scripts/lib/metadata-sources.mjs`（避免界面与脚本对同一候选给出不同结论）。
+
+- **三个源，一套阈值**：`qq`（默认，一次搜索即拿全 title/artist/album/year/duration/封面）、`netease`（`cloudsearch/pc`，主接口失败退旧接口）、`musicbrainz`（唯一能给可读流派，且有 release 级权威年份）。国内平台不返回数值相关度，故按**结果名次**折算相关度后进入同一 `scoreCandidate` 加权（词形/时长/艺术家/相关度），阈值口径三源一致；已用单测钉住"网易云榜首是翻唱时必须选中原唱"。
+- **候选只读，勾选才写**：`artist`/`album`/`genre`/`year` 按 `buildChanges` 白名单生成差异，界面逐字段勾选后经 `POST /api/tracks/:id/apply` 落库；已有值默认不覆盖（"批量匹配缺字段"走 `onlyIfEmpty`，写前按当前编目再过滤一遍）。低于阈值只展示候选、不给封面地址，也不会被批量模式写入。
+- **写库口径与保存一致**：统一走 `writeAndValidate()` → `dist/library/catalog.js#loadCatalog` 整库校验 → 失败回滚 + HTTP 422；候选值本身先验类型（字符串非空、年份 1800–2100 整数），杜绝"空值即删"语义被外部脏数据触发。
+- **出网边界**：只发检索文本、只取回文本字段与封面 URL，**不下载音频、不带任何登录 Cookie、不做批量爬站**；每源独立限速队列（MusicBrainz 约 1.1 秒/请求，QQ 与网易云约 0.8 秒/请求），批量为串行并带进度。结果缓存在 `.workbuddy/metadata-cache.json`（JSON 对象，键形如 `源|曲目标识`，坏了当空缓存重查即可、不拖垮匹配；勾选应用不回写缓存），曲库目录之外不写任何路径。
+- **歌词与封面不在匹配范围**：歌词继续由 `scripts/fetch-lrc.mjs` 单独抓取（人工授权决定），封面只在候选里给地址、确认后仍经管理器上传落盘，服务端不接受外部图片 URL。
 
 ## 8. 兼容、流量与部署
 
@@ -103,6 +119,7 @@ catalog 下发字段（固定 7 个，未知值为 `null`，便于文档作为�
 - **流量**：封面 30–100KB/张，按 `id+coverVer` 缓存后每设备每曲一次性；歌词 <10KB。对比音频（192kbps ≈ 86MB/听者小时）可忽略，不动 20GiB/月的出网约束。23 首全库封面约 1–2MB 内存常驻，上限保护后最坏 ~23MB，1.7GiB 内存无压力。
 - **部署**：媒体目录在 `/opt/listen-together/media`（releases 之外的持久层），`.lrc` 与编目变更不受升级影响；后端代码变更走现有 release 流程，**restart 清空全部房间**，选无人使用的时间窗，`current-version.txt` 按既有规矩成对维护。
 - **重启即重提取**：封面缓存与元数据都在 `loadCatalog` 时重建，无需额外持久化。
+- **本地管理器**：`node scripts/metadata-manager.mjs` 只监听 `127.0.0.1:3100`；手工编辑、音频上传、封面上传（写入 `media/covers/`）、联网匹配（`/api/sources`、`/api/tracks/:id/sync`、`/api/tracks/:id/apply`）都在同一界面，写编目统一过 `dist/library/catalog.js#loadCatalog` 校验并失败回滚，故干净克隆后需先 `cd server && npm run build`（缺产物时工具直接打印这条命令）。云端发布仍按部署手册单独上传媒体文件与清单。
 
 ## 9. 分轮实施计划
 
@@ -117,6 +134,6 @@ catalog 下发字段（固定 7 个，未知值为 `null`，便于文档作为�
 ## 10. 待定问题（实施前需拍板）
 
 1. ID3 乱码是否接受"手填覆盖"为唯一兜底（暂不引入编码探测）——建议接受。
-2. 封面 mime 是否统一转 jpeg（当前设计：保留原 mime 原始字节，不转码）——建议保留原样。
-3. `coverVer` 用音频 mtimeMs 是否够（多封面来源场景不存在，够用）。
+2. 管理器是否强制转 jpeg——已定：原图不超过1MB时保留 JPG/PNG/WebP；大图由浏览器缩放并转为 ≤1MB JPEG。
+3. `coverVer` 是否只用音频 mtimeMs——已改为图片内容哈希加文件时间，替换同一路径的封面也能刷新客户端缓存。
 4. 歌词页与展开页的关系：PlayerSheet 内嵌滚动区（推荐，不加新页面）还是独立全屏页。

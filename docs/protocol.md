@@ -11,9 +11,14 @@ API 不返回文件系统路径。令牌只传 Authorization: Bearer <token>，�
 | GET /health | 存活检查 | {ok:true,rooms,onlineMembers,wsConnections} |
 | POST /api/rooms | {nickname} | {code,memberId,token} |
 | POST /api/rooms/:code/join | {nickname} | {code,memberId,token} |
-| GET /api/rooms/:code/catalog | 成员令牌 | [{id,title,durationMs}] |
+| GET /api/rooms/:code/catalog | 成员令牌 | [{id,title,durationMs,artist,hasCover,coverVer,hasLyrics}]，未知字段值为 null/false |
 | GET /api/rooms/:code/audio/:id | 成员令牌，可选 Range | audio/mpeg |
+| GET /api/rooms/:code/cover/:id | 成员令牌 | 图片字节（image/jpeg \| image/png \| image/webp，Cache-Control: private, max-age=86400）；无封面 → 404 {"message":"该歌曲没有封面"}。catalog 独立封面优先，未配置时回退 MP3 内嵌封面 |
+| GET /api/rooms/:code/lyrics/:id | 成员令牌 | LRC 原文（text/plain; charset=utf-8，Cache-Control: private, no-store，整读不做 Range）；无歌词 → 404 {"message":"该歌曲没有歌词"}；引用文件已被删除 → 404 {"message":"歌词文件缺失，请联系管理员"} |
 | DELETE /api/rooms/:code/membership | 成员令牌 | {ok:true} |
+
+歌词来源为曲库内维护的 `.lrc` 文件（catalog.json 可选 `lyrics` 相对路径；上架时校验 realpath 在库根内、≤256KB，安卓按 `[mm:ss.xx]` 时间戳渲染）。
+`hasLyrics` 只是布尔提示，歌词文本与磁盘路径都只经该路由按需下发。
 
 创建和加入按 IP/路由每分钟最多 30 次；最多 100 个活跃房间，每房间最多 15 个成员（含重连宽限中的成员）。
 `rooms` 为内存房间数，`onlineMembers` 为持有 WS 连接的成员数，`wsConnections` 为当前已升级连接数；
@@ -167,4 +172,3 @@ target = clamp(positionMs + (playing ? max(0,serverNow-timestampMs) : 0),0,durat
   }
 }
 ```
-

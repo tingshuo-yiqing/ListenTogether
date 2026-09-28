@@ -7,7 +7,7 @@ import { buildApp } from '../src/app.js';
 import { validate } from './mini-schema.js';
 import type { Track } from '../src/library/catalog.js';
 
-const track = (id = 'one', durationMs = 10000): Track => ({ id, title: id, durationMs, path: '', size: 10 });
+const track = (id = 'one', durationMs = 10000): Track => ({ id, title: id, durationMs, path: '', size: 10, artist: null, cover: null, coverVer: null, lyricsPath: null });
 
 /** 从 docs/protocol.md 的「## JSON Schema」小节提取第一个 ```json 代码块；文档即契约，测试不另存一份 schema。 */
 async function loadProtocolSchema() {

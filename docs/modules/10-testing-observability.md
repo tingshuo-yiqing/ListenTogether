@@ -1,17 +1,34 @@
 # 10 测试、诊断与验收
 
 ## 当前资产与覆盖
-server/test：23 项测试（5 个文件，2026-09-26）。app.test.ts 5 项覆盖房间权限与生命周期、HTTP/Range 与限流、15 个真实 WS；
-catalog.test.ts 3 项覆盖真实 MP3 解析、坏清单，以及曲库外 `../` 逃逸与目录链接逃逸的拒绝（含"曲库内链接可用"对照）；
+server/test：30 项测试（2026-09-27）。app.test.ts 5 项覆盖房间权限与生命周期、HTTP/Range 与限流、15 个真实 WS；
+catalog.test.ts 5 项覆盖真实 MP3 解析、独立封面字节与版本、封面路径/格式边界、坏清单，以及曲库外 `../` 逃逸与目录链接逃逸的拒绝（含"曲库内链接可用"对照）；
 protocol.test.ts 2 项把 [protocol.md](../protocol.md) 的 JSON Schema 当作契约：直接从文档提取 schema，校验 buildApp 产出的真实
 state/clock/error 与出站 sync/command，并用构造性漂移（多字段/缺字段/类型错/未知 action）证明校验器有牙——
 实现与文档任一侧改动都会变红。校验器是 `test/mini-schema.ts` 的最小实现，无运行时依赖、无 codegen；
 realtime.test.ts 6 项钉住传输防线：消息级 20 条/秒第 21 条回 429、握手限连（同令牌+IP 超限 429、换源 IP 不受影响、无效令牌仍 401）、
 bufferedAmount 超 128KiB 时 close(1013)、15 秒无 pong 的 terminate（假 timer）；
 rooms.test.ts 7 项覆盖同 IP 存量房间配额（含回收释放与按 IP 隔离）、房间领域事件全生命周期与"不含令牌/昵称"红线、health 计数随连接变化；另验证房主清扫、首次上线立即接任与 60 秒宽限边界。
-android/app/src/test：96 项（09-26 补充小轮口径，上轮 91 按文件归类少计 1、真实基线 92，本轮新增 SeekConfirmTest 4 项）；包含会话竞态、时钟、同步、播放策略、邀请编解码、UI 纯逻辑与诊断边界。
+android/app/src/test：123 项（09-27 口径：09-26 补充小轮 96 + 元数据第二轮 ModelsTest/LrcTest 15 + 歌词状态 LyricsStateTest 7 + 相册扫码采样 LocalQrDecoderTest 5）；包含会话竞态、时钟、同步、播放策略、邀请编解码、歌词解析与歌词区状态、相册二维码采样决策、UI 纯逻辑与诊断边界。
 诊断：debug 构建 DiagnosticsLog 已实现（连接/校时/播放事件 JSONL，单文件约20MB、实例创建起60分钟窗口，超限停止写入，不自动轮转，不含令牌）；DiagnosticsLogTest（8 项 JVM 单测）覆盖 20MB/60 分钟轮转停止、JSONL 行格式、令牌不出现在输出红线约束、禁用时不创建文件；DiagnosticsLog 边界可注入（时钟、目录、执行器），生产构造器不变。
 smoke-test.mjs：对运行后端执行HTTP、两个WS及真实Range验证。
+scripts/lib/metadata-sources.test.mjs：元数据三源（QQ 音乐/网易云/MusicBrainz）共享模块与 ID3 读取的 **31 项离线单测**（2026-09-27）——
+纯函数（名次→相关度、秒/毫秒→年份、条目归一、buildChanges 白名单与强制位）+ 三个假客户端跑完整 `findMetadata`；
+`request`/`sleep`/`now` 全部注入，**一次公网请求都不发**，因此可以钉住"必须只发一次请求且带 Referer""榜首是翻唱时要选原唱"
+"结构缺失要抛错而不是判成没收录"这类外部契约。门禁：`scripts/check.ps1 -Scope scripts`（Windows 下必须写
+`node --test "scripts/**/*.test.mjs"`，目录形式会报 MODULE_NOT_FOUND 看起来像"没有测试"，见陷阱第 7 节）。
+管理器写入闸门的离线驱动 `docs/test-results/2026-09-27-metadata-sources/manager-offline-check.mjs`（**77 项断言 / 8 组**，2026-09-27）：
+起真管理器进程 + 系统临时目录夹具曲库 + `--cache`/`--trash` 把缓存与回收根都挪开真实文件，同样**零公网请求**（候选来自预置缓存）。
+它覆盖单测碰不到的 HTTP 写入闸门：`/api/sources` 清单、三源缓存互不污染、apply 的脏值/越界/空串拒绝、
+`onlyIfEmpty` 只补真空缺、整库校验失败 422 + catalog 逐字节回滚、失败后进程仍可用；第 [6] 组是同日 UX 轮加的歌词清单与 .lrc 上传，第 [7] 组另起一个实例，
+用 `--import` 预加载把它的 `globalThis.fetch` 换成必然抛异常，从而**不出网**地钉住出网降级契约
+（缓存未命中且平台不通 → 502 而非 500、带 `network-error` 与原因、指明失败的 id、不写缓存、批量其余各首照常）。
+这一轮正是它抓出了"缓存里的封面地址绕过当次阈值"的真实缺陷（见陷阱第 7 节的缓存条目）。
+第 [8] 组专测**删除曲目**：夹具里造出三组共享关系（两首共用一份 `.lrc`、两首共用一张走接口上传的独立封面、
+两首共用同一个 `.mp3`）外加一条 `cover` 手写指向 `covers/` 之外，逐条断言"坏参数 400/404、坏库 409 且逐字节不动、
+共用文件留原地并点名引用者、最后一份引用消失才进回收目录且保留库内相对路径、manifest 记下条目原文与文件来去、
+删到空库仍正常服务"。它当场抓出另外两个真实缺陷：封面归属判断在 POSIX 口径下永远为假、引用计数原先只对歌词生效。
+驱动留在证据目录、可复跑，不进 `check.ps1`（要起子进程与端口）。
 check-doc-links.mjs：扫描项目 Markdown 的本地链接；跳过外部 URL、锚点和不参与文档验证的构建/依赖目录。
 fault-proxy.mjs / fault-proxy-selftest.mjs：故障注入代理与其自测（延迟、断线、恢复、音频 401 注入，共 10 项）。
 load15.mjs：15 路负载脚本（playback 码率模型 + throughput 容量模型），见 [LOAD-15 记录](../test-results/2026-09-22-load15/README.md)。
@@ -21,6 +38,8 @@ PHQ110真机报告覆盖单机出声、暂停/跳转/切歌、后台、短时息
 2026-09-22 补：蓝牙耳机断开→本机暂停、重连不自动恢复、明确播放后追赶；音频 404（改名长测试音并拖到未缓冲区）→ERROR_CODE_IO_BAD_HTTP_STATUS→暂停→恢复文件后手动重试续播，见 [M3 记录](../test-results/2026-09-22-m3-bluetooth-audio-error/README.md)。新增 demo-long（40 分钟）测试音用于长时播放与错误注入。
 
 ## 下一阶段测试分层
+2026-09-27 下午：新增 `LyricsFollowTest` 4 项，钉住暂停歌曲同一行恢复、翻看期间换句、重复采样与首行前取消。`cloud-device-followup/regression.py` 留存初次修复的三档滑动回归；最终用户交互改为「无按钮、停止滚动三秒回位」，由 `three-second-regression.py` 的提前/继续翻页/稳定恢复截图与像素对照验证。见 [本轮记录](../test-results/2026-09-27-cloud-device-followup/README.md)。
+
 1. 纯单元：房间可控时钟、ClockEstimator、状态转移、错误输入；不调用公网。
 2. 集成：HTTP/WS/文件流、迟到回调、退出与重连竞态；用本地可控代理注入故障。
 3. 安卓UI/服务：页面重建、Controller释放、前后台、播放器中断；保留真实设备结果。
@@ -71,3 +90,5 @@ Debug诊断JSONL已实现（限60分钟或20MB，用户主动测试时采集）�
 2026-09-24（工具轮）：新增 protocol.test.ts（2 项）把协议文档变成可执行契约；`scripts/check.ps1` 的安卓段改为
 `:app:cleanTestDebugUnitTest :app:testDebugUnitTest`，避免测试任务被 Gradle 判 UP-TO-DATE 而跳过实跑（门禁的"测试通过"
 必须来自本轮执行，见 [陷阱清单](../development-pitfalls.md) 与 verification.md）。
+
+2026-09-28：scripts档现37项离线测试，新增metadata-assets.test.mjs（含启动真管理器的临时曲库集成用例，须先构建server/dist）；封面/歌词来源全部注入，不访问公网。原驱动85项，Chrome页面夹具与真实平台只读抽查分开登记：[资源应用验证](../test-results/2026-09-28-metadata-assets/README.md)。

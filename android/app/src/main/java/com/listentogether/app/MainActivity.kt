@@ -15,8 +15,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.getValue
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,7 +41,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -45,6 +50,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ExitToApp
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.outlined.QrCode2
 import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.ErrorOutline
@@ -61,6 +68,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -70,6 +78,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.runtime.DisposableEffect
@@ -113,6 +122,7 @@ import com.listentogether.app.network.RoomClient
 import com.listentogether.app.network.Track
 import com.listentogether.app.network.UiState
 import com.listentogether.app.playback.PlaybackService
+import com.listentogether.app.ui.CoverPlaceholder
 import com.listentogether.app.ui.MemberAvatar
 import com.listentogether.app.ui.MiniPlayer
 import com.listentogether.app.ui.PlaybackView
@@ -122,6 +132,7 @@ import com.listentogether.app.ui.composeNickname
 import com.listentogether.app.ui.takeCodePoints
 import com.listentogether.app.ui.joinError
 import com.listentogether.app.ui.memberDisplayName
+import com.listentogether.app.ui.rememberCoverBitmap
 import com.listentogether.app.ui.rememberRoomPlayer
 import com.listentogether.app.ui.showStatusNotice
 import com.listentogether.app.ui.screenStates
@@ -132,9 +143,12 @@ import com.listentogether.app.ui.theme.ListenTogetherTheme
 import com.listentogether.app.ui.theme.PillShape
 import com.listentogether.app.ui.theme.RowShape
 import java.util.Locale
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
+import com.listentogether.app.ui.LocalQrDecoder
 import com.listentogether.app.ui.encodeInviteQr
 
 /** 入房表单状态可保存；房间令牌不属于表单，也绝不写入 SavedState。 */
@@ -256,14 +270,18 @@ class MainActivity : ComponentActivity() {
                     ScanOptions().setDesiredBarcodeFormats(ScanOptions.QR_CODE).setPrompt("扫描一起听歌邀请二维码")
                         .setBeepEnabled(false).setOrientationLocked(false)
                 }
-                val scanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
-                    val invite = result.contents?.let(InviteCode::decode)
-                    if (invite == null) {
-                        if (result.contents != null) scope.launch { snackbar.showSnackbar("二维码不是有效的一起听歌邀请") }
-                    } else {
-                        input.accept(invite)
-                        input.joining = true
+                // 相机实时扫与相册选图共用同一条落地逻辑：能解析出邀请就填入并自动入房，
+                // 拿到文本但解不出邀请才提示"无效"，用户取消（null）则静默。
+                // 写成局部函数而非 val，避免两个 launcher 回调与它互相前向引用。
+                fun acceptInviteText(raw: String?) {
+                    val invite = raw?.let(InviteCode::decode)
+                    when {
+                        invite != null -> { input.accept(invite); input.joining = true }
+                        raw != null -> scope.launch { snackbar.showSnackbar("二维码不是有效的一起听歌邀请") }
                     }
+                }
+                val scanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
+                    acceptInviteText(result.contents)
                 }
                 val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
                     if (granted) scanLauncher.launch(scanOptions)
@@ -273,6 +291,17 @@ class MainActivity : ComponentActivity() {
                     if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
                         scanLauncher.launch(scanOptions)
                     } else cameraPermission.launch(Manifest.permission.CAMERA)
+                }
+                // 扫相册里的二维码图：不申请权限（GetContent 走系统文件选择器，无需读存储权限），
+                // 解码放 IO 线程——原图动辄数千像素，主线程解码会卡顿。
+                var showScanSheet by rememberSaveable { mutableStateOf(false) }
+                val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+                    if (uri == null) return@rememberLauncherForActivityResult
+                    scope.launch {
+                        val text = withContext(Dispatchers.IO) { LocalQrDecoder.decodeUri(contentResolver, uri) }
+                        acceptInviteText(text)
+                        if (text == null) snackbar.showSnackbar("图片里没有可识别的邀请二维码")
+                    }
                 }
                 var showInviteQr by rememberSaveable(ui.credentials?.token) { mutableStateOf(false) }
                 // 非房主点切歌入口的统一提示；展开播放页与歌单共用同一份。
@@ -284,7 +313,16 @@ class MainActivity : ComponentActivity() {
                 val playerState = rememberRoomPlayer(client, ui, track)
                 var showPlayerSheet by rememberSaveable(ui.credentials?.token) { mutableStateOf(false) }
                 Scaffold(
-                    topBar = { TopBar(ui, client.baseUrl, onShowQr = { showInviteQr = true }, onLeaveRequest = { showLeaveConfirm = true }) },
+                    topBar = {
+                        TopBar(
+                            ui, client.baseUrl,
+                            onShowQr = { showInviteQr = true },
+                            onLeaveRequest = { showLeaveConfirm = true },
+                            // 扫码入口收在右上角：只在家里（未入房）且处于"加入房间"分支时出现，
+                            // 建房分支没有可扫的东西，入房后由"显示邀请二维码"接管同一个位置。
+                            onScanInvite = if (ui.credentials == null && input.joining) ({ showScanSheet = true }) else null
+                        )
+                    },
                     bottomBar = {
                         if (ui.credentials != null) {
                             MiniPlayer(client, ui, playerState, track, onExpand = { showPlayerSheet = true })
@@ -306,7 +344,7 @@ class MainActivity : ComponentActivity() {
                                     },
                                     contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
                                     verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) { JoinForm(client, ui, input, snackbar, scanInvite) }
+                                ) { JoinForm(client, ui, input, snackbar) }
                             } else {
                                 RoomContent(client, ui, input, playback, onLockedTap)
                             }
@@ -316,6 +354,13 @@ class MainActivity : ComponentActivity() {
                 val credentialsForDialog = ui.credentials
                 if (credentialsForDialog != null && showInviteQr) {
                     InviteQrDialog(InviteCode.encode(credentialsForDialog.code, client.baseUrl)) { showInviteQr = false }
+                }
+                if (showScanSheet) {
+                    ScanSourceSheet(
+                        onDismiss = { showScanSheet = false },
+                        onCamera = { showScanSheet = false; scanInvite() },
+                        onGallery = { showScanSheet = false; galleryLauncher.launch("image/*") }
+                    )
                 }
                 if (ui.credentials != null && showPlayerSheet) {
                     PlayerSheet(client, ui, playerState, track, onLockedTap, onDismiss = { showPlayerSheet = false })
@@ -336,10 +381,20 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** 顶栏：始终显示应用名；房间页额外提供分享与退出入口（退出走确认弹窗）。邀请统一走分享口令，顶栏不再展示房间码。 */
+/**
+ * 顶栏：始终显示应用名。房间页提供「展示邀请二维码 / 分享口令 / 退出」，首页「加入房间」分支
+ * 提供「扫二维码」——两处刻意复用右上角第一个位置：入房前是"我去扫别人的码"，入房后是"让别人扫我的码"，
+ * 同一位置承载同一件事的两面，不给顶栏堆图标。
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TopBar(ui: UiState, baseUrl: String, onShowQr: () -> Unit, onLeaveRequest: () -> Unit) {
+private fun TopBar(
+    ui: UiState,
+    baseUrl: String,
+    onShowQr: () -> Unit,
+    onLeaveRequest: () -> Unit,
+    onScanInvite: (() -> Unit)? = null
+) {
     val context = LocalContext.current
     // 口令唯一来源：分享入口使用 encode 产物，避免硬编码漂移；
     // 口令只含房间码与服务器地址（公开信息，默认端口在口令里省略），绝不包含成员令牌。
@@ -366,9 +421,50 @@ private fun TopBar(ui: UiState, baseUrl: String, onShowQr: () -> Unit, onLeaveRe
                 IconButton(onClick = onLeaveRequest) {
                     Icon(Icons.AutoMirrored.Outlined.ExitToApp, contentDescription = "退出房间", tint = MaterialTheme.colorScheme.primary)
                 }
+            } else if (onScanInvite != null) {
+                IconButton(onClick = onScanInvite) {
+                    Icon(Icons.Outlined.QrCodeScanner, contentDescription = "扫描邀请二维码", tint = MaterialTheme.colorScheme.primary)
+                }
             }
         }
     )
+}
+
+/** 扫码来源选择：相机实时扫需要权限且要对准屏幕，相册选图适合好友发来的截图/存图。 */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ScanSourceSheet(onDismiss: () -> Unit, onCamera: () -> Unit, onGallery: () -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState()) {
+        Column(
+            Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text("扫描邀请二维码", style = MaterialTheme.typography.titleMedium)
+            Text(
+                "用相机扫，或从相册选一张已有二维码的图片。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            FilledTonalButton(
+                onClick = onCamera, shape = PillShape,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
+            ) {
+                // 这两个图标只有 Filled 系列（icons-extended 未提供 Outlined 变体），
+                // 与 QrCodeScanner/QrCode2 的 Outlined 混用是刻意的：不为了统一风格去自绘图标。
+                Icon(Icons.Filled.PhotoCamera, contentDescription = null, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("用相机扫描")
+            }
+            FilledTonalButton(
+                onClick = onGallery, shape = PillShape,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
+            ) {
+                Icon(Icons.Filled.PhotoLibrary, contentDescription = null, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("从相册选择图片")
+            }
+        }
+    }
 }
 
 /** 房间采用固定成员摘要与歌单表头，曲目在圆角面板内独立滚动；播放器由 Scaffold 固定在底部。 */
@@ -421,17 +517,10 @@ private fun RoomContent(client: RoomClient, ui: UiState, input: JoinInput, playb
 
 /**
  * 创建和加入分为两条路径，错误留在表单内；切换路径保留已填信息。
- * 布局收拢为"标题区 + 单卡片表单"：标签、输入、错误与主按钮同处一张卡，
- * 视线在一个动作区内完成"选路径→填信息→点按钮"，不再逐块平铺。
+ * 布局收拢为"单卡片表单"：进入即见表单，标题行的应用名已说明这是什么。
+ * 扫码入口在顶栏右上角（见 [TopBar]），不再占一整行。
  */
-private fun LazyListScope.JoinForm(client: RoomClient, ui: UiState, input: JoinInput, snackbar: SnackbarHostState, onScanInvite: () -> Unit) {
-    item(key = "join-heading", contentType = "heading") {
-        Column(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp)) {
-            Text("此刻，一起听", style = MaterialTheme.typography.headlineMedium)
-            Spacer(Modifier.height(4.dp))
-            Text("和朋友分享同一段旋律", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
+private fun LazyListScope.JoinForm(client: RoomClient, ui: UiState, input: JoinInput, snackbar: SnackbarHostState) {
     item(key = "join-card", contentType = "form") {
         Surface(shape = CardShape, color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -454,16 +543,6 @@ private fun LazyListScope.JoinForm(client: RoomClient, ui: UiState, input: JoinI
                 )
                 if (input.joining) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilledTonalButton(
-                            onClick = onScanInvite,
-                            enabled = !ui.busy,
-                            shape = PillShape,
-                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                        ) {
-                            Icon(Icons.Outlined.QrCodeScanner, contentDescription = null, modifier = Modifier.size(20.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("扫描邀请二维码")
-                        }
                         // 解析成功用确认卡替换手填输入框；与下方错误横幅互斥展示——入房失败时优先显示横幅，
                         // 确认卡数据保留（不销毁已填昵称），横幅消失（重新入房）后恢复显示。
                         val invite = input.invite
@@ -539,12 +618,16 @@ private fun InviteQrDialog(inviteText: String, onDismiss: () -> Unit) {
     }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("邀请好友一起听") },
+        // 标题比 AlertDialog 默认（headlineSmall）收一档：弹窗主体是二维码，标题不该抢视觉重量。
+        title = { Text("邀请好友一起听", style = MaterialTheme.typography.titleMedium) },
         text = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                androidx.compose.foundation.Image(bitmap.asImageBitmap(), contentDescription = "一起听歌房间邀请二维码", modifier = Modifier.fillMaxWidth())
-                Text("好友打开一起听歌，选择“扫描邀请二维码”即可加入。", style = MaterialTheme.typography.bodyMedium)
-            }
+            // 对话框文字区默认已带内边距，横向再留一点即可：既保证二维码不贴边、好扫，
+            // 又不会把「完成」按钮顶出屏幕。二维码是这张弹窗的内容主体，不额外封顶宽度。
+            androidx.compose.foundation.Image(
+                bitmap.asImageBitmap(),
+                contentDescription = "一起听歌房间邀请二维码",
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
+            )
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("完成") } }
     )
@@ -710,8 +793,8 @@ private fun LazyListScope.PlaylistSection(client: RoomClient, ui: UiState, curre
         item { Text("还没有歌曲，联系房主添加后再来听。", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         return
     }
-    itemsIndexed(ui.tracks, key = { _, song -> "track:${song.id}" }, contentType = { _, _ -> "track" }) { index, song ->
-        PlaylistRow(song, index + 1, song.id == currentTrackId, playingNow && song.id == currentTrackId, ui.status == ConnectionStatus.Ready) {
+    items(ui.tracks, key = { song -> "track:${song.id}" }, contentType = { _ -> "track" }) { song ->
+        PlaylistRow(client, song, song.id == currentTrackId, playingNow && song.id == currentTrackId, ui.status == ConnectionStatus.Ready) {
             if (client.isHost) client.command("select", trackId = song.id) else onLockedTap()
         }
     }
@@ -719,8 +802,10 @@ private fun LazyListScope.PlaylistSection(client: RoomClient, ui: UiState, curre
 
 /** 每行只接收展示所需数据，播放进度变化不会使整张歌单重组。 */
 @Composable
-private fun PlaylistRow(song: Track, number: Int, current: Boolean, playing: Boolean, enabled: Boolean, onClick: () -> Unit) {
+private fun PlaylistRow(client: RoomClient, song: Track, current: Boolean, playing: Boolean, enabled: Boolean, onClick: () -> Unit) {
     val durationLabel = remember(song.durationMs) { formatTime(song.durationMs) }
+    val cover = rememberCoverBitmap(client, song)
+    val coverShape = RoundedCornerShape(6.dp)
     Surface(
         shape = RowShape,
         color = if (current) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
@@ -728,26 +813,37 @@ private fun PlaylistRow(song: Track, number: Int, current: Boolean, playing: Boo
             .semantics { if (current) stateDescription = "当前曲目" }
             .clickable(enabled = enabled, onClick = onClick)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 12.dp, vertical = 10.dp)) {
-            if (current && playing) {
-                PlayingIndicator(color = MaterialTheme.colorScheme.onPrimaryContainer)
-            } else {
-                Text(
-                    number.toString().padStart(2, '0'),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (current) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.width(24.dp)
-                )
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 12.dp, vertical = 8.dp)) {
+            // 左侧封面缩略图（44dp）：有图显示图，当前播放显示动效条，其余统一静态占位。
+            Box(modifier = Modifier.size(44.dp), contentAlignment = Alignment.Center) {
+                if (cover != null) {
+                    Image(bitmap = cover.asImageBitmap(), contentDescription = null, modifier = Modifier.size(44.dp).clip(coverShape))
+                } else if (current && playing) {
+                    PlayingIndicator(color = MaterialTheme.colorScheme.onPrimaryContainer)
+                } else {
+                    CoverPlaceholder(44.dp)
+                }
             }
             Spacer(Modifier.size(12.dp))
-            Text(
-                song.title,
-                style = MaterialTheme.typography.bodyLarge,
-                color = if (current) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
+            Column(Modifier.weight(1f)) {
+                Text(
+                    song.title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (current) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                // 歌手副行：null/空时不占行高。
+                if (!song.artist.isNullOrEmpty()) {
+                    Text(
+                        song.artist,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (current) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
             Spacer(Modifier.width(12.dp))
             Text((if (current) "当前 · " else "") + durationLabel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }

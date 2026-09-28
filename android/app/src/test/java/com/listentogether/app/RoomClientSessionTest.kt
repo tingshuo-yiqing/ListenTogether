@@ -3,12 +3,15 @@ package com.listentogether.app
 import com.listentogether.app.diagnostics.Diagnostics
 import com.listentogether.app.network.ConnectionStatus
 import com.listentogether.app.network.ConnectionStore
+import com.listentogether.app.network.CoverCache
 import com.listentogether.app.network.HttpTransport
+import com.listentogether.app.network.LrcCache
 import com.listentogether.app.network.RoomClient
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
+import okhttp3.OkHttpClient
 import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
@@ -21,6 +24,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 import java.io.IOException
 
 /**
@@ -84,6 +88,8 @@ class RoomClientSessionTest {
     }
 
     private val sockets = FakeSocketFactory()
+    private val http = OkHttpClient()
+    private val coverCache = CoverCache(File(System.getProperty("java.io.tmpdir"), "listen-cover-test"))
 
     private object NoopDiagnostics : Diagnostics {
         override fun connection(event: String, roomCode: String?, detail: String) {}
@@ -91,7 +97,8 @@ class RoomClientSessionTest {
         override fun playback(roomCode: String?, trackId: String?, version: Long, playerPositionMs: Long, targetPositionMs: Long, driftMs: Long, buffering: Boolean, localPause: Boolean, correction: String, estimatedServerMs: Long) {}
     }
 
-    private fun newClient() = RoomClient(store, NoopDiagnostics, { mono }, transport, sockets, dispatcher)
+    private fun newClient() = RoomClient(store, NoopDiagnostics, { mono }, transport, sockets, http, coverCache,
+        LrcCache(File(System.getProperty("java.io.tmpdir"), "listen-lyrics-test")), dispatcher)
 
     private fun credentials(code: String) = JSONObject()
         .put("code", code).put("memberId", "member-$code").put("token", "token-$code")

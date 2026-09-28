@@ -3,6 +3,8 @@ import websocket from '@fastify/websocket';
 import rateLimit from '@fastify/rate-limit';
 import { Rooms, Fault } from './rooms/store.js';
 import { audioRoutes } from './routes/audio.js';
+import { coverRoutes } from './routes/cover.js';
+import { lyricsRoutes } from './routes/lyrics.js';
 import { socketRoutes } from './realtime/socket.js';
 import type { EventSink } from './events.js';
 import type { Track } from './library/catalog.js';
@@ -22,9 +24,9 @@ export async function buildApp(tracks: Track[], options: { now?: () => number; t
   // 建房按 req.ip 记创建者：单 IP 同时最多 3 个活跃房间（限速不限量的缺口由 Rooms.create 兜底）。
   app.post<{ Body: { nickname?: unknown } }>('/api/rooms', limits, async req => rooms.create(req.body?.nickname, req.ip));
   app.post<{ Params: { code: string }; Body: { nickname?: unknown } }>('/api/rooms/:code/join', limits, async req => rooms.add(rooms.get(req.params.code), req.body?.nickname));
-  app.get<{ Params: { code: string } }>('/api/rooms/:code/catalog', async req => { rooms.auth(req.params.code, req.headers.authorization?.replace(/^Bearer /, '') ?? ''); return tracks.map(({ id, title, durationMs }) => ({ id, title, durationMs })); });
+  app.get<{ Params: { code: string } }>('/api/rooms/:code/catalog', async req => { rooms.auth(req.params.code, req.headers.authorization?.replace(/^Bearer /, '') ?? ''); return tracks.map(({ id, title, durationMs, artist, cover, coverVer, lyricsPath }) => ({ id, title, durationMs, artist, hasCover: cover !== null, coverVer, hasLyrics: lyricsPath !== null })); });
   app.delete<{ Params: { code: string } }>('/api/rooms/:code/membership', async req => { rooms.leave(req.params.code, req.headers.authorization?.replace(/^Bearer /, '') ?? ''); return { ok: true }; });
-  audioRoutes(app, rooms); socketRoutes(app, rooms, realtime, events);
+  audioRoutes(app, rooms); coverRoutes(app, rooms); lyricsRoutes(app, rooms); socketRoutes(app, rooms, realtime, events);
   const timer = options.timers === false ? undefined : setInterval(() => rooms.tick(), 250);
   timer?.unref(); app.addHook('onClose', async () => { if (timer) clearInterval(timer); });
   return { app, rooms };

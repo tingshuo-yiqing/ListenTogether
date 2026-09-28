@@ -7,6 +7,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
@@ -14,6 +15,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -23,6 +25,9 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items as itemsLrc
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -45,10 +50,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,6 +66,10 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -71,9 +85,14 @@ import com.listentogether.app.network.RoomClient
 import com.listentogether.app.network.Track
 import com.listentogether.app.network.UiState
 import com.listentogether.app.sync.TrackQueue
+import com.listentogether.app.ui.LrcLine
+import com.listentogether.app.ui.indexAt
+import com.listentogether.app.ui.parseLrc
 import kotlin.math.abs
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 /**
@@ -206,6 +225,12 @@ internal fun MiniPlayer(
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val cover = rememberCoverBitmap(client, track)
+                Box(modifier = Modifier.size(44.dp), contentAlignment = Alignment.Center) {
+                    if (cover != null) Image(bitmap = cover.asImageBitmap(), contentDescription = null, modifier = Modifier.size(44.dp).clip(RoundedCornerShape(6.dp)))
+                    else if (track != null) CoverPlaceholder(44.dp)
+                }
+                Spacer(Modifier.width(12.dp))
                 Text(
                     track?.title ?: if (client.isHost) "选一首喜欢的歌" else "等待房主选歌",
                     style = MaterialTheme.typography.titleMedium,
@@ -257,6 +282,18 @@ internal fun PlayerSheet(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            val cover = rememberCoverBitmap(client, track)
+            if (cover != null) {
+                Image(
+                    bitmap = cover.asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier.size(180.dp).clip(RoundedCornerShape(12.dp))
+                )
+            } else if (track != null) {
+                CoverPlaceholder(180.dp, corner = 12.dp)
+            } else {
+                Spacer(Modifier.height(12.dp))
+            }
             Text(
                 track?.title ?: if (client.isHost) "选一首喜欢的歌" else "等待房主选歌",
                 style = MaterialTheme.typography.headlineSmall,
@@ -264,6 +301,16 @@ internal fun PlayerSheet(
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center
             )
+            if (!track?.artist.isNullOrEmpty()) {
+                Text(
+                    track!!.artist!!,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center
+                )
+            }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 SkipButton(Icons.Outlined.SkipPrevious, "上一首", canSkip) { skip(-1) }
                 PlayPauseButton(client, ui, track, playing, size = 64.dp)
@@ -273,6 +320,10 @@ internal fun PlayerSheet(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(formatTime(shown.toLong()), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(formatTime(track?.durationMs ?: 0), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            // 换曲重建取值与滚动状态，避免 produceState 沿用上一首已加载的文本。
+            key(track?.id, track?.hasLyrics) {
+                LyricsSection(client, track, shown.toLong())
             }
         }
     }
@@ -361,6 +412,88 @@ private fun SliderRow(client: RoomClient, ui: UiState, state: RoomPlayerState, t
             }
         }
     )
+}
+
+/**
+ * 播放页内嵌滚动歌词：本机播放位置驱动逐行高亮（parseLrc/indexAt 纯函数定位）。
+ * - 当前行滚到视口顶部偏下 70dp 处（foundation 1.8 没有像素级居中 API，用顶部留白近似）；
+ *   跟随只在当前行变化或用户滚动结束恢复时触发，不做逐帧微调；
+ * - 手势滚动暂停自动跟随；手势与惯性滚动停止 3 秒后自动恢复，期间继续滚动则重新计时；
+ * - 无歌词 / 加载失败 / 歌词无时间轴时显示占位文案，不出现空白区。
+ */
+@Composable
+private fun LyricsSection(client: RoomClient, track: Track?, positionMs: Long) {
+    // produceState 以 (id, hasLyrics) 为键：换曲立即重启取值。
+    // 首值用 ""（而非 null）区分"还没取"与"取到了但没有"：null=无歌词/失败，""=加载中。
+    val lyricText = produceState<String?>(if (track?.hasLyrics == true) "" else null, track?.id, track?.hasLyrics) {
+        if (track == null || !track.hasLyrics) { value = null; return@produceState }
+        client.state.first { it.credentials != null }
+        value = client.fetchLyrics(track)
+    }.value
+    val lines = remember(track?.id, lyricText) { lyricText?.let { parseLrc(it) } ?: emptyList() }
+    val listState = rememberLazyListState()
+    val current = indexAt(lines, positionMs)
+    var manualPaused by remember(track?.id) { mutableStateOf(false) }
+    var resumeTick by remember(track?.id) { mutableIntStateOf(0) }
+    val latestCurrent by rememberUpdatedState(current)
+
+    // 自动滚动不产生 UserInput 源事件；只由用户手势暂停，惯性结束后才开始恢复倒计时。
+    val followStopper = Modifier.nestedScroll(object : NestedScrollConnection {
+        override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+            if (source == NestedScrollSource.UserInput && (consumed.x != 0f || consumed.y != 0f)) {
+                manualPaused = true
+                resumeTick++
+            }
+            return Offset.Zero
+        }
+    })
+    val scrolling = listState.isScrollInProgress
+    LaunchedEffect(resumeTick, scrolling) {
+        if (!manualPaused || scrolling) return@LaunchedEffect
+        delay(3_000)
+        manualPaused = false
+    }
+
+    // 恢复事件也驱动跟随：歌曲暂停或处于长句时，当前行不变也必须回到观看位。
+    LaunchedEffect(listState, lines) {
+        snapshotFlow { LyricsFollowPosition(latestCurrent, manualPaused) }
+            .lyricsFollowTargets()
+            .collectLatest { target ->
+                if (target != null && target in lines.indices) listState.animateScrollToItem(target)
+            }
+    }
+
+    Box(Modifier.fillMaxWidth().height(220.dp), contentAlignment = Alignment.Center) {
+        // 状态判定抽到 LyricsState.kt 的纯函数：这里只负责渲染，文案与条件可被单测钉住。
+        val uiState = lyricsUiState(track, lyricText, lines.size)
+        when (uiState) {
+            LyricsUiState.Ready -> LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxWidth().fillMaxHeight().then(followStopper),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(top = 70.dp, bottom = 150.dp)
+            ) {
+                itemsLrc(lines, key = { "${it.timeMs}-${it.text}" }) { line ->
+                    val active = line.timeMs == (lines.getOrNull(current)?.timeMs ?: -1L)
+                    Text(
+                        line.text,
+                        style = if (active) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium,
+                        color = if (active) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+                    )
+                }
+            }
+            else -> lyricsPlaceholderText(uiState)?.let { text ->
+                Text(
+                    text,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
 }
 
 /** 当前曲目播放中标记：3 根错相跳动的竖条；暂停时静止在低位，与图标同尺寸可互换。 */

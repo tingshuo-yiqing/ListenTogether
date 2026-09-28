@@ -2,7 +2,19 @@ package com.listentogether.app.network
 
 import org.json.JSONObject
 
-data class Track(val id: String, val title: String, val durationMs: Long)
+data class Track(val id: String, val title: String, val durationMs: Long, val artist: String? = null, val hasCover: Boolean = false, val coverVer: Long? = null, val hasLyrics: Boolean = false) {
+    companion object {
+        fun parse(json: JSONObject): Track = Track(
+            id = json.getString("id"),
+            title = json.getString("title"),
+            durationMs = json.getLong("durationMs"),
+            artist = if (json.isNull("artist")) null else json.optString("artist").takeIf { it.isNotEmpty() },
+            hasCover = json.optBoolean("hasCover", false),
+            coverVer = if (json.isNull("coverVer")) null else json.optLong("coverVer"),
+            hasLyrics = json.optBoolean("hasLyrics", false)
+        )
+    }
+}
 data class Credentials(val code: String, val memberId: String, val token: String)
 data class Member(val id: String, val name: String, val online: Boolean)
 data class RoomState(

@@ -8,7 +8,8 @@ app.ts：注册限流和WebSocket、创建Rooms、定义HTTP接口、统一错�
 ## 当前接口
 - GET /health：进程存活，返回 ok 与 rooms/onlineMembers/wsConnections 三个只读计数（计数由 Rooms 与传输层共同维护）。
 - POST /api/rooms，POST /api/rooms/:code/join：昵称入房，返回code/memberId/token。
-- GET /api/rooms/:code/catalog：成员鉴权后返回公开曲目数据。
+- GET /api/rooms/:code/catalog：成员鉴权后返回公开曲目数据（id/title/durationMs/artist/hasCover/coverVer/hasLyrics，无磁盘路径）。
+- GET /api/rooms/:code/cover/:id、GET /api/rooms/:code/lyrics/:id：成员令牌鉴权后分别下发封面字节与LRC文本；封面支持 JPG/PNG/WebP，缺失各自404。
 - DELETE /api/rooms/:code/membership：主动退出。
 - 音频和WS分别由独立模块注册。完整协议见 [协议](../protocol.md)。
 
@@ -40,3 +41,5 @@ SIGTERM后端口释放，重启可正常启动；不能遗留tick和打开的流
 buildApp的依赖注入/关闭钩子、代理信任、日志裁剪、路由鉴权顺序和环境变量默认值均需注释。
 2026-09-21：建档；路由schema和关闭流程加固待实现。
 2026-09-24：/health 追加只读计数（保持 ok 兼容）；create 传入 req.ip 接存量配额；事件通过 EventSink 注入，测试构建下为空操作。
+2026-09-26：catalog 扩至 7 字段；新增 cover/lyrics 两个只读路由（同一鉴权模板，见模块 08）。
+2026-09-27：封面从临时占位恢复为 catalog 独立图片优先、ID3 回退；客户端继续按 coverVer 缓存。

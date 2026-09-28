@@ -1,0 +1,21 @@
+[Unit]
+Description=ListenTogether metadata manager (SSH tunnel only)
+After=network.target
+
+[Service]
+Type=simple
+User=listen-metadata
+Group=listen
+WorkingDirectory=/opt/listen-together/metadata-manager
+ExecStart=/usr/bin/node /opt/listen-together/metadata-manager/scripts/metadata-manager.mjs --dir /opt/listen-together/media --cache /opt/listen-together/metadata-state/cache.json --trash /opt/listen-together/metadata-state/trash
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/listen-together/media /opt/listen-together/metadata-state
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target
