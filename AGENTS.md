@@ -100,3 +100,4 @@ cd D:\ListenTogether; .\scripts\check.ps1 -Scope scripts
 - 行为约定以 README"行为约定"与 docs/protocol.md 为准：单进程、内存房间、服务端为播放唯一来源、明确点击播放才能解除本机暂停。
 - 测试分层见 docs/modules/10-testing-observability.md：纯单测不访问公网；真机结论必须附操作步骤与实测数据。
 - 双机相关验收在没有第二台手机时保持挂起并显式标注。
+- 动手实现一个不熟悉的功能前，先搜 GitHub 上的相关开源实现（用 WebSearch/WebFetch 搜 `site:github.com` 或具体库名，本机未装 `gh` CLI）做参考，再写代码；搜到的结论（方案、坑、取舍）在交付说明里简述来源链接。只读参考，不整段拷贝代码，注意许可证。
