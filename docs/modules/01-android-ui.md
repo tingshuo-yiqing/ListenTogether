@@ -68,6 +68,7 @@ ListenApplication 持有进程级 RoomClient；页面通过 StateFlow 观察 UiS
 
 - 2026-09-27 下午：云端真机补验复现并修复「暂停歌曲翻歌词后不归位」；新增 `LyricsFollow.kt` + 4 项回归，恢复时同一行也重新滚动。按用户反馈移除「回到当前歌词」按钮，改为停止滚动 3 秒自动恢复，继续滚动重置计时；切歌重建歌词取值与列表状态。相机新入口已由用户实际扫码确认。证据见 [本轮记录](../test-results/2026-09-27-cloud-device-followup/README.md)。
 
+- 2026-09-28 深夜：**结构拆分 + 封面双层缓存**。①MainActivity 868→284 行，只留组合根（ScreenState 采样、MediaController 接线、扫码落地、弹窗装配）与 `formatTime`；界面构件按页拆为 `ui/HomeScreen.kt`（JoinInput/JoinInputSaver/JoinForm/InviteConfirmCard）、`ui/RoomScreen.kt`（RoomContent/StatusBanner/MembersSection/AvatarStack/PlaylistSection/PlaylistRow）、`ui/CommonUi.kt`（TopBar/ScanSourceSheet/InviteQrDialog），全部 `internal`，单 Activity + 单一不可变状态原则不变。②`CoverCache` 加内存 LruCache（堆 1/8、按 byteCount 计费、键含目标像素）+ 按 `targetPx` 降采样解码（`inSampleSize` 2 的幂）——44dp 缩略图不再解全尺寸 500×500 位图；`rememberCoverBitmap` 增加 `size: Dp` 参数（歌单行/MiniPlayer 44dp、展开页 180dp，尺寸也进 produceState 键）。③帧耗时复测（PHQ110 同工况快滑 12 次，21 首带真实封面）：debug 14.3% 掉帧/p90 40ms，R8 benchmark **1.1%/p90 16ms**——卡顿主因是 debug 包工具链（结论与 09-24 R8 口径一致），封面功能未破坏 R8 流畅度。
+
 ## 待开发
-拆分连接页、房间页和播放器组件为独立文件（MainActivity 已 860+ 行），保留单 Activity；采用单一不可变状态。
 歌词与封面已在元数据第一二轮落地（见上「变更记录」）；`lyricsVer` 缓存失效已闭环（2026-09-28：catalog 下发 `lyricsVer`，`LrcCache` 键 = id + lyricsVer，换词后旧缓存自然失配）。剩余：歌词长列表快滑的手感、2 倍系统字号下的歌词排版。批次 B 表情互动属协议扩展，动手前先定协议。

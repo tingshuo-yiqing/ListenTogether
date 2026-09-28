@@ -281,16 +281,18 @@ class RoomClient internal constructor(
     }
 
     /**
-     * 拉取当前曲目的封面：缓存命中即读文件，未命中下载到 coverDir/<id>-<coverVer> 再解码；
-     * 无封面 / 无会话 / 网络失败统一返回 null（UI 静默回退为占位）。
-     * 必须在协程中调用；本函数自己切到 IO 线程执行网络与文件 IO。
+     * 拉取当前曲目的封面：内存 LruCache 命中即返回；否则磁盘文件/网络下载原始字节，
+     * 按 [targetPx] 降采样解码并写入内存层。无封面 / 无会话 / 网络失败统一返回 null
+     * （UI 静默回退为占位）。
+     * 必须在协程中调用；本函数自己切到 IO 线程执行网络与文件 IO（内存命中可在主线程快速返回）。
      */
-    suspend fun fetchCover(track: Track): Bitmap? {
+    suspend fun fetchCover(track: Track, targetPx: Int): Bitmap? {
         val context = session ?: return null
         if (!track.hasCover || track.coverVer == null) return null
         val key = coverCache.key(track) ?: return null
+        coverCache.cached(key, targetPx)?.let { return it }
         val file = coverCache.file(key)
-        if (file.exists()) return withContext(Dispatchers.IO) { runCatching { coverCache.decode(file.readBytes()) }.getOrNull() }
+        if (file.exists()) return withContext(Dispatchers.IO) { runCatching { coverCache.decodeAndCache(key, targetPx, file.readBytes()) }.getOrNull() }
         return withContext(Dispatchers.IO) {
             runCatching {
                 val req = Request.Builder()
@@ -299,7 +301,7 @@ class RoomClient internal constructor(
                 http.newCall(req).execute().use { response ->
                     if (!response.isSuccessful) return@use null
                     val bytes = response.body?.bytes() ?: return@use null
-                    file.writeBytes(bytes); coverCache.decode(bytes)
+                    file.writeBytes(bytes); coverCache.decodeAndCache(key, targetPx, bytes)
                 }
             }.getOrNull()
         }

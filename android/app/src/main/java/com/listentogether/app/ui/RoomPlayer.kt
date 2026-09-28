@@ -225,7 +225,7 @@ internal fun MiniPlayer(
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val cover = rememberCoverBitmap(client, track)
+                val cover = rememberCoverBitmap(client, track, 44.dp)
                 Box(modifier = Modifier.size(44.dp), contentAlignment = Alignment.Center) {
                     if (cover != null) Image(bitmap = cover.asImageBitmap(), contentDescription = null, modifier = Modifier.size(44.dp).clip(RoundedCornerShape(6.dp)))
                     else if (track != null) CoverPlaceholder(44.dp)
@@ -282,7 +282,7 @@ internal fun PlayerSheet(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            val cover = rememberCoverBitmap(client, track)
+            val cover = rememberCoverBitmap(client, track, 180.dp)
             if (cover != null) {
                 Image(
                     bitmap = cover.asImageBitmap(),

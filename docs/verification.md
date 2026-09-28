@@ -1,8 +1,18 @@
 # 一起听歌 · 当前交付与验收记录
 
 项目：D:\ListenTogether
-更新日期：2026-09-28 深夜（分支合并 + 云端管理器 metadata-03 + lyricsVer 缓存失效 release 20260928-1815；同日：元数据真机验收与云端曲库同步、工作区三次清理、曲库删除轮、管理器三轮）
+更新日期：2026-09-28 深夜（结构拆分 + 封面双层缓存；此前：分支合并、云端管理器 metadata-03、lyricsVer release 20260928-1815；同日：元数据真机验收与云端曲库同步、工作区三次清理、曲库删除轮、管理器三轮）
 定位：**进度唯一事实来源**。当前状态看「状态一览」，待办看「尚待验收」；每轮交付以追加「本轮新增」小节的方式登记，测试细节由 docs/test-results/<日期-场景>/ 承载，更早的历史轮次已压缩为「交付历史索引」。
+
+## 本轮新增（结构拆分 + 封面双层缓存，2026-09-28 深夜，纯安卓重构、协议零改动）
+
+回应「滑动卡顿 + 结构优化」：先实测定位，再按勘察结论动刀。APK 新锚 **`F79DFE09…`** 已装机。
+
+- **卡顿定性（先测后改，PHQ110 同工况快滑 12 次、21 首带真实封面）**：debug 包 14.3% 掉帧/p90 40ms/p99 77ms；R8 benchmark（`assembleBenchmark` 重装实测）**1.1%/p90 16ms/p99 26ms**——用户手感的卡顿主因是 debug 包工具链（结论与 09-24「只认 R8 口径」一致），并证明 09-27 新增的歌单封面**没有**破坏 R8 流畅度。测量细节记于本轮会话，benchmark 包留在设备（`.benchmark` 后缀共存、不分发）。
+- **封面双层缓存（真实热点修复）**：`CoverCache` 加内存 LruCache（堆 1/8、按 `Bitmap.byteCount` 计费、键 = `<id>-<coverVer>@<目标像素>`）+ 按 `targetPx` 降采样解码（`inJustDecodeBounds` 先读边界、`inSampleSize` 取 2 的幂）——44dp 缩略图不再解全尺寸 500×500 位图（约 1MB/行），且滚回可见区不再重复解码（原实现每次 `produceState` 重触发全尺寸解码）。`rememberCoverBitmap` 增加 `size: Dp` 参数并进 `produceState` 键（歌单行/MiniPlayer 44dp、展开页 180dp）；`RoomClient.fetchCover(track, targetPx)` 内存命中可主线程快速返回。
+- **MainActivity 拆分（模块 01 挂账关闭）**：868 → **284** 行，只留组合根（ScreenState 采样、MediaController 接线、扫码落地、弹窗装配）与 `formatTime`（根包测试引用）；界面构件拆为 `ui/HomeScreen.kt`（221 行，JoinInput/JoinInputSaver/JoinForm/InviteConfirmCard，顺带删除 JoinForm 未使用的 snackbar 参数）、`ui/RoomScreen.kt`（308 行，RoomContent/StatusBanner/MembersSection/AvatarStack/PlaylistSection/PlaylistRow/statusLabel）、`ui/CommonUi.kt`（157 行，TopBar/ScanSourceSheet/InviteQrDialog），全部 `internal`；单 Activity + 单一不可变状态原则不变，权限 launcher 仍注册在 Activity（`ActivityResult` 契约不能挪进组合，见代码注释）。
+- **门禁与装机**：单测 **128/128 实跑**、Lint 0、Debug 构建通过；`F79DFE09…` USB 装机回拉逐位一致。真机冒烟（房间 3BD75E24 延续）：歌单封面经新降采样路径正常显示、展开页 180dp 大图正常、歌词新键 `he-bu-ke-2065….lrc` 命中不重复下载、磁盘 19 张封面完好；优化后 debug 包同工况掉帧 **14.3% → 11.0%**（p90 40→34ms，内存缓存消除了重复解码尖峰；剩余为 debug 工具链固有开销）。证据截图 `16-refactor-smoke.png`/`17-refactor-playersheet.png`。APK 版本历史已补行。
+- **边界**：本轮纯安卓重构，协议/服务端零改动；benchmark 包未重建（结构性变化对 R8 的影响待下次需要帧耗时结论时再测，届时以 benchmark 包为准）。
 
 ## 本轮新增（分支合并 + 云端管理器 metadata-03 + lyricsVer 缓存失效 release 20260928-1815，2026-09-28 深夜）
 
@@ -499,6 +509,7 @@ M4 四项部署门槛（2026-09-23 晚全部关闭）：
 
 | SHA256 | 日期 | 内容 | 单测 | 真机状态 |
 |---|---|---|---|---|
+| F79DFE09211D8EE55B4F24B88BC18CA49CE022CD2C97D12DF628A7FA7DA3BA41 | 09-28 深夜 | **当前交付锚（已装机）**：结构拆分（MainActivity 868→284，ui/HomeScreen+RoomScreen+CommonUi）+ 封面双层缓存（LruCache + inSampleSize 降采样，rememberCoverBitmap 加 size 参数） | 128 | **USB 装机 PHQ110 且回拉逐位一致**；装机冒烟通过（歌单/展开页封面、歌词缓存键命中、debug 掉帧 14.3%→11.0%） |
 | F762D90579C91B6600B3C1F53B20FD69208C2A9377E13D1C55DDDC4FFC951671 | 09-28 深夜 | **当前交付锚（已装机）**：lyricsVer 缓存失效——catalog 第 8 字段 `lyricsVer`，`LrcCache` 键 = id + lyricsVer（换词免清缓存），`ModelsTest` 补解析/键命名用例 | 128 | **USB 装机 PHQ110 且回拉逐位一致**；装机冒烟通过（歌词净本渲染 + 新缓存键实证，见 09-28 深夜节） |
 | A586F93C7E7487A8ACB67A4A82170D4AE4F2AF5EBA020DEA42AD9AA826D2E13F | 09-27 下午 | 歌词跟随修复 + 无按钮三秒回位（09-28 真机验收回拉与此锚逐位一致；与同源码重建可复现） | 127 | **已装机 PHQ110 且回拉逐位一致**（09-28 元数据真机验收轮复核） |
 | 854846985C5420A68CF05E677267FC9185CA0B6317432197181D8B46538BB77E | 09-27 白天 | 首页与扫码交互调整——扫码入口移到右上角、新增相册选图扫码（`LocalQrDecoder`）、删首页标语、邀请二维码弹窗改匀称 | 123 | 已装机（当晚被 A586F93C 取代）；用户实测相册选图扫码成功入房；截屏经 `jsQR` 独立反解确认码可扫 |
