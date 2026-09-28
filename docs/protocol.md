@@ -11,7 +11,7 @@ API 不返回文件系统路径。令牌只传 Authorization: Bearer <token>，�
 | GET /health | 存活检查 | {ok:true,rooms,onlineMembers,wsConnections} |
 | POST /api/rooms | {nickname} | {code,memberId,token} |
 | POST /api/rooms/:code/join | {nickname} | {code,memberId,token} |
-| GET /api/rooms/:code/catalog | 成员令牌 | [{id,title,durationMs,artist,hasCover,coverVer,hasLyrics}]，未知字段值为 null/false |
+| GET /api/rooms/:code/catalog | 成员令牌 | [{id,title,durationMs,artist,hasCover,coverVer,hasLyrics,lyricsVer}]，未知字段值为 null/false；`lyricsVer` 为歌词内容版本（内容哈希+mtime），客户端歌词缓存键 = id + lyricsVer，无歌词为 null |
 | GET /api/rooms/:code/audio/:id | 成员令牌，可选 Range | audio/mpeg |
 | GET /api/rooms/:code/cover/:id | 成员令牌 | 图片字节（image/jpeg \| image/png \| image/webp，Cache-Control: private, max-age=86400）；无封面 → 404 {"message":"该歌曲没有封面"}。catalog 独立封面优先，未配置时回退 MP3 内嵌封面 |
 | GET /api/rooms/:code/lyrics/:id | 成员令牌 | LRC 原文（text/plain; charset=utf-8，Cache-Control: private, no-store，整读不做 Range）；无歌词 → 404 {"message":"该歌曲没有歌词"}；引用文件已被删除 → 404 {"message":"歌词文件缺失，请联系管理员"} |

@@ -14,8 +14,8 @@ function coverMime(data: Buffer): string | null {
   return null;
 }
 
-/** 内容哈希加少量文件时间，替换同一路径的图片时客户端缓存键必然有机会变化。 */
-function coverVersion(data: Buffer, mtimeMs: number): number {
+/** 内容哈希加少量文件时间，替换同一路径的图片/歌词时客户端缓存键必然有机会变化。 */
+function contentVersion(data: Buffer, mtimeMs: number): number {
   const digest = Number.parseInt(createHash('sha256').update(data).digest('hex').slice(0, 10), 16);
   return digest * 4096 + (Math.round(mtimeMs) % 4096);
 }
@@ -27,7 +27,8 @@ export type Track = {
   artist: string | null;
   cover: CoverArt | null;
   coverVer: number | null;
-  lyricsPath: string | null;   // 新增：库内 .lrc 绝对路径（仅服务端使用，绝不下发）
+  lyricsPath: string | null;   // 库内 .lrc 绝对路径（仅服务端使用，绝不下发）
+  lyricsVer: number | null;    // 歌词内容版本：客户端歌词缓存键 = id + lyricsVer，换词必失效
 };
 
 export async function loadCatalog(directory: string): Promise<Track[]> {
@@ -71,7 +72,7 @@ export async function loadCatalog(directory: string): Promise<Track[]> {
       const mime = coverMime(data);
       if (!mime) throw new Error(`封面不是有效的 JPG、PNG 或 WebP：${entry.id}`);
       cover = { mime, data };
-      coverVer = coverVersion(data, coverInfo.mtimeMs);
+      coverVer = contentVersion(data, coverInfo.mtimeMs);
     } else {
       const picture = metadata.common.picture?.[0];
       if (picture && picture.data.length <= COVER_MAX_BYTES) {
@@ -79,13 +80,14 @@ export async function loadCatalog(directory: string): Promise<Track[]> {
         const mime = coverMime(data);
         if (mime) {
           cover = { mime, data };
-          coverVer = coverVersion(data, info.mtimeMs);
+          coverVer = contentVersion(data, info.mtimeMs);
         }
       }
     }
     // 歌词：catalog.json 可选 lyrics（库内相对路径）。与 mp3 同一套 realpath 防逃逸；
     // 只接受 .lrc、≤256KB，写坏路径让服务启动失败，而不是运行期 500。
     let lyricsPath: string | null = null;
+    let lyricsVer: number | null = null;
     const lyricsField = (entry as Record<string, unknown>).lyrics;
     if (typeof lyricsField === 'string' && lyricsField.trim()) {
       const lp = await realpath(resolve(root, lyricsField.trim()));
@@ -93,7 +95,9 @@ export async function loadCatalog(directory: string): Promise<Track[]> {
       const linfo = await stat(lp);
       if (!linfo.isFile() || linfo.size > LYRICS_MAX_BYTES) throw new Error(`歌词文件无效或超过 256KB：${entry.id}`);
       lyricsPath = lp;
+      // 文件启动时已校验 ≤256KB，读入算版本代价可忽略；换词（指针换新文件或原地改写）都会变。
+      lyricsVer = contentVersion(await readFile(lp), linfo.mtimeMs);
     }
-    return { id: entry.id, title: entry.title, path, size: info.size, durationMs, artist, cover, coverVer, lyricsPath };
+    return { id: entry.id, title: entry.title, path, size: info.size, durationMs, artist, cover, coverVer, lyricsPath, lyricsVer };
   }));
 }

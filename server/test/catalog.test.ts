@@ -84,9 +84,18 @@ test('catalog validates optional lyrics references at load time', async t => {
   await writeFile(manifest, JSON.stringify([{ id: 'tone', title: '有词', file: 'tone.mp3', lyrics: 'tone.lrc' }]));
   const a = await loadCatalog(root);
   assert.ok(a[0].lyricsPath && a[0].lyricsPath.endsWith('tone.lrc'));
-  // ② 无 lyrics 字段 → null。
+  // lyricsVer：内容哈希 + mtime，非空且数值稳定；换词（原地改写）后版本必变，客户端据此失效缓存。
+  assert.equal(typeof a[0].lyricsVer, 'number');
+  const verBefore = a[0].lyricsVer;
+  const again = await loadCatalog(root);
+  assert.equal(again[0].lyricsVer, verBefore);
+  await writeFile(join(root, 'tone.lrc'), '[00:01.00] 换词后的第一行\n');
+  assert.notEqual((await loadCatalog(root))[0].lyricsVer, verBefore);
+  // ② 无 lyrics 字段 → null（lyricsVer 同步为 null）。
   await writeFile(manifest, JSON.stringify([{ id: 'tone', title: '无词', file: 'tone.mp3' }]));
-  assert.equal((await loadCatalog(root))[0].lyricsPath, null);
+  const noLyrics = (await loadCatalog(root))[0];
+  assert.equal(noLyrics.lyricsPath, null);
+  assert.equal(noLyrics.lyricsVer, null);
   // ③ ../ 逃逸与外部绝对路径都必须被 realpath+前缀比较拦下。
   await writeFile(join(outside, 'away.lrc'), 'x');
   await writeFile(manifest, JSON.stringify([{ id: 'tone', title: '逃', file: 'tone.mp3', lyrics: relative(root, join(outside, 'away.lrc')) }]));

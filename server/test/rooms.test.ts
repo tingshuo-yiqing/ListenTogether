@@ -7,7 +7,7 @@ import { Rooms, IP_ROOM_QUOTA } from '../src/rooms/store.js';
 import type { ServerEvent } from '../src/events.js';
 import type { Track } from '../src/library/catalog.js';
 
-const track = (id = 'one', durationMs = 10000): Track => ({ id, title: id, durationMs, path: '', size: 10, artist: null, cover: null, coverVer: null, lyricsPath: null });
+const track = (id = 'one', durationMs = 10000): Track => ({ id, title: id, durationMs, path: '', size: 10, artist: null, cover: null, coverVer: null, lyricsPath: null, lyricsVer: null });
 async function until(predicate: () => Promise<boolean> | boolean) {
   const end = Date.now() + 5000;
   while (!(await predicate())) { if (Date.now() > end) throw new Error('timeout'); await new Promise(resolve => setTimeout(resolve, 20)); }

@@ -7,7 +7,7 @@ import { buildApp } from '../src/app.js';
 import type { Track } from '../src/library/catalog.js';
 
 function track(id: string, overrides: Partial<Track> = {}): Track {
-  return { id, title: id, durationMs: 10000, path: '', size: 100, artist: null, cover: null, coverVer: null, lyricsPath: null, ...overrides };
+  return { id, title: id, durationMs: 10000, path: '', size: 100, artist: null, cover: null, coverVer: null, lyricsPath: null, lyricsVer: null, ...overrides };
 }
 
 test('lyrics: authentication, missing track/lyrics, UTF-8 text and no-store', async t => {

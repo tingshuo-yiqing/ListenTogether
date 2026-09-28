@@ -2,7 +2,7 @@ package com.listentogether.app.network
 
 import org.json.JSONObject
 
-data class Track(val id: String, val title: String, val durationMs: Long, val artist: String? = null, val hasCover: Boolean = false, val coverVer: Long? = null, val hasLyrics: Boolean = false) {
+data class Track(val id: String, val title: String, val durationMs: Long, val artist: String? = null, val hasCover: Boolean = false, val coverVer: Long? = null, val hasLyrics: Boolean = false, val lyricsVer: Long? = null) {
     companion object {
         fun parse(json: JSONObject): Track = Track(
             id = json.getString("id"),
@@ -11,7 +11,8 @@ data class Track(val id: String, val title: String, val durationMs: Long, val ar
             artist = if (json.isNull("artist")) null else json.optString("artist").takeIf { it.isNotEmpty() },
             hasCover = json.optBoolean("hasCover", false),
             coverVer = if (json.isNull("coverVer")) null else json.optLong("coverVer"),
-            hasLyrics = json.optBoolean("hasLyrics", false)
+            hasLyrics = json.optBoolean("hasLyrics", false),
+            lyricsVer = if (json.isNull("lyricsVer")) null else json.optLong("lyricsVer")
         )
     }
 }

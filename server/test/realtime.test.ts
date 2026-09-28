@@ -6,7 +6,7 @@ import { buildApp } from '../src/app.js';
 import { createSender, startHeartbeat, HANDSHAKE_LIMIT, HEARTBEAT_INTERVAL_MS, MAX_BUFFERED_BYTES } from '../src/realtime/socket.js';
 import type { Track } from '../src/library/catalog.js';
 
-const track = (id = 'one', durationMs = 10000): Track => ({ id, title: id, durationMs, path: '', size: 10, artist: null, cover: null, coverVer: null, lyricsPath: null });
+const track = (id = 'one', durationMs = 10000): Track => ({ id, title: id, durationMs, path: '', size: 10, artist: null, cover: null, coverVer: null, lyricsPath: null, lyricsVer: null });
 const createRoom = (app: FastifyInstance) => app.inject({ method: 'POST', url: '/api/rooms', payload: { nickname: 'host' } }).then(res => res.json());
 
 async function until(predicate: () => Promise<boolean> | boolean) {

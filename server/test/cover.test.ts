@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { buildApp } from '../src/app.js';
 import type { Track } from '../src/library/catalog.js';
 function track(id: string, overrides: Partial<Track> = {}): Track {
-  return { id, title: id, durationMs: 10000, path: '', size: 100, artist: null, cover: null, coverVer: null, lyricsPath: null, ...overrides };
+  return { id, title: id, durationMs: 10000, path: '', size: 100, artist: null, cover: null, coverVer: null, lyricsPath: null, lyricsVer: null, ...overrides };
 }
 test('cover: authentication, missing track, missing cover and successful bytes', async t => {
   const directory = await mkdtemp(join(tmpdir(), 'listen-cover-'));
@@ -51,9 +51,9 @@ test('catalog JSON includes artist/hasCover/coverVer/hasLyrics with null semanti
   t.after(() => app.close());
   const host = (await app.inject({ method: 'POST', url: '/api/rooms', payload: { nickname: 'h' } })).json();
   const list = (await app.inject({ url: '/api/rooms/' + host.code + '/catalog', headers: { authorization: 'Bearer ' + host.token } })).json();
-  assert.deepEqual(list.find((x: Track) => x.id === 'with-art'), { id: 'with-art', title: 'with-art', durationMs: 10000, artist: '歌手', hasCover: false, coverVer: null, hasLyrics: false });
-  assert.deepEqual(list.find((x: Track) => x.id === 'no-art'), { id: 'no-art', title: 'no-art', durationMs: 10000, artist: null, hasCover: false, coverVer: null, hasLyrics: false });
-  assert.deepEqual(list.find((x: Track) => x.id === 'with-cover'), { id: 'with-cover', title: 'with-cover', durationMs: 10000, artist: null, hasCover: true, coverVer: 999, hasLyrics: false });
+  assert.deepEqual(list.find((x: Track) => x.id === 'with-art'), { id: 'with-art', title: 'with-art', durationMs: 10000, artist: '歌手', hasCover: false, coverVer: null, hasLyrics: false, lyricsVer: null });
+  assert.deepEqual(list.find((x: Track) => x.id === 'no-art'), { id: 'no-art', title: 'no-art', durationMs: 10000, artist: null, hasCover: false, coverVer: null, hasLyrics: false, lyricsVer: null });
+  assert.deepEqual(list.find((x: Track) => x.id === 'with-cover'), { id: 'with-cover', title: 'with-cover', durationMs: 10000, artist: null, hasCover: true, coverVer: 999, hasLyrics: false, lyricsVer: null });
   const lyricsRow = list.find((x: Track) => x.id === 'with-lyrics');
   assert.equal(lyricsRow.hasLyrics, true);
   // 绝对文件路径绝不出服务端，只下发布尔位。

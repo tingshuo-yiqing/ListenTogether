@@ -44,17 +44,18 @@ export type Track = {
   cover: { mime: string; data: Buffer } | null;  // 新增：独立文件优先、ID3 回退，启动时常驻内存
   coverVer: number | null;          // 新增：图片内容版本，客户端缓存键
   lyricsPath: string | null;        // 新增：库内 .lrc 文件绝对路径（仅服务端使用）
+  lyricsVer: number | null;         // 2026-09-28：歌词内容版本（内容哈希+mtime），客户端缓存键
 };
 ```
 
-catalog 下发字段（固定 7 个，未知值为 `null`，便于文档作为唯一出处与测试断言）：
+catalog 下发字段（固定 8 个，未知值为 `null`，便于文档作为唯一出处与测试断言；`album` 属第三轮、暂不下发）：
 
 ```json
 { "id": "song-01", "title": "歌名", "durationMs": 213000,
-  "artist": "歌手", "album": "专辑", "hasCover": true, "hasLyrics": false }
+  "artist": "歌手", "hasCover": true, "hasLyrics": false, "lyricsVer": 502594349944104 }
 ```
 
-`coverVer` 也一并下发（`hasCover=false` 时为 `null`）：客户端封面缓存键 = `id + coverVer`，图片替换后版本变化，缓存自然失效。`path`/`size`/`cover`/`lyricsPath` 仍不出服务端。
+`coverVer` 也一并下发（`hasCover=false` 时为 `null`）：客户端封面缓存键 = `id + coverVer`，图片替换后版本变化，缓存自然失效。`lyricsVer`（`hasLyrics=false` 时为 `null`）：客户端歌词缓存键 = `id + lyricsVer`，换词后旧缓存自然失配。`path`/`size`/`cover`/`lyricsPath` 仍不出服务端。
 
 ## 3. 数据来源与优先级
 

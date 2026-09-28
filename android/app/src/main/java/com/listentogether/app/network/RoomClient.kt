@@ -330,14 +330,14 @@ class RoomClient internal constructor(
     }
 
     /**
-     * 拉取当前曲目的 LRC 歌词原文：缓存命中即读文件，未命中下载到 lyricsDir/<id>.lrc；
+     * 拉取当前曲目的 LRC 歌词原文：缓存命中即读文件，未命中下载到 lyricsDir/<id>-<lyricsVer>.lrc；
      * 无会话 / 无歌词 / 网络失败统一返回 null（UI 显示占位文案）。
      * 必须在协程中调用；本函数自己切到 IO 线程执行网络与文件 IO。
      */
     suspend fun fetchLyrics(track: Track): String? {
         val context = session ?: return null
         if (!track.hasLyrics) return null
-        val file = lrcCache.file(track.id)
+        val file = lrcCache.file(track.id, track.lyricsVer)
         if (file.exists()) return withContext(Dispatchers.IO) { runCatching { file.readText() }.getOrNull() }
         return withContext(Dispatchers.IO) {
             runCatching {

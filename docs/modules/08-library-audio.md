@@ -36,7 +36,7 @@ coverVer由图片内容哈希和文件时间生成；替换图片后客户端缓
 补充路径穿越、符号链接、文件变更/删除、客户端中断下载、并发Range的测试。
 明确管理规则：播放期间不覆盖文件；检测到文件与启动元数据不一致时返回可解释错误并要求管理员重载。
 连接关闭必须释放文件流，避免15路反复拖动后文件句柄增长。
-歌词版本化（lyricsVer）待歌词来源稳定后再议：当前本机缓存键只有曲目id，服务端换歌词后旧文本不过期。
+歌词版本化（lyricsVer）已于 2026-09-28 落地：`loadCatalog` 启动时对每个 `.lrc` 算内容哈希+mtime 版本，catalog 下发第 8 字段 `lyricsVer`（无歌词为 null）；安卓 `LrcCache` 缓存键 = id + lyricsVer，换词后旧缓存自然失配重新下载（服务端 `server/src/library/catalog.ts`，安卓 `LrcCache.kt`/`Models.kt`）。
 元数据联网匹配已并入上述管理器，原命令行同步器 `scripts/fetch-metadata.mjs` **已于 2026-09-27 删除、文件不存在**：抓取/打分/缓存的唯一实现是 `scripts/lib/metadata-sources.mjs`（QQ 音乐 / 网易云 / MusicBrainz 三源，共用一套阈值与 `buildChanges` 落库白名单）。候选只读、勾选后才写库，低置信度结果必须人工复核；出网只取搜索文本与封面地址，不下载音频、不带登录 Cookie。
 
 ## 异常与验收
