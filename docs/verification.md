@@ -1,8 +1,16 @@
 # 一起听歌 · 当前交付与验收记录
 
 项目：D:\ListenTogether
-更新日期：2026-09-26
+更新日期：2026-09-28
 定位：**进度唯一事实来源**。当前状态看「状态一览」，待办看「尚待验收」；每轮交付以追加「本轮新增」小节的方式登记，测试细节由 docs/test-results/<日期-场景>/ 承载，更早的历史轮次已压缩为「交付历史索引」。
+
+## 本轮新增（工作区三次清理，2026-09-28，无代码改动、无新代码 hash）
+
+按[仓库清理标准](development-standards.md)六条执行的第三次清理：勘察（git 基线干净 + 全 docs 引用扫描）→ 逐项结论 → 清单经用户确认（A+B 全部执行）→ 只删安全区 → 删后门禁 → 本节登记。代码与协议零改动。
+
+- **删除项（均 gitignore 覆盖、冗余/可再生，回收约 784MB，项目体积约 998MB → 214MB，git 跟踪文件零删除）**：①`.workbuddy/` 476MB → 4.5MB——删除 09-26 云端曲库上云的三个暂存（`tmp-lt-media.tar` / `tmp-lt-media-ascii.tar` / `media-stage` 各 133MB，本地 `media/` 完整 + 云端在产，纯冗余）、`cloud-device-followup/`（41MB，09-27 设备跟进 session 残留：两个过期 APK 副本 + 截图，docs 引用扫描零命中）、`deliverable-b1e80573.apk`（20MB 旧 session 交付副本）、`shots/`（14MB session 截图，证据已归档 docs/test-results/）、09-27 部署暂存与快照（deploy-stage-*/deploy2-stage-*/snapshot-*，<1MB）；②`android/app/build/`（313MB）全清后全量重建。
+- **保留项**：`.workbuddy/memory/` 与可复跑驱动脚本（标准明文永不删）、`qrtool/`（二维码验证可复跑工具）、metadata/organize 脚本与 catalog 备份（09-27 个人曲库工作流，<1MB）、**`media/` 133MB 用户曲库本地副本**（云端 `/opt/listen-together/media` 在产 + `media-originals/` 有备份，本地用途不确定，按标准第 2 条保留并标注）、`demo-media/`（含本地唯一副本个人音频）、`docs/test-results/` 证据链、`server/`、`android/.gradle`（5.7MB 不值得动）。
+- **门禁（实跑）**：全量重建后 `cleanTestDebugUnitTest → testDebugUnitTest → assembleDebug → lintDebug` BUILD SUCCESSFUL（3m22s，53/54 任务实跑），单测 **96/96 实跑、0 失败/错误/跳过**（XML 报告逐个统计），Lint 通过，`app-debug.apk` 再生 `a9289e82…`（代码未变，装机锚仍为 **517A776B…**，再生副本字节不同属 Gradle 正常非确定性）；`git status` 0 变更。
 
 ## 本轮新增（工作区二次清理 + 清理标准定型，2026-09-26 深夜，无代码改动、无新 hash）
 
