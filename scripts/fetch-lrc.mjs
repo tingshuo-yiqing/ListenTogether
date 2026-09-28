@@ -40,6 +40,9 @@ function api(params) {
   const qs = new URLSearchParams(params).toString();
   return new Promise((resolve, reject) => {
     https.get({ host: 'lrclib.net', path: '/api/search?' + qs, headers: { 'User-Agent': UA } }, res => {
+      // 必须先 setEncoding('utf8') 再收 data：直接 data += chunk 会把每个 Buffer 块独立解码，
+      // 跨块被切断的汉字整体变成 U+FFFD（09-27 上云歌词两文件损坏的根因，见开发陷阱清单）。
+      res.setEncoding('utf8');
       let data = ''; res.on('data', c => data += c);
       res.on('end', () => {
         try {
