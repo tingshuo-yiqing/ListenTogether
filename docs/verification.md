@@ -11,7 +11,7 @@
 - **①分支合并（main ← codex/metadata-manager-cloud，merge commit `7428c0c`）**：冲突仅 docs/verification.md（两侧各加了 09-28 顶部小节），按时间序手工合并并顺手修掉一处重复的更新日期行；`check-doc-links` 通过。此前 codex 分支上遗漏暂存的 `media/catalog.json`（21 首合并口径）已补提交（`02844ca`）。合并后 main 含全部历史，工作继续在 main。
 - **②云端管理器 20260928-metadata-03（prev 20260928-metadata-02 可回滚）**：按既有发布流程（独立版本目录 + 夹具验收 + 切链接 + rollback trap），服务器侧 `node --test scripts/lib` **37/37**、离线驱动 **85/85**；发布前后生产 `media/catalog.json` SHA256 逐字节相同（21 首），管理器回 21 首、`/api/sources` 正常；**未重启播放后端**。tarball SHA256 `1c688613…`。
 - **③lyricsVer（协议扩展：catalog 第 8 字段）**：服务端 `loadCatalog` 对每个 `.lrc` 算内容哈希+mtime 版本（`coverVersion` 泛化更名 `contentVersion`，与封面同源），`/catalog` 下发 `lyricsVer`（无歌词 null）；安卓 `Track` 解析 + `LrcCache` 缓存键改 `id-lyricsVer`（旧服务端缺字段时退回纯 id 键，向后兼容），换词后旧缓存自然失配重新下载，**「换歌词要手动清客户端缓存」的挂账就此关闭**。测试：服务端 `catalog.test.ts` 新增「换词版本必变/无词 null」断言、`cover.test.ts` null 语义扩展，**30/30** + tsc 0；安卓 `ModelsTest` 补解析与键命名用例，**128/128 实跑、0 失败**（127+1），Lint 0。文档同步：[protocol.md](protocol.md) REST 表、[设计稿](track-metadata-design.md)第 2 节（顺带把「固定 7 字段/album 下发」修正为实际的 8 字段、album 属第三轮未下发）、[模块 01](modules/01-android-ui.md)/[模块 08](modules/08-library-audio.md) 挂账关闭。
-- **部署与装机边界（如实标注）**：服务端 **release 20260928-1815**（prev 20260928-1718 可回滚；tarball SHA256 `f40cf886…`）已上云，基线 **14/14**；新 debug APK `F762D90579C91B6600B3C1F53B20FD69208C2A9377E13D1C55DDDC4FFC951671`（20,489,803 字节）**已构建、门禁全过，但装机冒烟未做**——无线 adb 在部署间隙掉线（mDNS 无广播，符合陷阱 2.8 息屏冻结 adbd），待设备恢复后装机并冒烟（入房看歌词 + 管理器换词后客户端免清缓存自动更新）。
+- **部署与装机（USB 冒烟通过）**：服务端 **release 20260928-1815**（prev 20260928-1718 可回滚；tarball SHA256 `f40cf886…`）已上云，基线 **14/14**；新 debug APK `F762D90579C91B6600B3C1F53B20FD69208C2A9377E13D1C55DDDC4FFC951671`（20,489,803 字节）USB 装机 PHQ110、回拉逐位一致。冒烟（房间 3BD75E24）：播放 PLAYING 1.0x、真实封面与歌手行正常、《有何不可》歌词净本渲染；**缓存键实证**——`cache/lyrics/` 出现新键 `he-bu-ke-2065500089251888.lrc`（0 个 U+FFFD），历史旧键 `<id>.lrc` 文件不再被命中（等待 LRU 淘汰），即 lyricsVer 链路端到端生效；「管理器换词 → 重启后端 → 客户端免清缓存自动拉新词」的完整 E2E 待下次实际换词时顺带验证（换词本就需重启后端加载新 catalog，见陷阱 8.10）。证据截图 `15-smoke-new-apk-lyrics.png`。
 - **⑤清理**：删除本轮一次性产物（media 同步包 127MB + 暂存目录 136MB、两个 server-only 包、metadata-03 包、装机回拉 APK 副本），`.workbuddy` 维持 ~4.6MB；`media-originals` 三份备份（平铺旧库/坏歌词/合并前 catalog）全部保留。
 
 ## 本轮新增（元数据链路真机验收 + 云端曲库同步 + release 20260928-1718，2026-09-28 傍晚）
@@ -499,7 +499,7 @@ M4 四项部署门槛（2026-09-23 晚全部关闭）：
 
 | SHA256 | 日期 | 内容 | 单测 | 真机状态 |
 |---|---|---|---|---|
-| F762D90579C91B6600B3C1F53B20FD69208C2A9377E13D1C55DDDC4FFC951671 | 09-28 深夜 | **当前交付锚**：lyricsVer 缓存失效——catalog 第 8 字段 `lyricsVer`，`LrcCache` 键 = id + lyricsVer（换词免清缓存），`ModelsTest` 补解析/键命名用例 | 128 | **构建通过、门禁全过，未装机**（无线 adb 掉线，装机冒烟待设备恢复） |
+| F762D90579C91B6600B3C1F53B20FD69208C2A9377E13D1C55DDDC4FFC951671 | 09-28 深夜 | **当前交付锚（已装机）**：lyricsVer 缓存失效——catalog 第 8 字段 `lyricsVer`，`LrcCache` 键 = id + lyricsVer（换词免清缓存），`ModelsTest` 补解析/键命名用例 | 128 | **USB 装机 PHQ110 且回拉逐位一致**；装机冒烟通过（歌词净本渲染 + 新缓存键实证，见 09-28 深夜节） |
 | A586F93C7E7487A8ACB67A4A82170D4AE4F2AF5EBA020DEA42AD9AA826D2E13F | 09-27 下午 | 歌词跟随修复 + 无按钮三秒回位（09-28 真机验收回拉与此锚逐位一致；与同源码重建可复现） | 127 | **已装机 PHQ110 且回拉逐位一致**（09-28 元数据真机验收轮复核） |
 | 854846985C5420A68CF05E677267FC9185CA0B6317432197181D8B46538BB77E | 09-27 白天 | 首页与扫码交互调整——扫码入口移到右上角、新增相册选图扫码（`LocalQrDecoder`）、删首页标语、邀请二维码弹窗改匀称 | 123 | 已装机（当晚被 A586F93C 取代）；用户实测相册选图扫码成功入房；截屏经 `jsQR` 独立反解确认码可扫 |
 | AE3DFF35B16FE3570ACFB7AF2C36063F1DA8447DFAD0AF0437BB604D2C28A6B8 | 09-27 白天 | 同源码 R8 benchmark，性能测试专用、不分发 | 123（debug 侧计） | 构建通过，未装机 |
