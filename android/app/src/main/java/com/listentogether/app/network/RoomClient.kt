@@ -1,6 +1,7 @@
 package com.listentogether.app.network
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.os.SystemClock
 import com.listentogether.app.BuildConfig
 import com.listentogether.app.diagnostics.Diagnostics
@@ -59,6 +60,9 @@ class RoomClient internal constructor(
     private val monoMs: () -> Long,
     private val transport: HttpTransport,
     private val wsFactory: WebSocket.Factory,
+    private val http: OkHttpClient,
+    private val coverCache: CoverCache,
+    private val lrcCache: LrcCache,
     mainDispatcher: CoroutineDispatcher
 ) {
     private val scope = CoroutineScope(SupervisorJob() + mainDispatcher)
@@ -141,7 +145,7 @@ class RoomClient internal constructor(
                 session = context
                 created = context
                 val catalog = JSONArray(request(context, "GET", "/api/rooms/" + credentials.code + "/catalog"))
-                val tracks = (0 until catalog.length()).map { val t = catalog.getJSONObject(it); Track(t.getString("id"), t.getString("title"), t.getLong("durationMs")) }
+                val tracks = (0 until catalog.length()).map { Track.parse(catalog.getJSONObject(it)) }
                 mutable.value = UiState(status = ConnectionStatus.Connecting, credentials = credentials, tracks = tracks, message = "正在连接房间")
                 attempt = 0
                 diag.connection("join", credentials.code, "generation=${context.generation}")
@@ -276,6 +280,31 @@ class RoomClient internal constructor(
         onState?.invoke()
     }
 
+    /**
+     * 拉取当前曲目的封面：缓存命中即读文件，未命中下载到 coverDir/<id>-<coverVer> 再解码；
+     * 无封面 / 无会话 / 网络失败统一返回 null（UI 静默回退为占位）。
+     * 必须在协程中调用；本函数自己切到 IO 线程执行网络与文件 IO。
+     */
+    suspend fun fetchCover(track: Track): Bitmap? {
+        val context = session ?: return null
+        if (!track.hasCover || track.coverVer == null) return null
+        val key = coverCache.key(track) ?: return null
+        val file = coverCache.file(key)
+        if (file.exists()) return withContext(Dispatchers.IO) { runCatching { coverCache.decode(file.readBytes()) }.getOrNull() }
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val req = Request.Builder()
+                    .url(context.baseUrl + "/api/rooms/" + context.credentials.code + "/cover/" + track.id)
+                    .header("Authorization", "Bearer " + context.credentials.token).build()
+                http.newCall(req).execute().use { response ->
+                    if (!response.isSuccessful) return@use null
+                    val bytes = response.body?.bytes() ?: return@use null
+                    file.writeBytes(bytes); coverCache.decode(bytes)
+                }
+            }.getOrNull()
+        }
+    }
+
     fun updatePosition(position: Long) { mutable.value = state.value.copy(positionMs = position.coerceAtLeast(0)) }
     fun report(message: String) { mutable.value = state.value.copy(message = message) }
 
@@ -300,6 +329,30 @@ class RoomClient internal constructor(
         }
     }
 
+    /**
+     * 拉取当前曲目的 LRC 歌词原文：缓存命中即读文件，未命中下载到 lyricsDir/<id>.lrc；
+     * 无会话 / 无歌词 / 网络失败统一返回 null（UI 显示占位文案）。
+     * 必须在协程中调用；本函数自己切到 IO 线程执行网络与文件 IO。
+     */
+    suspend fun fetchLyrics(track: Track): String? {
+        val context = session ?: return null
+        if (!track.hasLyrics) return null
+        val file = lrcCache.file(track.id)
+        if (file.exists()) return withContext(Dispatchers.IO) { runCatching { file.readText() }.getOrNull() }
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val req = Request.Builder()
+                    .url(context.baseUrl + "/api/rooms/" + context.credentials.code + "/lyrics/" + track.id)
+                    .header("Authorization", "Bearer " + context.credentials.token).build()
+                http.newCall(req).execute().use { response ->
+                    if (!response.isSuccessful) return@use null
+                    val text = response.body?.string() ?: return@use null
+                    file.writeText(text); text
+                }
+            }.getOrNull()
+        }
+    }
+
     companion object {
         /** 进程共享的 OkHttp：HTTP 与 WebSocket 共用连接池；15 秒调用超时，15 秒 WS ping 检测半开连接。 */
         private val sharedHttp: OkHttpClient by lazy {
@@ -307,8 +360,14 @@ class RoomClient internal constructor(
         }
 
         /** 生产入口：SharedPreferences 存储、系统单调时钟、OkHttp 传输、Main.immediate 调度。 */
-        fun create(context: Context, diag: Diagnostics): RoomClient = RoomClient(
-            SharedPrefsStore(context), diag, SystemClock::elapsedRealtime, okHttpTransport(sharedHttp), sharedHttp, Dispatchers.Main.immediate
-        )
+        fun create(context: Context, diag: Diagnostics): RoomClient {
+            val http = sharedHttp
+            return RoomClient(
+                SharedPrefsStore(context), diag, SystemClock::elapsedRealtime,
+                okHttpTransport(http), http, http, CoverCache(java.io.File(context.cacheDir, "covers")),
+                LrcCache(java.io.File(context.cacheDir, "lyrics")),
+                Dispatchers.Main.immediate
+            )
+        }
     }
 }

@@ -51,7 +51,7 @@ test('封面拒绝跳往内网；流式限制不能靠伪造Content-Length绕过
   assert.throws(() => imageExtension(Buffer.from('<html>error</html>')), /图片/);
 });
 
-test('真实管理器：封面与歌词一键落库、失败隔离、票据绑定、补缺和回滚', { timeout: 45000 }, async () => {
+test('真实管理器：封面与歌词一键落库、失败隔离、票据绑定、补缺、歌词替换和回滚', { timeout: 45000 }, async () => {
   const root = resolve(import.meta.dirname, '../..');
   const temp = await mkdtemp(join(tmpdir(), 'lt-assets-'));
   let child;
@@ -100,7 +100,8 @@ test('真实管理器：封面与歌词一键落库、失败隔离、票据绑�
         body: body === undefined ? undefined : JSON.stringify(body) });
       return { code: response.status, value: await response.json() };
     }
-    const sync = async (id = 'a') => (await api('/api/tracks/' + id + '/sync', { includeLyrics: true })).value;
+    const sync = async (id = 'a', onlyIfEmpty = false) =>
+      (await api('/api/tracks/' + id + '/sync', { includeLyrics: true, onlyIfEmpty })).value;
     const snapshot = () => readFile(catalog, 'utf8');
     const matched = await sync();
     assert.equal(matched.lyrics.kind, 'synced');
@@ -118,10 +119,23 @@ test('真实管理器：封面与歌词一键落库、失败隔离、票据绑�
     assert.deepEqual(await readFile(join(temp, saved.cover)), Buffer.from(png, 'base64'));
     assert.equal((await loadCatalog(temp)).length, 2);
     const existing = await sync();
-    assert.equal(existing.changes.cover, undefined); assert.equal(existing.changes.lyrics, undefined);
+    // 单曲口径（用户 2026-09-28 要求）：已有歌词照样给出替换候选并默认勾选；已有封面仍不自动勾。
+    assert.equal(existing.changes.cover, undefined);
+    assert.equal(existing.changes.lyrics, existing.assetToken);
+    // 批量口径：onlyIfEmpty 下已有歌词不得被报成"可补"，否则一键补缺会换掉整库歌词。
+    assert.equal((await sync('a', true)).changes.lyrics, undefined);
     const beforeSkip = await snapshot();
     assert.equal((await api('/api/tracks/a/apply', { fields: { cover: existing.assetToken, lyrics: existing.assetToken }, onlyIfEmpty: true })).value.skipped, true);
     assert.equal(await snapshot(), beforeSkip);
+    // 不带 onlyIfEmpty 才真替换：另起新文件、只改 catalog 指针，旧 .lrc 原样留在盘上。
+    const replaced = await api('/api/tracks/a/apply', { fields: { lyrics: existing.assetToken } });
+    assert.equal(replaced.code, 200);
+    assert.deepEqual(replaced.value.applied, ['lyrics']);
+    assert.deepEqual(replaced.value.failed, []);
+    const afterReplace = JSON.parse(await snapshot())[0];
+    assert.match(afterReplace.lyrics, /^lyrics\//);
+    assert.notEqual(afterReplace.lyrics, saved.lyrics, '替换要另起文件，不能覆盖旧歌词内容');
+    assert.match(await readFile(join(temp, saved.lyrics), 'utf8'), /fixture lyrics/, '旧 .lrc 必须留在原地供回退');
     await api('/api/tracks/a', { title: 'Changed' }, 'PUT');
     assert.equal((await api('/api/tracks/a/apply', { fields: { lyrics: existing.assetToken } })).code, 409);
     await writeFile(catalog, JSON.stringify(entries));

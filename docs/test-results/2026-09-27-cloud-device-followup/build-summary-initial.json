@@ -1,0 +1,22 @@
+{
+  "tests": 127,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "classes": 20,
+  "lintIssues": 0,
+  "apks": {
+    "debug": {
+      "bytes": 20489954,
+      "sha256": "54a52f8a9d710f88e12996f243126e709ca5ad5e1fbd16418717b6df0764641c"
+    },
+    "benchmark": {
+      "bytes": 2445981,
+      "sha256": "aab43d10db0ee9a9de5226e5f3119f787bf926ca025e99bc1f9e21b94de61ad5"
+    }
+  },
+  "installed": {
+    "bytes": 20489954,
+    "sha256": "54a52f8a9d710f88e12996f243126e709ca5ad5e1fbd16418717b6df0764641c"
+  }
+}

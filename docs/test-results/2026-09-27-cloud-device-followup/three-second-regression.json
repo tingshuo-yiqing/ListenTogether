@@ -1,0 +1,12 @@
+{
+  "earlyStillBrowsing": true,
+  "continuedStillBrowsing": true,
+  "settledMatchesBaseline": true,
+  "pixelMeanDifference": {
+    "early": 11.46329912371579,
+    "continued": 12.338850578433911,
+    "settled": 0.0
+  },
+  "pausePosition": "0:50",
+  "returnButtonPresent": false
+}

@@ -1,0 +1,9 @@
+{
+  "backendRelease": "20260927-1240",
+  "track": "he-bu-ke",
+  "httpStatus": 200,
+  "bytes": 2147,
+  "httpSha256": "583ffd17a932cfa147969566beb2f1c99e6587f554862bf93608770c5a096a3f",
+  "deviceSha256": "583ffd17a932cfa147969566beb2f1c99e6587f554862bf93608770c5a096a3f",
+  "deviceStat": "-rw------- 1 u0_a364 u0_a364_cache 2147 2026-09-27 17:28 cache/lyrics/he-bu-ke.lrc"
+}

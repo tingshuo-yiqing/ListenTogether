@@ -245,7 +245,8 @@
       <div id="batch-report"></div>
       <div class="footer-note" style="margin-top:10px">
         批量匹配默认命中缓存即跳过出网；「一键补缺」只写当前为空的字段，不会覆盖你已手填的内容，
-        每首仍逐条过 loadCatalog 校验闸门。想覆盖已有值，请在右侧单首匹配里勾选后应用。
+        每首仍逐条过 loadCatalog 校验闸门。想覆盖已有值，请在右侧单首匹配里勾选后应用
+        （单首匹配到歌词时默认已勾选，点应用即替换当前歌词，旧 .lrc 保留原地不删）。
       </div>
     </details>
     <div class="footer-note">
@@ -626,7 +627,7 @@ function renderSync(r) {
   }
   if (r.coverUrl) resourceRow('cover', '封面', r.hasCover ? '已有封面（勾选将替换）' : '无', '候选图片，勾选后直接下载并保存');
   if (r.lyrics?.status === 'matched') {
-    resourceRow('lyrics', '歌词', r.hasLyrics ? '已有歌词（勾选将替换）' : '无',
+    resourceRow('lyrics', '歌词', r.hasLyrics ? '已有歌词（已默认勾选，应用即替换）' : '无',
       'LRCLIB · ' + (r.lyrics.kind === 'synced' ? '带时间轴' : '纯文本，无逐行跟随'));
   }
   resultEl.appendChild(table);
@@ -658,7 +659,9 @@ function renderSync(r) {
     note.appendChild(a);
     resultEl.appendChild(note);
   }
-  statusEl.textContent = r.message || (selectable ? '勾选要应用的字段，封面与歌词会直接保存；已有资源默认不勾选。' : '没有可应用的候选');
+  statusEl.textContent = r.message || (selectable
+    ? '勾选要应用的字段，封面与歌词会直接保存；匹配到歌词时默认已勾选，本曲已有歌词的会被替换（旧 .lrc 保留原地，可手工改回路径）。'
+    : '没有可应用的候选');
   $('btn-apply-sync').disabled = selectable === 0;
 }
 
@@ -744,9 +747,10 @@ $('btn-batch-go').onclick = async () => {
     $('batch-progress').textContent = `匹配中 ${i + 1}/${targets.length}…`;
     i++;
     try {
+      // onlyIfEmpty：批量是"补缺"口径，已有歌词不进勾选候选，避免一键把整库歌词换掉。
       const r = await api('/api/tracks/' + encodeURIComponent(t.id) + '/sync', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source, minScore, refresh: refreshCache, includeLyrics: true }),
+        body: JSON.stringify({ source, minScore, refresh: refreshCache, includeLyrics: true, onlyIfEmpty: true }),
       });
       batchResults.push(r);
       const writable = r.changes ? Object.keys(r.changes).length : 0;
@@ -772,6 +776,7 @@ $('btn-batch-apply').onclick = async () => {
   for (const r of pending) {
     try {
       // onlyIfEmpty：候选可能来自旧缓存，写回前由服务端按当前编目再挡一层覆盖。
+      // 匹配阶段也带同一个口径，服务端就不会把"已有歌词的替换候选"报成可补字段。
       const res = await api('/api/tracks/' + encodeURIComponent(r.id) + '/apply', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fields: r.changes, onlyIfEmpty: true }),

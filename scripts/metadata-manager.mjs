@@ -348,8 +348,10 @@ async function writeSyncCache(cache) {
  * 单曲匹配。返回里 candidate（外部说了什么）与 changes（我们准备写什么）分开：
  * 低于 minScore 的候选照原样回显供人工判断，但不给 changes，界面据此禁掉"应用"——
  * 不给误写留通道，这是原 CLI 里 needs-review 不能自动落库那条纪律的界面版。
+ * changes 的口径由 onlyIfEmpty 决定：true＝只报可补的空缺（批量补缺用，已有值一律不进候选勾选）；
+ * false（默认，单曲匹配）＝歌词匹配到就进勾选，已有歌词也报，替换由人工点"应用"确认。
  */
-async function syncTrack(id, { source = DEFAULT_SOURCE, minScore = DEFAULT_MIN_SCORE, refresh = false, includeLyrics = false } = {}) {
+async function syncTrack(id, { source = DEFAULT_SOURCE, minScore = DEFAULT_MIN_SCORE, refresh = false, includeLyrics = false, onlyIfEmpty = false } = {}) {
   const entries = await readCatalogEntries();
   const entry = entries.find(e => e.id === id);
   if (!entry) return { id, status: 'not-found', message: '歌曲不存在' };
@@ -404,7 +406,12 @@ async function syncTrack(id, { source = DEFAULT_SOURCE, minScore = DEFAULT_MIN_S
   if (assetToken) assetCandidates.set(assetToken, { id, at: Date.now(), snapshot: JSON.stringify(entry),
     coverUrl, lyrics: lyrics?.status === 'matched' ? lyrics : null });
   if (coverUrl && !track.cover) changes.cover = assetToken;
-  if (lyrics?.status === 'matched' && !entry.lyrics) changes.lyrics = assetToken;
+  // 封面已有值时一律不自动勾（换图必须人工确认）；歌词不同：单曲匹配下只要匹配到就默认勾上，
+  // 哪怕本曲已引用歌词——依据是用户 2026-09-28 的明确要求「匹配到歌词后就可以替换掉旧的歌词」。
+  // 批量走 onlyIfEmpty（补缺口径），已有歌词照旧不进 changes，界面"批量不会覆盖已有内容"仍是真话。
+  // 替换只改 catalog 指针：新文本另起 lyrics/<id>-<uuid>.lrc，旧文件留在原地（见 apply 分支），
+  // 因为同一份 .lrc 可能被别的曲目共用。
+  if (lyrics?.status === 'matched' && (!entry.lyrics || !onlyIfEmpty)) changes.lyrics = assetToken;
   const status = Object.keys(changes).length ? 'matched-change' : (accepted ? 'matched-no-change' : 'needs-review');
   return {
     id,
@@ -663,6 +670,7 @@ async function handleRequest(req, res) {
       try {
         return json(res, 200, await syncTrack(syncMatch[1], {
           source, minScore, refresh: Boolean(body.refresh), includeLyrics: body.includeLyrics === true,
+          onlyIfEmpty: body.onlyIfEmpty === true,
         }));
       } catch (err) {
         // 出网失败按"这一首失败"回 502，不抛 500：批量是界面逐首调用的，

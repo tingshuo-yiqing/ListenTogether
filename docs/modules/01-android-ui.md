@@ -8,6 +8,7 @@ ListenApplication 持有进程级 RoomClient；页面通过 StateFlow 观察 UiS
 ## 当前入口与数据
 - `MainActivity.kt`：Compose 首页/房间页（单 Activity），通知权限申请、MediaController 绑定、TopBar/StatusBanner/MembersSection/PlaylistSection/InviteQrDialog/InviteConfirmCard。
 - `ui/RoomPlayer.kt`：常驻底部 `MiniPlayer` + `ModalBottomSheet` 展开页 `PlayerSheet`；`RoomPlayerState`（positionMs/dragged/pendingSeek）挂房间会话作用域（key 含 token，防跨房复用）；seek 确认判定纯函数 `seekConfirmed`；`PlayingIndicator` 动效条。
+- `ui/LyricsFollow.kt`：歌词跟随目标流，同时消费当前行与手动暂停状态；暂停发 null 取消动画，恢复时同一行也重新定位。界面等待手势与惯性滚动停止 **3 秒**后自动恢复，再滚动则重新计时；不显示「回到当前歌词」按钮。切歌重建歌词取值与列表状态。
 - `ui/MemberAvatar.kt`：圆形头像（主题派生 6 色色板按 memberId 稳定散列，`avatarPaletteIndex`/`memberAvatarGlyph` 纯函数）+ 在线状态点；`ui/DisplayName.kt`：字素/码点安全工具（`firstGrapheme`、`splitAvatarPrefix`、`takeCodePoints`、`composeNickname`），约定"昵称首字素是 emoji 即头像"（用户手动输入，无选择器）。
 - `ui/InviteQr.kt`：zxing 位图生成；`ui/PlaybackView.kt`：仅 `mediaId`/`failed` 两个观测字段 + `showStatusNotice` 横幅判定；`ui/ScreenState.kt`：`screenStates()` 按 500ms 过滤进度刷新。
 - `InviteCode.kt`：邀请口令编解码纯函数（详见下节）。
@@ -21,7 +22,7 @@ ListenApplication 持有进程级 RoomClient；页面通过 StateFlow 观察 UiS
 房主控制调用 command；成员播放按钮只改变本机跟听状态。退出调用 leave。
 
 ## 界面结构（当前）
-- **入房页**：文字标题区 + 单卡片表单——创建/加入分段、昵称（输入即按码点截断 24 码元）、邀请码框、相机扫码按钮、高级设置（服务器地址，空地址自动展开）、错误横幅与一个主按钮；连接进度条在卡片下方。已移除：剪贴板"粘贴邀请"入口与整段口令智能识别（09-25 夜改扫码）、头像 emoji 选择器、欢迎大卡。
+- **入房页**：单卡片表单——创建/加入分段、昵称（输入即按码点截断 24 码元）、邀请码框、高级设置（服务器地址，空地址自动展开）、错误横幅与一个主按钮；连接进度条在卡片下方。扫码入口在加入分支的顶栏右上角，弹出相机/相册来源选择。已移除：首页标语、剪贴板"粘贴邀请"入口与整段口令智能识别（09-25 夜改扫码）、头像 emoji 选择器、欢迎大卡。
 - **扫码入房**：ZXing（`com.journeyapps:zxing-android-embedded`）Activity Result 方式，不依赖 Google Play Services；`CAMERA` 权限首次点击时请求，manifest 声明 `<uses-feature android:name="android.hardware.camera" android:required="false"/>`；结果进入邀请确认卡，需再点"加入"。8 位手动房间码保留为备用入口。
 - **顶栏**：房间页与入房页统一显示「一起听歌」（房间码不再上顶栏，仅存于口令文本与确认卡）；操作区为二维码展示、分享（系统分享面板）、退出（确认弹窗）。二维码/口令载荷沿用 `InviteCode.encode`——只有房间码与服务器地址，绝不含成员令牌。
 - **状态横幅**（`liveRegion=Polite`）：连接中/重连+立即重试、身份失效+「重新加入房间」+退出、本机暂停、当前曲音频错误、非默认消息；入房失败优先横幅、确认卡数据与昵称保留。保留的状态反馈只此一处，另有播放键图标与歌单当前曲高亮/动效条（09-26 已删除"当前歌曲+状态"文字等同步说明类低价值提示）。
@@ -62,7 +63,11 @@ ListenApplication 持有进程级 RoomClient；页面通过 StateFlow 观察 UiS
 - 2026-09-25：反馈二小轮——顶栏去房间码胶囊、「保存长图」整体删除（`ui/PlaylistImage.kt` 移除）。批次 A「一起听体验轮」——房间动态流、伪封面、歌单跟随、触感/无障碍、头像 emoji（100 项单测 + 独立复核 9 处修正；当天下午 PHQ110 真机 6 项场景通过，修复展开页半屏回归）。09-25 晚试用反馈——按用户指示删除头像选择器、房间动态流（`ui/RoomActivity.kt`）、伪封面（`ui/TrackArtwork.kt`），歌单改圆角面板固定标题+独立滚动+序号；`PlayingIndicator` 改固定尺寸 Canvas 绘制期读值。夜轮——`JoinInputSaver` 输入恢复、`lastRoom` 预填、Expired 重新加入、二维码邀请（`ui/InviteQr.kt`）、`benchmark` 变体。
 - 2026-09-25 深夜 → 09-26 凌晨：门禁补齐（`CAMERA` 补 uses-feature、UseKtx 清理）；6 项真机场景通过；R8 vs debug 帧耗时 A/B（R8 掉帧 0.16%–0.77%）；按用户指示删除 `playbackLabel` 与状态文字提示（单测 86→84）。
 - 2026-09-26：遗留修复——邀请提示文案改扫码/手动入房、decode 拒长码；seek 确认窗口改单调时钟 + `seekConfirmed` 纯函数；重新加入补 `composeNickname`；撤回对 PlaybackView 的旧采样疑点归因（三张截图均正常）。傍晚 PHQ110 真机复测（`517A776B…`，云端 23 首曲库）：seek 三场景、过期重入闭环、扫码入房、昵称边界全过，见 [设备复测记录](../test-results/2026-09-26-device-retest/README.md)。
+- 2026-09-26 深夜 / 09-27：**歌曲元数据第一二轮 UI** —— 歌单行/MiniPlayer/展开页三处歌手副行（artist 为空不占行高）；封面有图时通过 Bearer 请求并按 `coverVer` 缓存，缺图统一使用 `CoverPlaceholder`；展开页歌词区按用户确认改为停止滚动 3 秒自动回位且不显示按钮。**09-27 真机验收**通过并修复歌词状态缺陷：`""`/`null` 兼职"加载中/没内容"导致 404 曲目卡在「加载中」——判定抽为 `ui/LyricsState.kt` 纯函数（`lyricsUiState`/`lyricsPlaceholderText`，显式区分 Loading/NoLyrics/NoTimeline/Ready），`LyricsStateTest` 7 项钉住。见 [真机记录](../test-results/2026-09-27-metadata-r2-device/README.md) 与陷阱 4.8。
+- 2026-09-27 白天：**首页与扫码交互（试用反馈）**——①首页「此刻，一起听 / 和朋友分享同一段旋律」标语块删除，进入即见表单；②扫码入口从表单整行按钮**移到顶栏右上角**（`TopBar` 的 `onScanInvite`，只在未入房且处于加入分支时显示；入房后同一位置由「显示邀请二维码」接管）；③新增 `ui/LocalQrDecoder.kt` + `ScanSourceSheet` 底部弹窗，**支持从相册选图扫码**（ZXing core 直接解码，两段式读取避免大图 OOM），相机实时扫保留；④`InviteQrDialog` 去掉解释文字、标题收为 `titleMedium`、二维码留 12dp 边距。真机：相册选图扫码成功入房（用户实测），截屏经 `jsQR` 独立反解确认码可扫。见 [本轮记录](../test-results/2026-09-27-home-scan-ux/README.md) 与陷阱 3.10。
+
+- 2026-09-27 下午：云端真机补验复现并修复「暂停歌曲翻歌词后不归位」；新增 `LyricsFollow.kt` + 4 项回归，恢复时同一行也重新滚动。按用户反馈移除「回到当前歌词」按钮，改为停止滚动 3 秒自动恢复，继续滚动重置计时；切歌重建歌词取值与列表状态。相机新入口已由用户实际扫码确认。证据见 [本轮记录](../test-results/2026-09-27-cloud-device-followup/README.md)。
 
 ## 待开发
-拆分连接页、房间页和播放器组件为独立文件（MainActivity 已 770+ 行），保留单 Activity；采用单一不可变状态。
-歌词方向已定案未开工（方案见 [路线图](../next-development-plan.md)）；批次 B 表情互动属协议扩展，动手前先定协议。
+拆分连接页、房间页和播放器组件为独立文件（MainActivity 已 860+ 行），保留单 Activity；采用单一不可变状态。
+歌词与封面已在元数据第一二轮落地（见上「变更记录」）；剩余：歌词长列表快滑的手感、2 倍系统字号下的歌词排版、`lyricsVer` 缓存失效（.lrc 被替换后本机按 id 缓存不感知）。批次 B 表情互动属协议扩展，动手前先定协议。

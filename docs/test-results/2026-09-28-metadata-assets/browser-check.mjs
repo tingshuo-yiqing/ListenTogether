@@ -22,11 +22,15 @@ const server = createServer(async (req,res) => {
   if (path === '/api/sources') value = {sources:[{name:'qq',label:'QQ'}],default:'qq',minScore:0.8};
   if (path === '/api/lyrics-files') value = {files:[]};
   if (path.endsWith('/sync')) {
-    const id = path.split('/')[3]; const t = tracks.find(t=>t.id===id); requests.push(JSON.parse(body));
+    const id = path.split('/')[3]; const t = tracks.find(x=>x.id===id); const reqBody = JSON.parse(body);
+    requests.push(reqBody);
     if (delayed) await new Promise(r=>setTimeout(r,500));
+    // changes 的口径与真实管理器一致：单曲（默认）匹配到歌词就报，已有歌词也报（替换由人工点应用确认）；
+    // 批量带 onlyIfEmpty 时只报空缺，避免一键把整库歌词换掉。
+    const replaceLyrics = reqBody.onlyIfEmpty !== true;
     value = {id,source:'qq',metadataAccepted:true,status:'matched-change',score:1,minScore:0.8,local:t,
       candidate:{artist:t.artist,album:t.album,genre:t.genre,year:t.year},assetToken:'ticket-'+id,
-      changes:{...(!t.hasCover?{cover:'ticket-'+id}:{}),...(!t.lyrics?{lyrics:'ticket-'+id}:{})},
+      changes:{...(!t.hasCover?{cover:'ticket-'+id}:{}),...(!t.lyrics||replaceLyrics?{lyrics:'ticket-'+id}:{})},
       coverUrl:'data:image/png;base64,'+png.toString('base64'),hasCover:t.hasCover,hasLyrics:Boolean(t.lyrics),
       lyrics:{status:'matched',kind:'synced',text:'[00:00.00]测试歌词预览'}};
   }
@@ -73,6 +77,13 @@ try {
   await wait("tracks.find(t=>t.id==='b').lyrics !== null");
   assert.equal(applied[1].onlyIfEmpty,true);assert.equal(applied[1].id,'b');
   assert.ok(requests.every(r=>r.includeLyrics===true));
+  assert.ok(requests.some(r=>r.onlyIfEmpty===true),'批量匹配请求必须带 onlyIfEmpty 补缺口径');
+  // 已有歌词（b 刚被批量补上）时：单曲匹配把歌词默认勾上，应用即替换；已有封面不自动勾。
+  await evaluate("select('b'); document.getElementById('btn-sync').click()");
+  await wait("document.querySelectorAll('#sync-result input').length === 2");
+  assert.deepEqual(await evaluate("Array.from(document.querySelectorAll('#sync-result input:checked'), x=>x.dataset.field)"),['lyrics']);
+  assert.ok(await evaluate("Array.from(document.querySelectorAll('#sync-result tr'),r=>r.textContent).some(t=>t.includes('已有歌词（已默认勾选'))"));
+  assert.ok(await evaluate("document.getElementById('sync-status').textContent.includes('旧 .lrc 保留原地')"));
   delayed=true;
   await evaluate("select('a'); document.getElementById('btn-sync').click(); select('b')");
   await new Promise(r=>setTimeout(r,800));
