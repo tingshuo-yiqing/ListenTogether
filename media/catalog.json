@@ -3,6 +3,9 @@
     "id": "he-bu-ke",
     "title": "有何不可",
     "file": "audio/he-bu-ke.mp3",
+    "artist": "许嵩",
+    "album": "自定义",
+    "year": 2009,
     "lyrics": "lyrics/he-bu-ke.lrc",
     "cover": "covers/he-bu-ke.jpg"
   },
@@ -10,6 +13,9 @@
     "id": "chi-xin-jue-dui",
     "title": "痴心绝对",
     "file": "audio/chi-xin-jue-dui.mp3",
+    "artist": "李圣杰",
+    "album": "痴心绝对",
+    "year": 2002,
     "lyrics": "lyrics/chi-xin-jue-dui.lrc",
     "cover": "covers/chi-xin-jue-dui.jpg"
   },
@@ -23,6 +29,9 @@
     "id": "fu-shi-shan-xia",
     "title": "富士山下",
     "file": "audio/fu-shi-shan-xia.mp3",
+    "artist": "陈奕迅",
+    "album": "What's Going On...?",
+    "year": 2006,
     "lyrics": "lyrics/fu-shi-shan-xia.lrc",
     "cover": "covers/fu-shi-shan-xia.jpg"
   },
@@ -30,6 +39,9 @@
     "id": "ju-hao",
     "title": "句号",
     "file": "audio/ju-hao.mp3",
+    "artist": "G.E.M.邓紫棋",
+    "album": "摩天动物园",
+    "year": 2019,
     "lyrics": "lyrics/ju-hao.lrc",
     "cover": "covers/ju-hao.jpg"
   },
@@ -37,6 +49,9 @@
     "id": "ai-cuo",
     "title": "爱错",
     "file": "audio/ai-cuo.mp3",
+    "artist": "王力宏",
+    "album": "心中的日月",
+    "year": 2004,
     "lyrics": "lyrics/ai-cuo.lrc",
     "cover": "covers/ai-cuo.jpg"
   },
@@ -44,6 +59,9 @@
     "id": "hong-dou",
     "title": "红豆",
     "file": "audio/hong-dou.mp3",
+    "artist": "王菲",
+    "album": "唱游",
+    "year": 1998,
     "lyrics": "lyrics/hong-dou.lrc",
     "cover": "covers/hong-dou.jpg"
   },
@@ -57,6 +75,9 @@
     "id": "qiu-niao",
     "title": "囚鸟",
     "file": "audio/qiu-niao.mp3",
+    "artist": "彭羚",
+    "album": "从羚开始...",
+    "year": 2000,
     "lyrics": "lyrics/qiu-niao.lrc",
     "cover": "covers/qiu-niao.jpg"
   },
@@ -64,6 +85,9 @@
     "id": "te-bie-de-ren",
     "title": "特别的人",
     "file": "audio/te-bie-de-ren.mp3",
+    "artist": "方大同",
+    "album": "危险世界",
+    "year": 2014,
     "lyrics": "lyrics/te-bie-de-ren.lrc",
     "cover": "covers/te-bie-de-ren.jpg"
   },
@@ -71,6 +95,9 @@
     "id": "da-mian",
     "title": "大眠",
     "file": "audio/da-mian.mp3",
+    "artist": "王心凌",
+    "album": "CYNDILOVES2SING 爱。心凌",
+    "year": 2018,
     "lyrics": "lyrics/da-mian.lrc",
     "cover": "covers/da-mian.jpg"
   },
@@ -78,12 +105,19 @@
     "id": "ai-qing-zhuan-yi",
     "title": "爱情转移",
     "file": "audio/ai-qing-zhuan-yi.mp3",
-    "lyrics": "lyrics/ai-qing-zhuan-yi.lrc"
+    "artist": "陈奕迅",
+    "album": "爱情呼叫转移",
+    "year": 2007,
+    "lyrics": "lyrics/ai-qing-zhuan-yi.lrc",
+    "cover": "covers/ai-qing-zhuan-yi.jpg"
   },
   {
     "id": "bei-dui-bei-yong-bao",
     "title": "背对背拥抱",
     "file": "audio/bei-dui-bei-yong-bao.mp3",
+    "artist": "林俊杰",
+    "album": "100天",
+    "year": 2009,
     "lyrics": "lyrics/bei-dui-bei-yong-bao.lrc",
     "cover": "covers/bei-dui-bei-yong-bao.jpg"
   },
@@ -91,6 +125,9 @@
     "id": "tao-tai",
     "title": "淘汰",
     "file": "audio/tao-tai.mp3",
+    "artist": "陈奕迅",
+    "album": "认了吧",
+    "year": 2007,
     "lyrics": "lyrics/tao-tai.lrc",
     "cover": "covers/tao-tai.jpg"
   },
@@ -98,6 +135,9 @@
     "id": "dang-ni",
     "title": "当你",
     "file": "audio/dang-ni.mp3",
+    "artist": "王心凌",
+    "album": "Begin...",
+    "year": 2003,
     "lyrics": "lyrics/dang-ni.lrc",
     "cover": "covers/dang-ni.jpg"
   },
@@ -105,6 +145,9 @@
     "id": "tian-hou",
     "title": "天后",
     "file": "audio/tian-hou.mp3",
+    "artist": "陈势安",
+    "album": "再爱一遍‧天后",
+    "year": 2011,
     "lyrics": "lyrics/tian-hou.lrc",
     "cover": "covers/tian-hou.jpg"
   },
@@ -112,33 +155,29 @@
     "id": "wei-yi",
     "title": "唯一",
     "file": "audio/wei-yi.mp3",
+    "artist": "G.E.M.邓紫棋",
+    "album": "T.I.M.E.",
+    "year": 2023,
     "lyrics": "lyrics/wei-yi.lrc",
     "cover": "covers/wei-yi.jpg"
-  },
-  {
-    "id": "hong-ri",
-    "title": "红日",
-    "file": "audio/hong-ri.mp3",
-    "lyrics": "lyrics/hong-ri.lrc"
   },
   {
     "id": "shou-fang-kai",
     "title": "手放开",
     "file": "audio/shou-fang-kai.mp3",
+    "artist": "李圣杰",
+    "album": "绝对痴心·手放开",
+    "year": 2004,
     "lyrics": "lyrics/shou-fang-kai.lrc",
     "cover": "covers/shou-fang-kai.jpg"
-  },
-  {
-    "id": "wang-qing-shui",
-    "title": "忘情水",
-    "file": "audio/wang-qing-shui.mp3",
-    "lyrics": "lyrics/wang-qing-shui.lrc",
-    "cover": "covers/wang-qing-shui.jpg"
   },
   {
     "id": "di-yi-tian",
     "title": "第一天",
     "file": "audio/di-yi-tian.mp3",
+    "artist": "孙燕姿",
+    "album": "完美的一天",
+    "year": 2005,
     "lyrics": "lyrics/di-yi-tian.lrc",
     "cover": "covers/di-yi-tian.jpg"
   },
@@ -146,6 +185,9 @@
     "id": "yu-jian",
     "title": "遇见",
     "file": "audio/yu-jian.mp3",
+    "artist": "孙燕姿",
+    "album": "The Moment",
+    "year": 2003,
     "lyrics": "lyrics/yu-jian.lrc",
     "cover": "covers/yu-jian.jpg"
   },
@@ -153,6 +195,9 @@
     "id": "wang-fei",
     "title": "王妃",
     "file": "audio/wang-fei.mp3",
+    "artist": "萧敬腾",
+    "album": "王妃",
+    "year": 2009,
     "lyrics": "lyrics/wang-fei.lrc",
     "cover": "covers/wang-fei.jpg"
   }
