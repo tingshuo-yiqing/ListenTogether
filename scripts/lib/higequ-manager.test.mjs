@@ -181,18 +181,18 @@ test('真管理器：从 Hi 搜索并导入整首新歌（音频+信息+歌词+�
     const port=log.match(/http:\/\/127.0.0.1:(\d+)/)?.[1];assert.ok(port,log);
     const api=async(path,body,method=body?'POST':'GET')=>{const r=await fetch('http://127.0.0.1:'+port+path,{method,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});return {httpStatus:r.status,...await r.json()};};
     const search=await api('/api/higequ/search',{query:'随便'});assert.equal(search.httpStatus,200);assert.equal(search.results[0].rid,'42');assert.equal(search.results[0].album,'Import Album');
+    // 新 ID = 歌名拼音（用户 2026-09-29 要求拼音命名）；同再导入自动 -2 后缀（不静默拒绝，重复曲目由人删除）。
     const imp=await api('/api/higequ/import',{rid:'42',album:search.results[0].album});assert.equal(imp.httpStatus,200,JSON.stringify(imp));
     const cat=JSON.parse(await readFile(join(media,'catalog.json'),'utf8'));assert.equal(cat.length,1);
-    const e=cat[0];assert.equal(e.id,'hi-42');assert.equal(e.title,'Import Song');assert.equal(e.artist,'Import Artist');assert.equal(e.album,'Import Album');
-    assert.equal(e.file,'audio/hi-42.mp3');assert.match(e.lyrics,/^lyrics\/hi-42-[0-9a-f-]{36}\.lrc$/);assert.match(e.cover,/^covers\/hi-42-[0-9a-f-]{36}\.jpg$/);
+    const e=cat[0];assert.equal(e.id,'import-song');assert.equal(e.title,'Import Song');assert.equal(e.artist,'Import Artist');assert.equal(e.album,'Import Album');
+    assert.equal(e.file,'audio/import-song.mp3');assert.match(e.lyrics,/^lyrics\/import-song-[0-9a-f-]{36}\.lrc$/);assert.match(e.cover,/^covers\/import-song-[0-9a-f-]{36}\.jpg$/);
     const audio=await readFile(join(media,e.file));assert.equal(audio.subarray(0,3).toString(),'ID3');
     assert.equal(await readFile(join(media,e.lyrics),'utf8'),'[00:00.00]import line\n');
-    // 重复导入同 rid → 409（默认 ID hi-42 已存在）；坏 rid → 400；无直链（mode 切换）→ 404。
-    assert.equal((await api('/api/higequ/import',{rid:'42'})).httpStatus,409);
+    const imp2=await api('/api/higequ/import',{rid:'42'});assert.equal(imp2.httpStatus,200);assert.equal(imp2.id,'import-song-2');
     assert.equal((await api('/api/higequ/import',{rid:'abc'})).httpStatus,400);
     await writeFile(mode,'audio-noaudio');
     assert.equal((await api('/api/higequ/import',{rid:'42',id:'hi-2'})).httpStatus,404);
-    assert.equal(JSON.stringify(JSON.parse(await readFile(join(media,'catalog.json'),'utf8')).map(x=>x.id)),JSON.stringify(['hi-42']));
+    assert.equal(JSON.stringify(JSON.parse(await readFile(join(media,'catalog.json'),'utf8')).map(x=>x.id)),JSON.stringify(['import-song','import-song-2']));
   } finally {
     if (child) child.kill();
     await rm(temp,{recursive:true,force:true});

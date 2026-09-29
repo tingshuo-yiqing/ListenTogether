@@ -1,0 +1,27 @@
+{
+  "name": "listentogether",
+  "version": "1.0.0",
+  "description": "安卓好友听歌原型：昵称入房、8 位邀请码、最多 15 人、房主控制、手动 MP3 曲库、断线重连。 代码中的关键同步、权限和生命周期说明使用中文。",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tingshuo-yiqing/ListenTogether.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/tingshuo-yiqing/ListenTogether/issues"
+  },
+  "homepage": "https://github.com/tingshuo-yiqing/ListenTogether#readme",
+  "dependencies": {
+    "pinyin-pro": "^3.29.4"
+  }
+}

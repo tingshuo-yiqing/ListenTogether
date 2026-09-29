@@ -46,11 +46,20 @@ import {
 
 import { findLyrics, fetchLimited, allowedCoverUrl, allowedAudioUrl, AUDIO_LIMIT, imageExtension, COVER_LIMIT } from './lib/metadata-assets.mjs';
 import { parseHiAudio, parseHiDetail, searchHi } from './lib/higequ.mjs';
+import { pinyin } from 'pinyin-pro';
 
 /** MP3 魔数：ID3 头或 MPEG 帧同步（0xFFEx/Fx）。下载与导入共用。 */
 function looksLikeMp3(bytes) {
   return bytes.length > 1024
     && ((bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) || (bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0));
+}
+
+/** 歌名 → 拼音 ID：中文转无声调拼音、非中文按原文小写 slug 化，段间 '-' 连接（依赖 pinyin-pro，MIT）。
+ *  超过 64 位截断（ID_RULE 上限）；全非字母数字时返回空串，由调用方回退 hi-<rid>。 */
+function pinyinId(title) {
+  return pinyin(String(title || ''), { toneType: 'none', type: 'array', nonZh: 'consecutive' })
+    .map(s => s.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, ''))
+    .filter(Boolean).join('-').replace(/-+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64);
 }
 
 /** Hi歌曲 player 页抓取：域 + 路径白名单（/s/<词>/ 与 /player/<rid>/），2MB 上限。 */
@@ -912,18 +921,28 @@ async function handleRequest(req, res) {
       return json(res, 200, { ok: true, results: rows.map(r => ({ rid: r.id, title: r.title, artist: r.artist, album: r.album, sourceUrl: r.sourceUrl })) });
     }
     // 从 Hi歌曲导入整首新歌：搜索结果里人工挑选（rid），音频/标题/歌手/歌词/封面一次到位。
-    // 新 ID 默认 hi-<rid>，可自定义（过 ID 规则、不得与现有重复）；写库走同一道 writeAndValidate 闸门。
+    // 新 ID 默认 = 歌名拼音（2026-09-29 用户要求拼音命名；非中文按原文 slug 化），重名自动 -2/-3 后缀；
+    // body.id 可显式指定（过 ID 规则；与现有重复直接 409，不静默改名）。写库走同一道 writeAndValidate 闸门。
     if (req.method === 'POST' && url.pathname === '/api/higequ/import') {
       const body = JSON.parse((await readBody(req, 1024 * 1024)).toString('utf8') || '{}');
       const rid = String(body.rid || '');
       if (!/^\d{1,20}$/.test(rid)) return json(res, 400, { message: 'rid 不合法（应为纯数字）' });
-      const newId = String(body.id || 'hi-' + rid).trim();
-      if (!ID_RULE.test(newId)) return json(res, 400, { message: 'ID 只允许 1-64 位字母/数字/下划线/连字符' });
-      const entries = await readCatalogEntries();
-      if (entries.some(e => e.id === newId)) return json(res, 409, { message: `ID 已存在：${newId}` });
       const pageHtml = await fetchHiPlayerPage(`https://higequ.com/player/${rid}/`);
       // 导入以页面为准，跳过与搜索行的身份核对（挑选动作本身就是人工确认）。
       const detail = parseHiDetail(pageHtml, { sourceUrl: `https://higequ.com/player/${rid}/` }, { title: '', artist: '', durationMs: 0 }, { verifyIdentity: false });
+      const entries = await readCatalogEntries();
+      let newId;
+      if (String(body.id || '').trim()) {
+        newId = String(body.id).trim();
+        if (!ID_RULE.test(newId)) return json(res, 400, { message: 'ID 只允许 1-64 位字母/数字/下划线/连字符' });
+        if (entries.some(e => e.id === newId)) return json(res, 409, { message: `ID 已存在：${newId}` });
+      } else {
+        newId = pinyinId(detail.title) || 'hi-' + rid;
+        while (entries.some(e => e.id === newId)) {
+          const m = newId.match(/-(\d+)$/);
+          newId = (m ? newId.slice(0, -m[1].length - 1) : newId) + '-' + (m ? Number(m[1]) + 1 : 2);
+        }
+      }
       const audioUrl = parseHiAudio(pageHtml);
       if (!audioUrl) return json(res, 404, { message: '播放页没有可用的音频直链（页面结构变化或不在白名单域），已放弃' });
       const bytes = await fetchLimited(audioUrl, AUDIO_LIMIT, allowedAudioUrl);
