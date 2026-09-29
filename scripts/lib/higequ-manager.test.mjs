@@ -5,7 +5,7 @@ import {mkdtemp,mkdir,cp,writeFile,readFile,rm,access} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {spawn} from 'node:child_process';
+import {spawn,spawnSync} from 'node:child_process';
 import {once} from 'node:events';
 test('真管理器：Hi优先与失败回退、只读匹配、歌词落库及回收恢复/冲突保护', {timeout:45000}, async()=>{
   const root=resolve(import.meta.dirname,'../..'), temp=await mkdtemp(join(tmpdir(),'lt-hi-'));
@@ -34,7 +34,7 @@ test('真管理器：Hi优先与失败回退、只读匹配、歌词落库及回
     for(let i=0;i<120&&!/http:\/\/127.0.0.1:(\d+)/.test(log);i++)await new Promise(r=>setTimeout(r,50));
     const port=log.match(/http:\/\/127.0.0.1:(\d+)/)?.[1];assert.ok(port,log);
     const api=async(path,body,method=body?'POST':'GET')=>{const r=await fetch('http://127.0.0.1:'+port+path,{method,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});return {httpStatus:r.status,...await r.json()};};
-    assert.equal((await api('/api/sources')).serviceVersion,'20260929-hi-audio');
+    assert.equal((await api('/api/sources')).serviceVersion,'20260929-hi-aac');
     assert.equal((await api('/api/tracks/a/lyrics')).httpStatus,404);
     assert.equal((await api('/api/tracks/missing/lyrics')).httpStatus,404);
     const sync=()=>api('/api/tracks/a/sync',{includeLyrics:true,refresh:true});
@@ -89,8 +89,13 @@ test('真管理器：Hi音频下载（Base64 直链→白名单→魔数校验�
       {id:'a-no',title:'Test Song',artist:'Artist',file:'demo-soft.mp3'},
       {id:'a-evil',title:'Test Song',artist:'Artist',file:'demo-soft.mp3'},
       {id:'a-magic',title:'Test Song',artist:'Artist',file:'demo-soft.mp3'},
+      {id:'a-aac',title:'Test Song',artist:'Artist',file:'demo-soft.mp3'},
     ];
     const cat=join(media,'catalog.json'),mode=join(temp,'mode');
+    // 真 aac 夹具：ffmpeg 合成 1 秒正弦（本机 ffmpeg 8.0 + libmp3lame 已在门禁机可用）。
+    const aacPath=join(temp,'tone.aac');
+    const gen=spawnSync('ffmpeg',['-y','-hide_banner','-loglevel','error','-f','lavfi','-i','sine=frequency=440:duration=1','-c:a','aac','-b:a','64k',aacPath],{windowsHide:true});
+    assert.equal(gen.status,0,'aac 夹具生成失败：'+gen.stderr?.toString());
     await writeFile(cat,JSON.stringify(entries)); await writeFile(mode,'audio-ok');
     const preload=join(temp,'preload.mjs');
     // mockFetch 会被 toString() 序列化进 --import 预加载文件：**不能引用外层任何变量**（player/b64
@@ -106,8 +111,12 @@ test('真管理器：Hi音频下载（Base64 直链→白名单→魔数校验�
           if(state==='audio-identity')return new Response(player(null,'翻唱歌手'));
           if(state==='audio-noaudio')return new Response(player(null));
           if(state==='audio-evil')return new Response(player(b64('https://cdn.evil.test/x/M500016.mp3')));
+          if(state==='audio-aac')return new Response(player(b64('https://kw-bj.kuwo.cn/55/6a/lu/resource/a2/30/51/1649598311.aac')));
           return new Response(player(b64('https://kw-lv.kuwo.cn/c7d9/r/1/trackmedia/M500016.mp3')));
         }
+      }
+      if(u.hostname.endsWith('.kuwo.cn') && u.pathname.endsWith('.aac')){
+        return new Response(readFileSync(process.env.HI_AAC));
       }
       if(u.hostname.endsWith('.kuwo.cn') && u.pathname.endsWith('.mp3')){
         if(state==='audio-magic')return new Response('<html>not audio</html>');
@@ -117,7 +126,7 @@ test('真管理器：Hi音频下载（Base64 直链→白名单→魔数校验�
       throw new Error('offline fixture refuses '+u.hostname);
     };
     await writeFile(preload,'globalThis.fetch = '+mockFetch.toString()+';');
-    child=spawn(process.execPath,['--import',pathToFileURL(preload).href,join(root,'scripts/metadata-manager.mjs'),'--dir',media,'--trash',trash,'--cache',join(temp,'cache.json'),'--port','0'],{stdio:['ignore','pipe','pipe'],windowsHide:true,env:{...process.env,HI_MODE:mode,HI_AUDIO:join(root,'demo-media/demo-soft.mp3')}});
+    child=spawn(process.execPath,['--import',pathToFileURL(preload).href,join(root,'scripts/metadata-manager.mjs'),'--dir',media,'--trash',trash,'--cache',join(temp,'cache.json'),'--port','0'],{stdio:['ignore','pipe','pipe'],windowsHide:true,env:{...process.env,HI_MODE:mode,HI_AUDIO:join(root,'demo-media/demo-soft.mp3'),HI_AAC:aacPath}});
     let log='';child.stdout.setEncoding('utf8');child.stderr.setEncoding('utf8');child.stdout.on('data',c=>log+=c);child.stderr.on('data',c=>log+=c);
     for(let i=0;i<120&&!/http:\/\/127.0.0.1:(\d+)/.test(log);i++)await new Promise(r=>setTimeout(r,50));
     const port=log.match(/http:\/\/127.0.0.1:(\d+)/)?.[1];assert.ok(port,log);
@@ -144,6 +153,12 @@ test('真管理器：Hi音频下载（Base64 直链→白名单→魔数校验�
     assert.equal((await api('/api/tracks/a-evil/higequ-replace')).httpStatus,404);
     await writeFile(mode,'audio-magic');
     assert.equal((await api('/api/tracks/a-magic/higequ-replace')).httpStatus,422);
+    // .aac 直链（站点对部分曲目交付 aac）：本地 ffmpeg 转码为 MP3 后入库，loadCatalog（writeAndValidate）即时长校验。
+    await writeFile(mode,'audio-aac');
+    const aac=await api('/api/tracks/a-aac/higequ-replace');assert.equal(aac.httpStatus,200,JSON.stringify(aac));
+    const afterAac=(await catalog()).find(e=>e.id==='a-aac');
+    const aacBytes=await readFile(join(media,afterAac.file));
+    assert.ok(aacBytes.length>1024);assert.ok(aacBytes[0]===0x49||aacBytes[0]===0xff); // ID3 或帧同步
     await writeFile(mode,'audio-ok');
     assert.equal(JSON.stringify((await catalog()).map(e=>e.id)),JSON.stringify(entries.map(e=>e.id)));
     await access(join(media,'demo-soft.mp3'));

@@ -121,3 +121,7 @@ build-cloud-catalog.mjs 不依赖本地平铺布局，无需改动）。新增 s
 - **拼音 ID**：依赖 `pinyin-pro`（根 package.json，MIT）；管理器 `pinyinId()` 把歌名转无声调拼音 slug（非中文按原文、64 位截断、全空回退 `hi-<rid>`）；`/api/higequ/import` 默认 ID 即拼音，重名自动 `-2/-3` 后缀，`body.id` 显式指定时重复仍 409。
 - **批量替换**：管理器没有批量端点（刻意——逐首手动）；本轮按用户指令以脚本对真实曲库逐首调 `/higequ-replace`。跳过判据 = 文件已呈 `audio/<id>-<uuid>.mp3`（Hi 形式）或刚导入；结果 8 首成功、11 首因站点交付 `.aac`（非 MP3）按边界跳过。
 - **命名规范**：catalog 三路径字段必须 `<dir>/<id>.<ext>` 或 `<dir>/<id>-<uuid>.<ext>`、正斜杠、文件存在；检查脚本按条目 ID 前缀核对（本轮修正：改名脚本 `path.join` 写入 Windows 反斜杠 3 处，已归一——**catalog 路径一律正斜杠**，否则同步上云到 Linux 会坏）。
+
+## .aac 转码收编（2026-09-29 第三轮）
+
+批量替换发现 11 首（句号/爱错/倔强/囚鸟/特别的人/爱情转移/背对背拥抱/淘汰/当你/天后/遇见）站点交付 **.aac**（如 kw-bj.kuwo.cn/.../*.aac），按用户决策「开始做吧」补上转码能力：`parseHiAudio` 放行 `.mp3/.aac/.m4a`（白名单不变）；管理器 `transcodeToMp3`——非 MP3 魔数的下载字节经 **ffmpeg libmp3lame 192k** 本地转码（180s 超时，临时文件即用即删，产物过魔数+长度校验），`/higequ-replace` 与 `/api/higequ/import` 共用；ffmpeg 缺失/转码失败回 422 带原因。serviceVersion 升 `20260929-hi-aac`。门禁 51/51（新增真 aac 夹具 e2e：ffmpeg 合成 1s 正弦 → 替换 → loadCatalog 时长校验过）；**真实曲库 22/22 全部替换为 Hi 形式**（11 首 aac 转码 5–8s/首），命名合规复检通过。转码只在导入/替换的下载环节发生，播放链路照旧只读 MP3。

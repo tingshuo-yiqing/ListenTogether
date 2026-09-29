@@ -66,16 +66,16 @@ export function parseHiDetail(html, candidate, local, { verifyIdentity = true } 
 
 /**
  * 从 player 页静态 HTML 提取音频直链：站点以 `let code = "<base64>"; let realUrl = atob(code)`
- * 服务端渲染地址（实测无需签名/Referer，2026-09-29 抓包验证）。只认解码后为 https 且
- * allowedAudioUrl 白名单（酷我 CDN 族）的 .mp3 地址；页面无该脚本或解码不符返回 null。
- * 音频字节本身由管理器的 /higequ-audio 端点按 AUDIO_LIMIT 下载，本函数不做网络请求。
+ * 服务端渲染地址（实测无需签名/Referer，2026-09-29 抓包验证）。2026-09-29 起放行 .mp3/.aac/.m4a
+ * ——部分曲目站点交付 .aac（如 kw-bj.kuwo.cn/.../*.aac），由管理器本地转码为 MP3 后入库；
+ * 解码后必须过 allowedAudioUrl 白名单，否则返回 null。本函数不做网络请求。
  */
 export function parseHiAudio(html) {
   const code = html.match(/let\s+code\s*=\s*"([A-Za-z0-9+/=]+)"/)?.[1];
   if (!code) return null;
   let url;
   try { url = Buffer.from(code, 'base64').toString('utf8'); } catch { return null; }
-  if (!/^https:\/\//.test(url) || !/^https:[^?#]+\.mp3(?:[?#]|$)/.test(url)) return null;
+  if (!/^https:\/\//.test(url) || !/^https:[^?#]+\.(?:mp3|aac|m4a)(?:[?#]|$)/i.test(url)) return null;
   return allowedAudioUrl(url) ? url : null;
 }
 

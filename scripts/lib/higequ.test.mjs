@@ -63,10 +63,11 @@ test('Hi歌曲音频：player 页 Base64 直链解析为 https+白名单 的 .mp
   // 站点若把直链放进 <audio src> 而不是 Base64 脚本，本适配器仍不认——那属于结构变化。
   assert.equal(parseHiAudio('<audio src="' + AUDIO_URL + '"></audio>'), null);
   assert.equal(parseHiAudio('<script>let realUrl = atob(code);</script>'), null);
-  // 非 https / 非白名单域 / 非 .mp3 后缀 / 坏 Base64 全部拒绝。
+  // 非 https / 非白名单域 / 坏 Base64 全部拒绝；.mp3/.aac/.m4a 后缀都放行（aac/m4a 由管理器转码）。
   assert.equal(parseHiAudio(playerPage(AUDIO_URL.replace('https://','http://'))), null);
   assert.equal(parseHiAudio(playerPage('https://cdn.evil.test/x/M500016.mp3')), null);
-  assert.equal(parseHiAudio(playerPage('https://kw-lv.kuwo.cn/x/trackmedia/M500016.m4a')), null);
+  assert.equal(parseHiAudio(playerPage('https://kw-lv.kuwo.cn/x/trackmedia/M500016.m4a')), 'https://kw-lv.kuwo.cn/x/trackmedia/M500016.m4a');
+  assert.equal(parseHiAudio(playerPage('https://kw-bj.kuwo.cn/55/6a/lu/resource/a2/30/51/1649598311.aac')), 'https://kw-bj.kuwo.cn/55/6a/lu/resource/a2/30/51/1649598311.aac');
   assert.equal(parseHiAudio(playerPage(AUDIO_URL) + '!!'), AUDIO_URL); // 首个匹配生效，尾部脏数据忽略
   assert.equal(parseHiAudio('let code = "###";'), null); // 非 Base64 字符集视为无直链
 });

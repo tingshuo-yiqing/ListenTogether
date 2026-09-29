@@ -35,6 +35,8 @@ import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
 import { existsSync, realpathSync } from 'node:fs';
 import { readFile, writeFile, rename, stat, unlink, mkdir, readdir, copyFile, appendFile } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import { resolve, join, dirname, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 // 联网匹配的唯一实现：原命令行同步器 scripts/fetch-metadata.mjs 并入界面后随它一起删掉，
@@ -60,6 +62,29 @@ function pinyinId(title) {
   return pinyin(String(title || ''), { toneType: 'none', type: 'array', nonZh: 'consecutive' })
     .map(s => s.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, ''))
     .filter(Boolean).join('-').replace(/-+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64);
+}
+
+/**
+ * 站点对部分曲目交付 .aac/.m4a（如 kw-bj.kuwo.cn/.../*.aac），而曲库只收 MP3：
+ * 非 MP3 魔数的下载字节交给 ffmpeg 本地转码（libmp3lame 192k，超时 180s）。输入输出均为 Buffer；
+ * 失败抛错（ffmpeg 缺失 / 退出码非 0 / 产物不是有效 MP3），调用方回 422。
+ */
+async function transcodeToMp3(bytes) {
+  const work = join(tmpdir(), 'lt-transcode-' + randomUUID());
+  const inPath = work + '.aac', outPath = work + '.mp3';
+  await writeFile(inPath, bytes);
+  try {
+    const r = spawnSync('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-i', inPath,
+      '-vn', '-codec:a', 'libmp3lame', '-b:a', '192k', outPath], { timeout: 180_000, windowsHide: true });
+    if (r.error) throw new Error('ffmpeg 不可用：' + r.error.message);
+    if (r.status !== 0) throw new Error('ffmpeg 退出码 ' + r.status + '：' + (r.stderr?.toString().trim().split('\n').pop() ?? ''));
+    const out = await readFile(outPath);
+    if (!looksLikeMp3(out) || out.length <= 1024) throw new Error('转码产物不是有效 MP3');
+    return out;
+  } finally {
+    await unlink(inPath).catch(() => {});
+    await unlink(outPath).catch(() => {});
+  }
 }
 
 /** Hi歌曲 player 页抓取：域 + 路径白名单（/s/<词>/ 与 /player/<rid>/），2MB 上限。 */
@@ -724,7 +749,7 @@ async function handleRequest(req, res) {
     // 可选元数据源清单：界面下拉据此渲染，新源只需在 lib 注册表里加一行。
     if (req.method === 'GET' && url.pathname === '/api/sources') {
       return json(res, 200, {
-        serviceVersion: '20260929-hi-audio',
+        serviceVersion: '20260929-hi-aac',
         default: DEFAULT_SOURCE,
         minScore: DEFAULT_MIN_SCORE,
         sources: METADATA_SOURCES.map(({ name, label }) => ({ name, label })),
@@ -868,8 +893,12 @@ async function handleRequest(req, res) {
       const pageHtml = await fetchHiPlayerPage(sync.candidate.sourceUrl);
       const audioUrl = parseHiAudio(pageHtml);
       if (!audioUrl) return json(res, 404, { message: '播放页没有可用的音频直链（页面结构变化或不在白名单域），已放弃' });
-      const bytes = await fetchLimited(audioUrl, AUDIO_LIMIT, allowedAudioUrl);
-      if (!looksLikeMp3(bytes)) return json(res, 422, { message: '下载内容不是 MP3（魔数不符），已放弃' });
+      let bytes = await fetchLimited(audioUrl, AUDIO_LIMIT, allowedAudioUrl);
+      if (!looksLikeMp3(bytes)) {
+        // 站点对部分曲目交付 .aac/.m4a（句号/天后等 11 首实测）：本地 ffmpeg 转码为 MP3（192k）后入库。
+        try { bytes = await transcodeToMp3(bytes); }
+        catch (err) { return json(res, 422, { message: '音频需要转码为 MP3：' + err.message }); }
+      }
       const created = [];
       const newEntry = { ...entry };
       try {
@@ -945,8 +974,12 @@ async function handleRequest(req, res) {
       }
       const audioUrl = parseHiAudio(pageHtml);
       if (!audioUrl) return json(res, 404, { message: '播放页没有可用的音频直链（页面结构变化或不在白名单域），已放弃' });
-      const bytes = await fetchLimited(audioUrl, AUDIO_LIMIT, allowedAudioUrl);
-      if (!looksLikeMp3(bytes)) return json(res, 422, { message: '下载内容不是 MP3（魔数不符），已放弃' });
+      let bytes = await fetchLimited(audioUrl, AUDIO_LIMIT, allowedAudioUrl);
+      if (!looksLikeMp3(bytes)) {
+        // 站点对部分曲目交付 .aac/.m4a（句号/天后等 11 首实测）：本地 ffmpeg 转码为 MP3（192k）后入库。
+        try { bytes = await transcodeToMp3(bytes); }
+        catch (err) { return json(res, 422, { message: '音频需要转码为 MP3：' + err.message }); }
+      }
       const created = [];
       const entry = { id: newId, title: detail.title, artist: detail.artist, file: `audio/${newId}.mp3` };
       if (body.album && String(body.album).trim()) entry.album = String(body.album).trim();
