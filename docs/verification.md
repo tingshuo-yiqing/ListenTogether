@@ -1,8 +1,18 @@
 # 一起听歌 · 当前交付与验收记录
 
 项目：D:\ListenTogether
-更新日期：2026-09-29（最新：.aac 转码收编——真实曲库 22/22 全部替换为 Hi 形式；此前：导入拼音命名+批量替换 10/22、Hi整首替换/搜索导入、M2 双机机制验证）
+更新日期：2026-09-29（最新：真实曲库孤儿清理 + Hi 化曲库上云（22 首，云端已重启）；此前：.aac 转码收编、拼音命名、M2 双机机制验证）
 定位：**进度唯一事实来源**。当前状态看「状态一览」，待办看「尚待验收」；每轮交付以追加「本轮新增」小节的方式登记，测试细节由 docs/test-results/<日期-场景>/ 承载，更早的历史轮次已压缩为「交付历史索引」。
+
+## 本轮新增（曲库目录清理 + GitHub 推送 + Hi 化曲库上云，2026-09-29）
+
+按用户指令「非 catalog 迭代文件全部删掉保持目录干净 → 提交 GitHub → 上云」执行。**本地与云端曲库现已同为 22 首 Hi 形式**（音频/歌词/封面全套 `<id>-<uuid>` 命名 + 完整 artist/album/year 元数据）。
+
+- **目录清理**：88 个非 catalog 引用迭代文件（135MB）移入 `.workbuddy/media-trash/orphan-cleanup-2026-09-29-04-25-51/`（相对路径 + manifest，可放回）；曲库目录收敛为「catalog 引用 66 文件 + 红日/忘情水本地留存 5 文件」。清理过程修正一处守卫正则误移（红日/忘情水 5 文件当即取回，见上上节）。
+- **GitHub**：main 推送至 `629d3c6`（含 M2 双机、结构优化、Hi 音频/整首替换/搜索导入/转码各轮 + 本地 Hi 化 catalog 入库 + start-metadata.cmd 补提交）；代理端口漂移（7892→7890）继续用 `-c http.proxy` 覆盖，另遇一次 schannel 握手失败重试即过。
+- **上云**：①云端旧曲库整体备份至 `media-originals/media-backup-hi-20260929/`（catalog + audio/covers/lyrics 只移不删）；②同步包 101MB（22 首 Hi 形式音频含 11 首 aac 转码产物 + 22 歌词 + 22 封面 + catalog，包 SHA256 `ceb67c4b…`）scp 上传解包，`chown listen-metadata:listen` + 640 权限照旧；③`systemctl restart listen-together`（内存房间清空，当时无活跃房间）；④基线 **14/14** + 对账：本地/云端 ju-hao 转码 mp3 与封面 md5 逐位一致、云端 catalog 首条字段完整（artist/album/year/lyrics/cover 全带）。
+- **客户端感知**：coverVer/lyricsVer 均随内容变化——设备下次入房自动重拉封面与歌词（无需清缓存）；音频是流式无缓存。手机/MuMu 上装的仍是 `F79DFE09…`（功能无差异，本轮无新代码）。
+- **边界**：`.workbuddy` 里 88 个迭代旧版本（135MB 回收留档）与同步暂存目录待下次清理轮彻底删除；云端旧曲库备份在 `media-originals/media-backup-hi-20260929/`。
 
 ## 本轮新增（.aac 转码收编：真实曲库 22/22 全部 Hi 化，2026-09-29）
 
