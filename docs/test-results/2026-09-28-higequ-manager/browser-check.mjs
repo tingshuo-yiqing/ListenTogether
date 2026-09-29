@@ -19,7 +19,7 @@ const server = createServer(async (req,res) => {
   if (path.startsWith('/api/cover/')) { res.setHeader('Content-Type','image/png'); return res.end(png); }
   let value = {};
   if (path === '/api/tracks') value = {dir:'临时测试曲库',tracks};
-  if (path === '/api/sources') value = {serviceVersion:oldService?'old':'20260929-lyrics-preview',sources:[{name:'higequ',label:'Hi歌曲优先（未命中时尝试其他来源）'}],default:'higequ',minScore:0.8};
+  if (path === '/api/sources') value = {serviceVersion:oldService?'20260927-1240':'20260929-hi-aac',sources:[{name:'higequ',label:'Hi歌曲优先（未命中时尝试其他来源）'}],default:'higequ',minScore:0.8};
   if (path === '/api/trash') value = {items:restored?[]:[{run:'fixture',key:'key',id:'removed',title:'已删歌曲',artist:'歌手'}],errors:[]};
   if (path === '/api/trash/restore') { restored=true; value={ok:true,message:'已恢复'}; }
   if (path === '/api/lyrics-files') value = {files:[]};

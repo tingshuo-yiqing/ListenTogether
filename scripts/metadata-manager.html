@@ -18,7 +18,17 @@
   header h1 { font-size: 16px; margin: 0; }
   header .dir { color: var(--muted); font-size: 12px; word-break: break-all; }
   header .spacer { flex: 1; }
-  main { display: flex; gap: 16px; padding: 16px 20px; align-items: flex-start; }
+  main { padding: 16px 20px; }
+  /* 三个视图（浏览曲库 / 批量匹配 / 新增歌曲）互斥显示，由 body[data-view] 驱动。
+     原来五块功能（浏览、编辑、批量、新增、说明）堆在同一屏，进来就得面对编辑表单的十几个控件，
+     而多数时候只是浏览或补字段；拆成视图后每屏只做一件事。 */
+  .view { display: none; gap: 16px; align-items: flex-start; }
+  body[data-view="browse"] #view-browse,
+  body[data-view="batch"] #view-batch,
+  body[data-view="new"] #view-new { display: flex; }
+  #view-batch, #view-new { flex-direction: column; }
+  #view-batch > .panel, #view-new > .panel { width: 100%; }
+  .view h2 { font-size: 15px; margin: 0; }
   .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; }
   #list-panel { width: 340px; flex-shrink: 0; max-height: calc(100vh - 110px); display: flex; flex-direction: column; }
   #list-filter { padding: 10px 12px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; }
@@ -94,7 +104,8 @@
   button.danger { background: var(--err); }
   button.danger:hover { background: #8f1d13; }
   .track-item.pickable { display: flex; align-items: flex-start; gap: 8px; }
-  .track-item.pickable .pi-body { flex: 1; min-width: 0; }
+  .track-item .pi-body { min-width: 0; }
+  .track-item.pickable .pi-body { flex: 1; }
   .track-item.pickable input[type=checkbox] { margin-top: 3px; }
   #pick-bar { display: none; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
   #pick-bar button { padding: 4px 12px; font-size: 12px; }
@@ -126,8 +137,26 @@
   table.cand { table-layout:fixed; } table.cand td { overflow-wrap:anywhere; }
   table.cand th:first-child { width:48px; } table.cand th:nth-child(2) { width:62px; }
   .actions { flex-wrap:wrap; } .sync-row select { max-width:300px; }
+
+  /* 视图切换按钮组：当前视图高亮，避免"按钮都在但不知道自己在哪" */
+  .tabs { display: flex; gap: 3px; background: #eef2f6; border-radius: 8px; padding: 3px; }
+  .tabs .tab { background: transparent; color: var(--text); padding: 6px 14px; font-size: 13px; }
+  .tabs .tab:hover { background: #e2e8f0; }
+  .tabs .tab[aria-selected="true"] { background: var(--accent); color: #fff; }
+  .tabs .tab[aria-selected="true"]:hover { background: var(--accent-hover); }
+
+  /* 以下是把原先散在 markup 里的内联 style 收编成的语义类 */
+  .sub-note { color: var(--muted); font-size: 12px; }
+  .inline-row { display: flex; gap: 8px; align-items: center; }
+  .grow { flex: 1; }
+  .w-full { width: 100%; }
+  .align-end { align-self: flex-end; }
+  .mt-6 { margin-top: 6px; } .mt-8 { margin-top: 8px; } .mt-10 { margin-top: 10px; }
+  .btn-compact { white-space: nowrap; padding: 8px 12px; }
+  .file-hidden { display: none; }
+  .lrc-preview { max-height: 320px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.8; }
   @media(max-width:850px) {
-    main { flex-direction:column; padding:12px; }
+    main { padding:12px; } .view { flex-direction:column; }
     #list-panel { width:100%; max-height:330px; position:static; }
     #edit-panel { width:100%; padding:14px; } .row { flex-wrap:wrap; } .row>div { flex-basis:160px; }
     #cover-box { flex-wrap:wrap; } header { padding:12px; } header button { padding:7px 10px; font-size:12px; }
@@ -140,16 +169,21 @@
   <h1>🎵 歌曲元信息管理</h1>
   <span class="dir" id="dir-label"></span>
   <span class="spacer"></span>
+  <nav class="tabs" id="view-tabs" role="tablist" aria-label="视图切换">
+    <button class="tab" type="button" role="tab" data-view="browse" aria-selected="true">浏览曲库</button>
+    <button class="tab" type="button" role="tab" id="btn-batch" data-view="batch" aria-selected="false">批量匹配</button>
+    <button class="tab" type="button" role="tab" data-view="new" aria-selected="false">新增歌曲</button>
+  </nav>
   <button class="secondary" id="btn-trash">回收站</button>
   <a href="https://higequ.com/" target="_blank" rel="noopener noreferrer">Hi歌曲 · 查找音频</a>
   <button class="secondary" id="btn-pick">多选删除</button>
-  <button class="secondary" id="btn-batch">批量匹配缺字段</button>
   <button class="secondary" id="btn-refresh">刷新列表</button>
 </header>
 <div id="service-warning" role="alert" class="library-status" hidden></div>
 <div class="library-status"><span id="library-stats"></span><span>操作对象为上方曲库路径。保存后需重启播放后端加载；此页不自动同步或重启服务。</span></div>
 <div id="toasts"></div>
 <main>
+ <div class="view" id="view-browse">
   <div class="panel" id="list-panel">
     <div id="list-filter">
       <input type="text" id="f-filter" placeholder="搜索歌名 / 歌手 / 专辑 / ID" aria-label="搜索曲库">
@@ -194,28 +228,28 @@
         </div>
       </div>
       <label>歌词文件 <span class="hint">库内相对路径，可直接输入或从下拉选已有文件；留空表示无歌词</span></label>
-      <div style="display:flex;gap:8px;align-items:center">
-        <input type="text" id="f-lyrics" list="lyrics-options" placeholder="lyrics/xxx.lrc" style="flex:1">
+      <div class="inline-row">
+        <input type="text" id="f-lyrics" list="lyrics-options" placeholder="lyrics/xxx.lrc" class="grow">
         <datalist id="lyrics-options"></datalist>
-        <input type="file" id="f-lrc-file" accept=".lrc,text/plain" style="display:none">
-        <button type="button" class="secondary" id="btn-lrc-upload" style="white-space:nowrap;padding:8px 12px">上传 .lrc…</button>
+        <input type="file" id="f-lrc-file" accept=".lrc,text/plain" class="file-hidden">
+        <button type="button" class="secondary btn-compact" id="btn-lrc-upload">上传 .lrc…</button>
       </div>
       <details id="current-lyrics-preview">
         <summary>预览当前歌词</summary>
         <p class="hint">显示这首歌已保存的歌词；修改路径或上传后，请先保存修改。</p>
         <button type="button" class="secondary" id="btn-preview-lyrics">重新读取</button>
         <p id="current-lyrics-status" role="status"></p>
-        <pre id="current-lyrics-text" style="max-height:320px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.8"></pre>
+        <pre id="current-lyrics-text" class="lrc-preview"></pre>
       </details>
       <label>封面 <span class="hint">支持 JPG、PNG、WebP；单张不超过 1MB</span></label>
       <div id="cover-box">
         <img id="cover-img" alt="封面预览" style="display:none">
         <div id="cover-actions">
-          <div id="cover-tip" style="color:var(--muted);font-size:12px"></div>
+          <div id="cover-tip" class="sub-note"></div>
           <input type="file" id="f-cover" accept="image/jpeg,image/png,image/webp">
           <button id="btn-cover-upload">上传/替换封面</button>
           <button class="secondary" id="btn-cover-remove">移除独立封面</button>
-          <span style="color:var(--muted);font-size:12px">大图会在浏览器中缩放到最长边 1024px。</span>
+          <span class="sub-note">大图会在浏览器中缩放到最长边 1024px。</span>
         </div>
       </div>
       <div class="id3-ref" id="id3-ref"></div>
@@ -228,64 +262,78 @@
           <button id="btn-sync">匹配这首</button>
           <button id="btn-apply-sync" disabled>应用所勾选字段</button>
           <button id="btn-higequ-audio" title="单曲手动触发：从 Hi歌曲整首替换本曲（音频+名字+歌手+专辑+歌词+封面），旧文件原地保留，无需先保存">⬇ 从 Hi 整首替换</button>
-          <span id="sync-status" style="color:var(--muted);font-size:12px"></span>
+          <span id="sync-status" class="sub-note"></span>
         </div>
         <div id="sync-result"></div>
       </div>
       <div class="actions">
         <button id="btn-save">保存修改</button>
         <button class="danger" id="btn-delete-track">删除这首…</button>
-        <span style="color:var(--muted);font-size:12px">保存时会检查整个曲库，失败自动回滚</span>
+        <span class="sub-note">保存时会检查整个曲库，失败自动回滚</span>
       </div>
     </div>
-    <details>
-      <summary>➕ 新增歌曲（Hi 搜索导入 / 手动上传）</summary>
-      <div style="margin-top:10px">
-        <div class="row">
-          <div style="flex:1">
-            <label>在 Hi歌曲 搜索 <span class="hint">选中哪首就导入哪首；音频/信息/歌词/封面一次到位</span></label>
-            <input type="text" id="hi-query" placeholder="歌名 歌手" style="width:100%">
-          </div>
-          <button id="btn-hi-search" style="align-self:flex-end">搜索</button>
-        </div>
-        <div id="hi-results" style="margin-top:8px"></div>
-        <div class="actions">
-          <span id="hi-progress" style="color:var(--muted);font-size:12px"></span>
+    <div class="footer-note">
+      说明：保存/上传/封面/删除修改页面顶部所示曲库（通过云端隧道访问时就是云端曲库）；正在运行的后端需重启才会重新加载（重启清空内存房间）。
+      删除不抹文件——条目与文件一起进管理器配置的回收目录（删除结果会显示完整路径）（附 manifest.jsonl），照它可放回。
+      维护前确认无人听歌，完成后重启听歌后端加载编目。
+    </div>
+  </div>
+ </div>
+
+ <div class="view" id="view-new">
+  <div class="panel" id="new-panel">
+    <h2>➕ 新增歌曲</h2>
+    <p class="footer-note">在 Hi歌曲 搜索后选中哪首就导入哪首：音频、歌名、歌手、专辑、歌词、封面一次到位。
+      自己的音频文件走下面的「手动上传」。导入只影响本页顶部所示曲库。</p>
+    <div class="row mt-10">
+      <div class="grow">
+        <label>在 Hi歌曲 搜索 <span class="hint">选中哪首就导入哪首；音频/信息/歌词/封面一次到位</span></label>
+        <input type="text" id="hi-query" placeholder="歌名 歌手" class="w-full">
+      </div>
+      <button id="btn-hi-search" class="align-end">搜索</button>
+    </div>
+    <div id="hi-results" class="mt-8"></div>
+    <div class="actions">
+      <span id="hi-progress" class="sub-note"></span>
+    </div>
+    <details class="mt-6">
+      <summary>手动上传本地 MP3（自己的音频文件走这里）</summary>
+      <div class="row mt-10">
+        <div>
+          <label>MP3 文件</label>
+          <input type="file" id="u-file" accept=".mp3,audio/mpeg" class="w-full">
         </div>
       </div>
-      <details style="margin-top:6px">
-        <summary>手动上传本地 MP3（自己的音频文件走这里）</summary>
-        <div class="row" style="margin-top:10px">
-          <div>
-            <label>MP3 文件</label>
-            <input type="file" id="u-file" accept=".mp3,audio/mpeg" style="width:100%">
-          </div>
+      <div class="row">
+        <div>
+          <label>歌曲 ID <span class="hint">1-64 位字母/数字/下划线/连字符</span></label>
+          <input type="text" id="u-id" placeholder="如 xin-ge">
         </div>
-        <div class="row">
-          <div>
-            <label>歌曲 ID <span class="hint">1-64 位字母/数字/下划线/连字符</span></label>
-            <input type="text" id="u-id" placeholder="如 xin-ge">
-          </div>
-          <div>
-            <label>歌名 <span class="hint">必填</span></label>
-            <input type="text" id="u-title">
-          </div>
+        <div>
+          <label>歌名 <span class="hint">必填</span></label>
+          <input type="text" id="u-title">
         </div>
-        <div class="row">
-          <div><label>艺术家 <span class="hint">留空取 ID3</span></label><input type="text" id="u-artist"></div>
-          <div><label>专辑</label><input type="text" id="u-album"></div>
-          <div><label>流派</label><input type="text" id="u-genre"></div>
-          <div><label>年份</label><input type="number" id="u-year" min="1" max="9999"></div>
-        </div>
-        <div class="actions">
-          <button id="btn-upload">上传并入库</button>
-          <span id="upload-progress" style="color:var(--muted);font-size:12px"></span>
-        </div>
-      </details>
+      </div>
+      <div class="row">
+        <div><label>艺术家 <span class="hint">留空取 ID3</span></label><input type="text" id="u-artist"></div>
+        <div><label>专辑</label><input type="text" id="u-album"></div>
+        <div><label>流派</label><input type="text" id="u-genre"></div>
+        <div><label>年份</label><input type="number" id="u-year" min="1" max="9999"></div>
+      </div>
+      <div class="actions">
+        <button id="btn-upload">上传并入库</button>
+        <span id="upload-progress" class="sub-note"></span>
+      </div>
     </details>
-    <details id="batch-details">
-      <summary>🌐 批量匹配缺字段（全库，串行限速）</summary>
-      <div class="sync-row" style="margin-top:10px">
+  </div>
+ </div>
+
+ <div class="view" id="view-batch">
+  <div class="panel" id="batch-panel">
+    <h2>🌐 批量匹配缺字段</h2>
+    <p class="footer-note">按首串行调用单曲端点，限速由服务端进程内队列保证；每首独立成败、可看进度，
+      中途关页面不会留下半批结果。默认命中缓存即跳过出网。</p>
+    <div class="sync-row mt-10">
         <label>来源 <select id="b-source"></select></label>
         <label>置信度阈值 <input type="number" id="b-min-score" min="0" max="1" step="0.05" value="0.8"></label>
         <label><input type="checkbox" id="b-refresh"> 忽略缓存重查</label>
@@ -294,21 +342,16 @@
         <button class="secondary" id="btn-batch-stop" disabled>停止后续匹配</button>
         <button class="secondary" id="btn-batch-retry" disabled>重试失败项</button>
         <button class="secondary" id="btn-batch-apply" disabled>一键补缺（只写缺失字段）</button>
-        <span id="batch-progress" style="color:var(--muted);font-size:12px"></span>
+        <span id="batch-progress" class="sub-note"></span>
       </div>
       <div id="batch-report"></div>
-      <div class="footer-note" style="margin-top:10px">
-        批量匹配默认命中缓存即跳过出网；「一键补缺」只写当前为空的字段，不会覆盖你已手填的内容，
-        每首仍逐条过 loadCatalog 校验闸门。想覆盖已有值，请在右侧单首匹配里勾选后应用
+      <div class="footer-note mt-10">
+        「一键补缺」只写当前为空的字段，不会覆盖你已手填的内容，每首仍逐条过 loadCatalog 校验闸门。
+        想覆盖已有值，请切到「浏览曲库」选中单曲后勾选应用
         （单首匹配到歌词时默认已勾选，点应用即替换当前歌词，旧 .lrc 保留原地不删）。
       </div>
-    </details>
-    <div class="footer-note">
-      说明：保存/上传/封面/删除修改页面顶部所示曲库（通过云端隧道访问时就是云端曲库）；正在运行的后端需重启才会重新加载（重启清空内存房间）。
-      删除不抹文件——条目与文件一起进管理器配置的回收目录（删除结果会显示完整路径）（附 manifest.jsonl），照它可放回。
-      维护前确认无人听歌，完成后重启听歌后端加载编目。
-    </div>
   </div>
+ </div>
 </main>
 <!-- 删除确认框：把"删什么、留什么、能不能反悔"摆在同一屏，点确认之前不动任何文件 -->
 <div class="mask" id="del-mask">
@@ -340,6 +383,9 @@
 </div></div>
 <script>
 const $ = id => document.getElementById(id);
+/** 本页需要的服务端最低版本；与服务端 /api/sources 的 serviceVersion 比的是"不比页面旧"，
+ *  所以服务端再发新版不必回来改这里（新增服务端能力时仍应同步抬这个下界）。 */
+const PAGE_SERVICE_VERSION = '20260929-hi-aac';
 let tracks = [], currentId = null;
 
 function toast(msg, ok = true) {
@@ -419,43 +465,73 @@ function filteredTracks() {
   if (sort === 'title' || sort === 'artist') shown.sort((a,b) => String(sort === 'title' ? a.title : a.effective.artist || '').localeCompare(String(sort === 'title' ? b.title : b.effective.artist || ''), 'zh-CN'));
   return shown;
 }
+// 列表行节点缓存：行只建一次，筛选/排序/多选切换只改类名、勾选状态与节点顺序。
+// 原来是每次 input 都整表 innerHTML='' 再逐条 createElement + querySelector 重来一遍，
+// 22 首时无感，曲库到几百首后每敲一个字母就是一次全量 DOM 拆建。
+const rowCache = new Map();
+function buildRow(t) {
+  const div = document.createElement('div');
+  div.className = 'track-item';
+  div.dataset.id = t.id;
+  // .pi-body 固定存在，多选时才把整行内容挪进去加勾选框；勾它不等于选中编辑，所以要挡住行点击
+  div.innerHTML = `<div class="pi-body"><div class="t-title"></div>
+      <div class="t-sub"><span class="sub-text"></span>
+        <span class="badge" data-role="lyrics"></span>
+        <span class="badge" data-role="cover"></span></div></div>
+      <input type="checkbox" hidden>`;
+  div.querySelector('.t-title').textContent = t.title;
+  div.querySelector('.sub-text').textContent =
+    `${t.effective.artist || '未知艺术家'} · ${fmtDuration(t.effective.durationMs)} · ${t.id}`;
+  div.onclick = () => select(t.id);
+  const cb = div.querySelector('input');
+  cb.onclick = (ev) => ev.stopPropagation();
+  cb.onchange = () => {
+    if (cb.checked) picked.add(t.id); else picked.delete(t.id);
+    updatePickBar();
+  };
+  return div;
+}
+/** 把行节点同步到当前曲目状态（多选/active 状态也在这里，改完直接重排）。 */
+function syncRow(div, t) {
+  const badges = div.querySelectorAll('.badge');
+  const ly = badges[0], cov = badges[1];
+  ly.textContent = t.effective.hasLyrics ? '歌词' : '无歌词';
+  ly.classList.toggle('has', !!t.effective.hasLyrics);
+  cov.textContent = t.hasCover ? '封面' : '无封面';
+  cov.classList.toggle('has', !!t.hasCover);
+  div.classList.toggle('active', t.id === currentId);
+  div.classList.toggle('pickable', pickMode);
+  const cb = div.querySelector('input');
+  cb.hidden = !pickMode;
+  cb.checked = picked.has(t.id);
+}
 function renderList() {
   const panel = $('list-items');
-  panel.innerHTML = '';
   const shown = filteredTracks();
   $('list-count').textContent = '显示 ' + shown.length + ' / ' + tracks.length + ' 首';
+  // 曲库里已经没了的行（刚删掉 / 别的窗口改过）连节点一起回收，避免留下点不动的空壳
+  for (const [id, node] of rowCache) {
+    if (!tracks.some(t => t.id === id)) { node.remove(); rowCache.delete(id); }
+  }
+  // 被筛掉的行只从面板里摘下来，节点留在缓存里 —— 再筛回来不用重建。
+  // 这一步必须在"筛不出东西"的早退之前做，否则旧行会留在面板上冒充筛选结果。
+  const alive = new Set(shown.map(t => t.id));
+  for (const [id, node] of rowCache) {
+    if (!alive.has(id) && node.parentNode) node.remove();
+  }
+  const empty = $('list-empty');
+  if (empty) empty.remove();
   if (!shown.length) {
-    panel.appendChild(el('div', tracks.length ? '没有符合条件的歌曲' : '曲库为空', null)).id = 'list-empty';
+    const tip = el('div', tracks.length ? '没有符合条件的歌曲' : '曲库为空', null);
+    tip.id = 'list-empty';
+    panel.appendChild(tip);
     return;
   }
   for (const t of shown) {
-    const div = document.createElement('div');
-    div.className = 'track-item' + (t.id === currentId ? ' active' : '');
-    div.innerHTML = `<div class="t-title"></div>
-      <div class="t-sub"><span class="sub-text"></span>
-        <span class="badge ${t.effective.hasLyrics ? 'has' : ''}">${t.effective.hasLyrics ? '歌词' : '无歌词'}</span>
-        <span class="badge ${t.hasCover ? 'has' : ''}">${t.hasCover ? '封面' : '无封面'}</span></div>`;
-    div.querySelector('.t-title').textContent = t.title;
-    div.querySelector('.sub-text').textContent =
-      `${t.effective.artist || '未知艺术家'} · ${fmtDuration(t.effective.durationMs)} · ${t.id}`;
-    div.onclick = () => select(t.id);
-    // 多选模式：整行内容包进 .pi-body，前面插一个勾选框（勾它不等于选中编辑，所以要挡住行点击）
-    if (pickMode) {
-      div.classList.add('pickable');
-      const body = document.createElement('div');
-      body.className = 'pi-body';
-      while (div.firstChild) body.appendChild(div.firstChild);
-      const cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.checked = picked.has(t.id);
-      cb.onclick = (ev) => ev.stopPropagation();
-      cb.onchange = () => {
-        if (cb.checked) picked.add(t.id); else picked.delete(t.id);
-        updatePickBar();
-      };
-      div.prepend(cb, body);
-    }
-    panel.appendChild(div);
+    let div = rowCache.get(t.id);
+    if (!div) { div = buildRow(t); rowCache.set(t.id, div); }
+    syncRow(div, t);
+    panel.appendChild(div);   // 对已有节点 appendChild 是移动而非重建，兼作排序
   }
 }
 $('f-filter').addEventListener('input', renderList);
@@ -874,13 +950,25 @@ function batchRow(text, cls) {
   report.scrollTop = report.scrollHeight;
 }
 
-$('btn-batch').onclick = () => {
-  const d = $('batch-details');
-  d.open = true;
-  d.scrollIntoView({ block: 'start' });
+// 视图切换：浏览曲库 / 批量匹配 / 新增歌曲 三选一，由 body[data-view] 驱动 CSS 显隐。
+// 只有一个状态位，没有第二套渲染逻辑——切视图不碰任何数据，切回来列表和表单都还在原样。
+function showView(name) {
+  document.body.dataset.view = name;
+  for (const tab of document.querySelectorAll('#view-tabs .tab')) {
+    tab.setAttribute('aria-selected', String(tab.dataset.view === name));
+  }
+}
+function batchHint() {
   const n = tracks.filter(missingFieldCount).length;
   $('batch-progress').textContent = n ? `有 ${n} 首存在空缺字段` : '所有字段都已填写，无需批量匹配';
-};
+}
+for (const tab of document.querySelectorAll('#view-tabs .tab')) {
+  tab.onclick = () => {
+    showView(tab.dataset.view);
+    // 切进批量视图时立刻给一句"还差多少"，省得点开始匹配才发现没活可干
+    if (tab.dataset.view === 'batch') batchHint();
+  };
+}
 
 // 批量匹配走"逐首调用单曲端点"而非服务端长请求：每首独立成败、可看进度，
 // 中途关页面不会留下半批结果；限速由服务端进程内串行队列保证。
@@ -976,7 +1064,10 @@ $('btn-batch-apply').onclick = async () => {
 async function loadSources() {
   try {
     const data = await api('/api/sources');
-    const compatible = data.serviceVersion === '20260929-lyrics-preview' && data.sources.some(s => s.name === 'higequ');
+    // 页面与服务端各自独立发版，只要服务端不比页面旧就算兼容——版本号是日期串，直接比大小。
+    // 原来用的是严格相等（'20260929-lyrics-preview'），服务端 09-29 加转码后升到 '20260929-hi-aac'，
+    // 于是"服务端比页面新"被误报成"管理服务仍是旧版本"，把用户引去重启一个并不旧的进程。
+    const compatible = String(data.serviceVersion) >= PAGE_SERVICE_VERSION && data.sources.some(s => s.name === 'higequ');
     $('service-warning').hidden = compatible;
     $('service-warning').textContent = compatible ? '' : '管理服务仍是旧版本：页面更新不会更新后台进程。请关闭旧的 metadata-manager 进程，重新运行 start-metadata.cmd 后刷新页面，才能使用 Hi歌曲匹配与当前歌词预览。';
     for (const box of [$('s-source'), $('b-source')]) {
@@ -1162,6 +1253,7 @@ $('del-go').onclick = async () => {
 };
 
 $('btn-refresh').onclick = () => refresh();
+showView('browse');   // 初始视图：body 上没有 data-view 时三个视图都是 display:none
 loadSources();
 loadLyricsOptions();
 refresh(false);
