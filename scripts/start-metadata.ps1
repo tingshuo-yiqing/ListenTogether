@@ -1,17 +1,16 @@
-﻿# 一键启动本地管理器；只复用本工具进程，不停止其他服务，也不重启播放后端。
+﻿# 一键启动本地管理器：**每次都用磁盘上的最新代码重启**（幂等）。管理器无持久状态
+# （同步缓存/回收清单都落盘），重启零成本；不做版本比较——硬编码版本常量必然随每次
+# 交付过期（2026-09-29 实测：复用旧进程导致"接口不存在"，比较常量过期导致误报旧版本）。
+# 3100 是管理器专属端口；只停本工具进程，不动播放后端（3000）与其他服务。
 $ErrorActionPreference = 'Stop'
 $projectDir = Split-Path $PSScriptRoot -Parent
 $managerUrl = 'http://127.0.0.1:3100'
 try {
-  $running = Invoke-RestMethod -Uri "$managerUrl/api/sources" -TimeoutSec 2
-} catch { }
-try {
-  if ($running.sources) {
-    if ($running.serviceVersion -ne '20260929-lyrics-preview') {
-      throw '3100 端口的元数据管理器仍是旧版本。请关闭旧的 metadata-manager 进程，再运行本启动器；仅刷新网页不会更新后台。'
-    }
-    Start-Process $managerUrl
-    exit 0
+  # 端口已被占用（旧管理器或残留进程）先停掉，保证起来的一定是当前代码。
+  $listener = Get-NetTCPConnection -LocalPort 3100 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+  if ($listener) {
+    Stop-Process -Id $listener.OwningProcess -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Milliseconds 500
   }
   $nodeExe = (Get-Command node -ErrorAction Stop).Source
   if (!(Test-Path -LiteralPath (Join-Path $projectDir 'server/dist/library/catalog.js'))) {
@@ -27,7 +26,11 @@ try {
     $managerProcess.Refresh()
     if ($managerProcess.HasExited) { throw "管理器启动失败，请查看 $errLog" }
     try { $ready = Invoke-RestMethod -Uri "$managerUrl/api/sources" -TimeoutSec 1 } catch { continue }
-    if ($ready.sources) { Start-Process $managerUrl; exit 0 }
+    if ($ready.sources) {
+      Start-Process $managerUrl
+      Write-Host "管理器已启动（$($ready.serviceVersion)），浏览器已打开 $managerUrl"
+      exit 0
+    }
   }
   throw "启动超时，请查看 $errLog"
 } catch {
