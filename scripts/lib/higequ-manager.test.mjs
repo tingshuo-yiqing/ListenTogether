@@ -113,6 +113,7 @@ test('真管理器：Hi音频下载（Base64 直链→白名单→魔数校验�
         if(state==='audio-magic')return new Response('<html>not audio</html>');
         return new Response(readFileSync(process.env.HI_AUDIO));
       }
+      if(u.hostname.endsWith('.kuwo.cn'))return new Response(new Uint8Array([255,216,255,224,0,0,0,0])); // 最小 JPEG（魔数即可过 imageExtension）
       throw new Error('offline fixture refuses '+u.hostname);
     };
     await writeFile(preload,'globalThis.fetch = '+mockFetch.toString()+';');
@@ -122,26 +123,76 @@ test('真管理器：Hi音频下载（Base64 直链→白名单→魔数校验�
     const port=log.match(/http:\/\/127.0.0.1:(\d+)/)?.[1];assert.ok(port,log);
     const api=async(path,method='POST')=>{const r=await fetch('http://127.0.0.1:'+port+path,{method});return {httpStatus:r.status,...await r.json()};};
     const catalog=async()=>JSON.parse(await readFile(cat,'utf8'));
-    // 成功路径：指针换新、旧文件原地保留、新文件以 ID3 开头且 ≥ AUDIO 上限以内。
-    const ok=await api('/api/tracks/a-ok/higequ-audio');assert.equal(ok.httpStatus,200,JSON.stringify(ok));assert.ok(ok.ok);
+    // 整首替换成功路径：音频指针换新 + 名字/歌手按 Hi 候选覆盖 + 歌词/封面新文件入链，旧文件原地保留。
+    const ok=await api('/api/tracks/a-ok/higequ-replace');assert.equal(ok.httpStatus,200,JSON.stringify(ok));assert.ok(ok.ok);
     const after=(await catalog()).find(e=>e.id==='a-ok');assert.match(after.file,/^audio\/a-ok-[0-9a-f-]{36}\.mp3$/);
+    assert.equal(after.title,'Test Song');assert.equal(after.artist,'Artist');
+    assert.match(after.lyrics,/^lyrics\/a-ok-[0-9a-f-]{36}\.lrc$/);
+    assert.match(after.cover,/^covers\/a-ok-[0-9a-f-]{36}\.jpg$/);
     const head=await readFile(join(media,after.file));assert.equal(head.subarray(0,3).toString(),'ID3');assert.ok(head.length>1024);
+    assert.equal((await readFile(join(media,after.lyrics),'utf8')),'[00:00.00]fixture lyrics\n');
     await access(join(media,'demo-soft.mp3')); // 旧音频原地保留
     // 身份不符拒绝：catalog 与文件零变化。
     const before=(await catalog()).find(e=>e.id==='a-id');
     await writeFile(mode,'audio-identity');
-    assert.equal((await api('/api/tracks/a-id/higequ-audio')).httpStatus,422);
+    assert.equal((await api('/api/tracks/a-id/higequ-replace')).httpStatus,422);
     assert.deepEqual((await catalog()).find(e=>e.id==='a-id'),before);
     // 无直链 / 白名单外域名 / 非 MP3 魔数：分别 404 / 404 / 422，均不动库。
     await writeFile(mode,'audio-noaudio');
-    assert.equal((await api('/api/tracks/a-no/higequ-audio')).httpStatus,404);
+    assert.equal((await api('/api/tracks/a-no/higequ-replace')).httpStatus,404);
     await writeFile(mode,'audio-evil');
-    assert.equal((await api('/api/tracks/a-evil/higequ-audio')).httpStatus,404);
+    assert.equal((await api('/api/tracks/a-evil/higequ-replace')).httpStatus,404);
     await writeFile(mode,'audio-magic');
-    assert.equal((await api('/api/tracks/a-magic/higequ-audio')).httpStatus,422);
+    assert.equal((await api('/api/tracks/a-magic/higequ-replace')).httpStatus,422);
     await writeFile(mode,'audio-ok');
     assert.equal(JSON.stringify((await catalog()).map(e=>e.id)),JSON.stringify(entries.map(e=>e.id)));
     await access(join(media,'demo-soft.mp3'));
+  } finally {
+    if (child) child.kill();
+    await rm(temp,{recursive:true,force:true});
+  }
+});
+
+test('真管理器：从 Hi 搜索并导入整首新歌（音频+信息+歌词+封面；重复 ID 409、坏 rid 400）', {timeout:45000}, async()=>{
+  const root=resolve(import.meta.dirname,'../..'), temp=await mkdtemp(join(tmpdir(),'lt-hi-import-'));
+  const media=join(temp,'media'), trash=join(temp,'trash');let child;
+  try {
+    await mkdir(media);
+    await writeFile(join(media,'catalog.json'),'[]');
+    const mode=join(temp,'mode'); await writeFile(mode,'audio-ok');
+    const preload=join(temp,'preload.mjs');
+    const mockFetch = async(value)=>{
+      const {readFileSync}=await import('node:fs');
+      const u=new URL(value), state=readFileSync(process.env.HI_MODE,'utf8');
+      const b64=s=>Buffer.from(s,'utf8').toString('base64');
+      const player=(code)=>'<span id="music-title">Import Song</span><span id="music-artist">Import Artist</span><meta property="og:image" content="https://img1.kuwo.cn/import.jpg"><div id="lyrics-container"><div class="lyric-line" data-time="0">import line</div></div>'+(code?'<script>let code = "'+code+'";</script>':'');
+      if(u.hostname==='higequ.com'){
+        if(u.pathname.startsWith('/s/'))return new Response('<div class="result-item" data-rid="42"><div class="result-info"><div class="result-title">Import Song</div><div class="result-artist">Import Artist</div><div class="result-album">专辑: Import Album</div></div></div>');
+        if(u.pathname==='/player/42/')return new Response(state==='audio-ok'?player(b64('https://kw-lv.kuwo.cn/c7d9/r/42/trackmedia/M500042.mp3')):player(null));
+      }
+      if(u.hostname.endsWith('.kuwo.cn') && u.pathname.endsWith('.mp3'))return new Response(readFileSync(process.env.HI_AUDIO));
+      if(u.hostname.endsWith('.kuwo.cn'))return new Response(new Uint8Array([255,216,255,224,0,0,0,0]));
+      throw new Error('offline fixture refuses '+u.hostname);
+    };
+    await writeFile(preload,'globalThis.fetch = '+mockFetch.toString()+';');
+    child=spawn(process.execPath,['--import',pathToFileURL(preload).href,join(root,'scripts/metadata-manager.mjs'),'--dir',media,'--trash',trash,'--cache',join(temp,'cache.json'),'--port','0'],{stdio:['ignore','pipe','pipe'],windowsHide:true,env:{...process.env,HI_MODE:mode,HI_AUDIO:join(root,'demo-media/demo-soft.mp3')}});
+    let log='';child.stdout.setEncoding('utf8');child.stderr.setEncoding('utf8');child.stdout.on('data',c=>log+=c);child.stderr.on('data',c=>log+=c);
+    for(let i=0;i<120&&!/http:\/\/127.0.0.1:(\d+)/.test(log);i++)await new Promise(r=>setTimeout(r,50));
+    const port=log.match(/http:\/\/127.0.0.1:(\d+)/)?.[1];assert.ok(port,log);
+    const api=async(path,body,method=body?'POST':'GET')=>{const r=await fetch('http://127.0.0.1:'+port+path,{method,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});return {httpStatus:r.status,...await r.json()};};
+    const search=await api('/api/higequ/search',{query:'随便'});assert.equal(search.httpStatus,200);assert.equal(search.results[0].rid,'42');assert.equal(search.results[0].album,'Import Album');
+    const imp=await api('/api/higequ/import',{rid:'42',album:search.results[0].album});assert.equal(imp.httpStatus,200,JSON.stringify(imp));
+    const cat=JSON.parse(await readFile(join(media,'catalog.json'),'utf8'));assert.equal(cat.length,1);
+    const e=cat[0];assert.equal(e.id,'hi-42');assert.equal(e.title,'Import Song');assert.equal(e.artist,'Import Artist');assert.equal(e.album,'Import Album');
+    assert.equal(e.file,'audio/hi-42.mp3');assert.match(e.lyrics,/^lyrics\/hi-42-[0-9a-f-]{36}\.lrc$/);assert.match(e.cover,/^covers\/hi-42-[0-9a-f-]{36}\.jpg$/);
+    const audio=await readFile(join(media,e.file));assert.equal(audio.subarray(0,3).toString(),'ID3');
+    assert.equal(await readFile(join(media,e.lyrics),'utf8'),'[00:00.00]import line\n');
+    // 重复导入同 rid → 409（默认 ID hi-42 已存在）；坏 rid → 400；无直链（mode 切换）→ 404。
+    assert.equal((await api('/api/higequ/import',{rid:'42'})).httpStatus,409);
+    assert.equal((await api('/api/higequ/import',{rid:'abc'})).httpStatus,400);
+    await writeFile(mode,'audio-noaudio');
+    assert.equal((await api('/api/higequ/import',{rid:'42',id:'hi-2'})).httpStatus,404);
+    assert.equal(JSON.stringify(JSON.parse(await readFile(join(media,'catalog.json'),'utf8')).map(x=>x.id)),JSON.stringify(['hi-42']));
   } finally {
     if (child) child.kill();
     await rm(temp,{recursive:true,force:true});

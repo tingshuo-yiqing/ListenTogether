@@ -35,11 +35,12 @@ export function parseHiSearch(html) {
   }).filter(Boolean);
 }
 
-/** 不从最后一句歌词推断歌曲时长；页面没声明的年份/流派保持空值。 */
-export function parseHiDetail(html, candidate, local) {
+/** 不从最后一句歌词推断歌曲时长；页面没声明的年份/流派保持空值。
+ *  verifyIdentity:false 供"从 Hi 导入新歌"用——导入哪条由人在搜索结果里挑，标题/歌手以页面为准。 */
+export function parseHiDetail(html, candidate, local, { verifyIdentity = true } = {}) {
   const title = htmlText(html.match(/<span\b[^>]*id=["']music-title["'][^>]*>([\s\S]*?)<\/span>/i)?.[1]);
   const artist = htmlText(html.match(/<span\b[^>]*id=["']music-artist["'][^>]*>([\s\S]*?)<\/span>/i)?.[1]);
-  if (!title || !artist || identity(title) !== identity(candidate.title) || identity(artist) !== identity(candidate.artist)) {
+  if (!title || !artist || (verifyIdentity && (identity(title) !== identity(candidate.title) || identity(artist) !== identity(candidate.artist)))) {
     throw new Error('Hi歌曲详情身份不符或页面结构变化，跳过详情');
   }
   const image = [...html.matchAll(/<meta\b[^>]*>/gi)].find(m => attr(m[0], 'property') === 'og:image');
@@ -60,7 +61,7 @@ export function parseHiDetail(html, candidate, local) {
   const text = lines.join('\n') + '\n';
   const lyrics = !invalid && lines.length && Buffer.byteLength(text) <= LYRICS_LIMIT
     ? { status: 'matched', kind: 'synced', source: 'Hi歌曲', text, sourceUrl: candidate.sourceUrl } : null;
-  return { coverUrl, lyrics };
+  return { coverUrl, lyrics, title, artist };
 }
 
 /**
@@ -112,4 +113,19 @@ export function createHiGequ(scoreCandidate, options = {}) {
     return result;
   }
   return { name: 'higequ', label: 'Hi歌曲', findMetadata };
+}
+
+/**
+ * 手动导入用的自由搜索（2026-09-29 随"从 Hi 导入新歌"新增）：按关键词取前 10 条候选，
+ * 不做身份核对——导入哪条由人挑。与 findMetadata 的匹配搜索不同：无 1 秒间隔、无缓存
+ * （单曲手动触发）；传输上限与域校验和匹配搜索一致。request 可注入供离线测试。
+ */
+export async function searchHi(query, request = globalThis.fetch) {
+  const q = String(query || '').trim();
+  if (!q) throw new Error('搜索词不能为空');
+  const html = (await fetchLimited(ROOT + '/s/' + encodeURIComponent(q) + '/', 2 * 1024 * 1024, value => {
+    const u = new URL(value);
+    return u.origin === ROOT && !u.username && !u.password && /^\/(?:s\/[^/]+\/|player\/\d+\/)$/.test(u.pathname);
+  }, request)).toString('utf8');
+  return parseHiSearch(html);
 }

@@ -104,4 +104,14 @@ build-cloud-catalog.mjs 不依赖本地平铺布局，无需改动）。新增 s
 
 `scripts/lib/higequ.mjs` 新增 `parseHiAudio`：player 页以服务端渲染的 `let code="<base64>"` 携带音频直链（实测酷我 CDN、免签名免 Referer），解码后必须过 `allowedAudioUrl` 白名单（`*.kuwo.cn` 族，https/443/无凭证）才是可用地址。管理器新增 `POST /api/tracks/:id/higequ-audio`：复用 `syncTrack` 的 higequ 身份校验（`metadataAccepted`，拒同名翻唱/现场版）→ 取 player 页 → 直链 → `fetchLimited` 按 `AUDIO_LIMIT`（64MB）下载 → MP3 魔数校验 → 新文件 `audio/<id>-<uuid>.mp3` + catalog 指针换新（`writeAndValidate` 闸门，失败撤文件），**旧音频原地保留**（删除轮的引用计数继续管它）。不限速：无批量入口，逐首手动点击（编辑页「⬇ Hi音频」）。serviceVersion 升 `20260929-hi-audio`；云端管理器未包含。设计稿「不下载音频」红线按用户决策修订（见设计稿非目标节的修订注记）。
 
+## Hi整首替换与搜索导入（2026-09-29 第二轮，按用户指令重构）
+
+同日用户指令「替换直接替换不用保存，连名字都直接替换；增加直接在 Hi 上搜索爬取的接口；重构上传新歌面板」：
+
+- **`POST /api/tracks/:id/higequ-replace`（替代原 /higequ-audio，后者不复存在）**：一次动作整首替换——音频（指针换新）+ 标题/歌手按 Hi 候选**连名覆盖** + 专辑（非空才覆盖）+ 歌词（新 .lrc 指针）+ 封面（新图指针）；**不要求表单先保存**（未保存编辑被服务端新值取代，即"直接替换"语义）；全部新文件走 `wx` 独占创建 + `writeAndValidate` 闸门，失败整组撤销；旧文件原地保留。UI 按钮改「⬇ 从 Hi 整首替换」并去掉 dirty 拦截。
+- **`POST /api/higequ/search` + `POST /api/higequ/import`**：自由搜索（`searchHi`，模块级导出，无 1 秒间隔/无缓存，挑哪条由人定）→ 导入整首新歌（`parseHiDetail` 新增 `verifyIdentity:false` 与 title/artist 回传——导入以页面为准；新 ID 默认 `hi-<rid>` 可自定义，重复 409、坏 rid 400；无直链 404、白名单外 404、非 MP3 422，均不动库）。音频/信息/歌词/封面一次到位。
+- **新增面板重构**：「上传新歌曲」改为「新增歌曲（Hi 搜索导入 / 手动上传）」——Hi 搜索结果行内一键导入（textContent 渲染，外部文本不可信），手动上传收进内层折叠保留（自有文件走这里）。
+- 门禁：脚本离线 **51/51**（替换测试迁移并加歌词/封面/字段覆盖断言、导入闭环 1 组：搜索→导入→文件/指针/重复 409/坏 rid 400/无直链 404）、驱动 85/85；真网验证《富士山下》整首替换 200（7.2s：音频 4.0MB 换新、专辑补全 What's Going On...?、歌词/封面新指针、旧 6.2MB 保留）与搜索导入 200（4.4s，4.0MB+歌词+封面）。
+- 本轮新坑：写歌词/封面文件前必须 mkdir（夹具无预建目录时 wx 直接 ENOENT）；`fetchLimited` 返回 Buffer，进 HTML 解析前必须 `.toString('utf8')`；离线 mock 已知约束同陷阱 10.5。
+
 2026-09-29：按用户指令恢复低置信度文字候选的手动应用。单曲 score < minScore 时只提示核对，不默认勾选，但可手动选择艺术家/专辑/年份/流派并应用；批量仍仅消费达标的 changes。资源未匹配到时不伪造封面或歌词候选。Chrome 实测 0.6 < 0.8 候选默认未选、可勾选并提交五月天；85/85接口回归通过。HTML按请求读取，刷新页面即生效，未改真实曲库。

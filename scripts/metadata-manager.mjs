@@ -45,7 +45,21 @@ import {
 } from './lib/metadata-sources.mjs';
 
 import { findLyrics, fetchLimited, allowedCoverUrl, allowedAudioUrl, AUDIO_LIMIT, imageExtension, COVER_LIMIT } from './lib/metadata-assets.mjs';
-import { parseHiAudio } from './lib/higequ.mjs';
+import { parseHiAudio, parseHiDetail, searchHi } from './lib/higequ.mjs';
+
+/** MP3 魔数：ID3 头或 MPEG 帧同步（0xFFEx/Fx）。下载与导入共用。 */
+function looksLikeMp3(bytes) {
+  return bytes.length > 1024
+    && ((bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) || (bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0));
+}
+
+/** Hi歌曲 player 页抓取：域 + 路径白名单（/s/<词>/ 与 /player/<rid>/），2MB 上限。 */
+async function fetchHiPlayerPage(sourceUrl) {
+  return (await fetchLimited(sourceUrl, 2 * 1024 * 1024, u => {
+    const p = new URL(u);
+    return p.origin === 'https://higequ.com' && /^\/(?:s\/[^/]+\/|player\/\d+\/)$/.test(p.pathname);
+  })).toString('utf8');
+}
 
 import { listTrash, restoreTrash } from './lib/media-trash.mjs';
 
@@ -821,54 +835,129 @@ async function handleRequest(req, res) {
         message: (applied.length ? `已应用「${entry.title}」的 ${applied.join('、')}` : '没有字段写入')
           + (failed.length ? '；' + failed.map(f => `${f.field} 未应用：${f.message}`).join('；') : '') });
     }
-    // 从 Hi歌曲抓取音频（2026-09-29 用户决策：单曲手动触发、仅开发测试用途、不限速）。
-    // 流程：复用 syncTrack 的 higequ 身份校验（拒同名翻唱/现场版）→ 取 player 页 →
-    // 解析 Base64 直链（parseHiAudio）→ allowedAudioUrl 白名单（酷我 CDN 族）→
-    // fetchLimited 按 AUDIO_LIMIT 下载 → MP3 魔数校验 → 新文件 audio/<id>-<uuid>.mp3 +
-    // catalog 指针换新（旧音频原地保留，回收/删除的引用计数继续管它）。
-    const audioSyncMatch = url.pathname.match(/^\/api\/tracks\/([a-zA-Z0-9_-]{1,64})\/higequ-audio$/);
-    if (req.method === 'POST' && audioSyncMatch) {
-      const id = audioSyncMatch[1];
+    // 从 Hi歌曲整首替换（2026-09-29 用户决策，替代此前仅换音频的 /higequ-audio）：
+    // 单曲手动触发、仅开发测试用途、不限速。一次动作替换 **音频 + 标题/歌手/专辑 + 歌词 + 封面**，
+    // 不要求表单先保存（refresh() 会以服务端新值为准）。旧文件全部原地保留，可随时手工改回。
+    const hiReplaceMatch = url.pathname.match(/^\/api\/tracks\/([a-zA-Z0-9_-]{1,64})\/higequ-replace$/);
+    if (req.method === 'POST' && hiReplaceMatch) {
+      const id = hiReplaceMatch[1];
       const entries = await readCatalogEntries();
       const entry = entries.find(e => e.id === id);
       if (!entry) return json(res, 404, { message: '歌曲不存在' });
       let sync;
       try {
-        sync = await syncTrack(id, { source: 'higequ' });
+        sync = await syncTrack(id, { source: 'higequ', includeLyrics: true });
       } catch (err) {
         return json(res, 502, { message: 'Hi歌曲查询失败：' + (err.message || '网络错误') });
       }
-      // 音频直链只在 Hi 的 player 页上：回退到了其他来源（QQ/网易云）时 sourceUrl 不是 player 页，直接拒绝。
       if (sync.source !== 'higequ' || !sync.candidate) {
-        return json(res, 404, { message: 'Hi歌曲没有匹配到候选（无结果或查询失败），未下载音频' });
+        return json(res, 404, { message: 'Hi歌曲没有匹配到候选（无结果或查询失败），未替换' });
       }
       if (sync.metadataAccepted !== true) {
-        return json(res, 422, { message: 'Hi歌曲候选身份不符（同名翻唱/现场版）或低于阈值，拒绝下载音频' });
+        return json(res, 422, { message: 'Hi歌曲候选身份不符（同名翻唱/现场版）或低于阈值，拒绝替换' });
       }
-      const pageHtml = (await fetchLimited(sync.candidate.sourceUrl, 2 * 1024 * 1024, u => {
-        const p = new URL(u);
-        return p.origin === 'https://higequ.com' && /^\/(?:s\/[^/]+\/|player\/\d+\/)$/.test(p.pathname);
-      })).toString('utf8');
+      const pageHtml = await fetchHiPlayerPage(sync.candidate.sourceUrl);
       const audioUrl = parseHiAudio(pageHtml);
       if (!audioUrl) return json(res, 404, { message: '播放页没有可用的音频直链（页面结构变化或不在白名单域），已放弃' });
       const bytes = await fetchLimited(audioUrl, AUDIO_LIMIT, allowedAudioUrl);
-      const isMp3 = bytes.length > 1024
-        && ((bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) || (bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0));
-      if (!isMp3) return json(res, 422, { message: '下载内容不是 MP3（魔数不符），已放弃' });
-      const rel = `audio/${id}-${randomUUID()}.mp3`;
-      const newPath = join(MEDIA_DIR, rel);
-      await mkdir(dirname(newPath), { recursive: true });
-      await writeFile(newPath, bytes, { flag: 'wx' });
-      const newEntries = entries.map(e => e.id === id ? { ...e, file: rel } : e);
+      if (!looksLikeMp3(bytes)) return json(res, 422, { message: '下载内容不是 MP3（魔数不符），已放弃' });
+      const created = [];
+      const newEntry = { ...entry };
       try {
-        await writeAndValidate(entries, newEntries);
+        // 音频：新文件 + 指针换新；文字字段按 Hi 候选直接覆盖（名字/歌手连名替换，Hi 没给的字段保留原值）。
+        const audioRel = `audio/${id}-${randomUUID()}.mp3`;
+        await mkdir(dirname(join(MEDIA_DIR, audioRel)), { recursive: true });
+        await writeFile(join(MEDIA_DIR, audioRel), bytes, { flag: 'wx' });
+        created.push(audioRel);
+        newEntry.file = audioRel;
+        newEntry.title = sync.candidate.title;
+        newEntry.artist = sync.candidate.artist;
+        if (sync.candidate.album) newEntry.album = sync.candidate.album;
+        // 歌词：sync(includeLyrics) 已带 Hi 的 synced 文本，写新文件 + 指针。
+        if (sync.lyrics?.status === 'matched' && sync.lyrics.text) {
+          const lrcRel = `lyrics/${id}-${randomUUID()}.lrc`;
+          await mkdir(dirname(join(MEDIA_DIR, lrcRel)), { recursive: true });
+          await writeFile(join(MEDIA_DIR, lrcRel), sync.lyrics.text, { flag: 'wx' });
+          created.push(lrcRel);
+          newEntry.lyrics = lrcRel;
+        }
+        // 封面：sync.coverUrl 已过 allowedCoverUrl 白名单，下载后按魔数定扩展名。
+        if (sync.coverUrl) {
+          const img = await fetchLimited(sync.coverUrl, COVER_LIMIT, allowedCoverUrl);
+          const covRel = `covers/${id}-${randomUUID()}.${imageExtension(img)}`;
+          await mkdir(dirname(join(MEDIA_DIR, covRel)), { recursive: true });
+          await writeFile(join(MEDIA_DIR, covRel), img, { flag: 'wx' });
+          created.push(covRel);
+          newEntry.cover = covRel;
+        }
+        await writeAndValidate(entries, entries.map(e => e.id === id ? newEntry : e));
       } catch (err) {
-        // 写库失败时新文件必然还没有任何 catalog 引用，直接清掉；回滚失败则保留供人工恢复。
-        if (!err.message?.includes('回滚失败')) await unlink(newPath).catch(() => {});
+        // 失败时新建文件都还没有 catalog 引用，直接清掉（回滚失败则保留供人工恢复）。
+        if (!err.message?.includes('回滚失败')) for (const rel of created) await unlink(join(MEDIA_DIR, rel)).catch(() => {});
         throw err;
       }
-      return json(res, 200, { ok: true, file: rel, size: bytes.length,
-        message: `已从 Hi歌曲下载音频：「${entry.title}」${(bytes.length / 1024 / 1024).toFixed(1)}MB → ${rel}；旧音频文件原地保留` });
+      return json(res, 200, { ok: true, file: newEntry.file, title: newEntry.title, artist: newEntry.artist,
+        message: `已从 Hi歌曲整首替换：「${entry.title}」→「${newEntry.title}」（音频 ${(bytes.length / 1024 / 1024).toFixed(1)}MB`
+          + `${sync.lyrics?.status === 'matched' ? ' + 歌词' : ''}${newEntry.cover && newEntry.cover !== entry.cover ? ' + 封面' : ''}）；旧文件原地保留` });
+    }
+    // Hi歌曲自由搜索（供"从 Hi 导入新歌"面板；单曲手动触发，不限速、无缓存）。
+    if (req.method === 'POST' && url.pathname === '/api/higequ/search') {
+      const body = JSON.parse((await readBody(req, 1024 * 1024)).toString('utf8') || '{}');
+      let rows;
+      try {
+        rows = await searchHi(body.query);
+      } catch (err) {
+        return json(res, 502, { message: 'Hi歌曲搜索失败：' + (err.message || '网络错误') });
+      }
+      return json(res, 200, { ok: true, results: rows.map(r => ({ rid: r.id, title: r.title, artist: r.artist, album: r.album, sourceUrl: r.sourceUrl })) });
+    }
+    // 从 Hi歌曲导入整首新歌：搜索结果里人工挑选（rid），音频/标题/歌手/歌词/封面一次到位。
+    // 新 ID 默认 hi-<rid>，可自定义（过 ID 规则、不得与现有重复）；写库走同一道 writeAndValidate 闸门。
+    if (req.method === 'POST' && url.pathname === '/api/higequ/import') {
+      const body = JSON.parse((await readBody(req, 1024 * 1024)).toString('utf8') || '{}');
+      const rid = String(body.rid || '');
+      if (!/^\d{1,20}$/.test(rid)) return json(res, 400, { message: 'rid 不合法（应为纯数字）' });
+      const newId = String(body.id || 'hi-' + rid).trim();
+      if (!ID_RULE.test(newId)) return json(res, 400, { message: 'ID 只允许 1-64 位字母/数字/下划线/连字符' });
+      const entries = await readCatalogEntries();
+      if (entries.some(e => e.id === newId)) return json(res, 409, { message: `ID 已存在：${newId}` });
+      const pageHtml = await fetchHiPlayerPage(`https://higequ.com/player/${rid}/`);
+      // 导入以页面为准，跳过与搜索行的身份核对（挑选动作本身就是人工确认）。
+      const detail = parseHiDetail(pageHtml, { sourceUrl: `https://higequ.com/player/${rid}/` }, { title: '', artist: '', durationMs: 0 }, { verifyIdentity: false });
+      const audioUrl = parseHiAudio(pageHtml);
+      if (!audioUrl) return json(res, 404, { message: '播放页没有可用的音频直链（页面结构变化或不在白名单域），已放弃' });
+      const bytes = await fetchLimited(audioUrl, AUDIO_LIMIT, allowedAudioUrl);
+      if (!looksLikeMp3(bytes)) return json(res, 422, { message: '下载内容不是 MP3（魔数不符），已放弃' });
+      const created = [];
+      const entry = { id: newId, title: detail.title, artist: detail.artist, file: `audio/${newId}.mp3` };
+      if (body.album && String(body.album).trim()) entry.album = String(body.album).trim();
+      try {
+        await mkdir(dirname(join(MEDIA_DIR, entry.file)), { recursive: true });
+        await writeFile(join(MEDIA_DIR, entry.file), bytes, { flag: 'wx' });
+        created.push(entry.file);
+        if (detail.lyrics?.status === 'matched' && detail.lyrics.text) {
+          const lrcRel = `lyrics/${newId}-${randomUUID()}.lrc`;
+          await mkdir(dirname(join(MEDIA_DIR, lrcRel)), { recursive: true });
+          await writeFile(join(MEDIA_DIR, lrcRel), detail.lyrics.text, { flag: 'wx' });
+          created.push(lrcRel);
+          entry.lyrics = lrcRel;
+        }
+        if (detail.coverUrl) {
+          const img = await fetchLimited(detail.coverUrl, COVER_LIMIT, allowedCoverUrl);
+          const covRel = `covers/${newId}-${randomUUID()}.${imageExtension(img)}`;
+          await mkdir(dirname(join(MEDIA_DIR, covRel)), { recursive: true });
+          await writeFile(join(MEDIA_DIR, covRel), img, { flag: 'wx' });
+          created.push(covRel);
+          entry.cover = covRel;
+        }
+        await writeAndValidate(entries, [...entries, entry]);
+      } catch (err) {
+        if (!err.message?.includes('回滚失败')) for (const rel of created) await unlink(join(MEDIA_DIR, rel)).catch(() => {});
+        throw err;
+      }
+      return json(res, 200, { ok: true, id: newId, title: entry.title,
+        message: `已从 Hi歌曲导入：「${entry.title} / ${entry.artist}」（${(bytes.length / 1024 / 1024).toFixed(1)}MB`
+          + `${entry.lyrics ? ' + 歌词' : ''}${entry.cover ? ' + 封面' : ''}），ID = ${newId}` });
     }
     // 上传新歌曲（原始字节流，避免 multipart 解析；id/title 走自定义头，中文 URL 编码）
     if (req.method === 'POST' && url.pathname === '/api/upload') {

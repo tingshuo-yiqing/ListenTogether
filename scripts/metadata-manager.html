@@ -227,7 +227,7 @@
           <label><input type="checkbox" id="s-refresh"> 忽略缓存重查</label>
           <button id="btn-sync">匹配这首</button>
           <button id="btn-apply-sync" disabled>应用所勾选字段</button>
-          <button id="btn-higequ-audio" title="单曲手动触发：从 Hi歌曲抓取本曲音频（仅开发测试用途），旧音频文件原地保留">⬇ Hi音频</button>
+          <button id="btn-higequ-audio" title="单曲手动触发：从 Hi歌曲整首替换本曲（音频+名字+歌手+专辑+歌词+封面），旧文件原地保留，无需先保存">⬇ 从 Hi 整首替换</button>
           <span id="sync-status" style="color:var(--muted);font-size:12px"></span>
         </div>
         <div id="sync-result"></div>
@@ -239,33 +239,49 @@
       </div>
     </div>
     <details>
-      <summary>➕ 上传新歌曲</summary>
-      <div class="row" style="margin-top:10px">
-        <div>
-          <label>MP3 文件</label>
-          <input type="file" id="u-file" accept=".mp3,audio/mpeg" style="width:100%">
+      <summary>➕ 新增歌曲（Hi 搜索导入 / 手动上传）</summary>
+      <div style="margin-top:10px">
+        <div class="row">
+          <div style="flex:1">
+            <label>在 Hi歌曲 搜索 <span class="hint">选中哪首就导入哪首；音频/信息/歌词/封面一次到位</span></label>
+            <input type="text" id="hi-query" placeholder="歌名 歌手" style="width:100%">
+          </div>
+          <button id="btn-hi-search" style="align-self:flex-end">搜索</button>
+        </div>
+        <div id="hi-results" style="margin-top:8px"></div>
+        <div class="actions">
+          <span id="hi-progress" style="color:var(--muted);font-size:12px"></span>
         </div>
       </div>
-      <div class="row">
-        <div>
-          <label>歌曲 ID <span class="hint">1-64 位字母/数字/下划线/连字符</span></label>
-          <input type="text" id="u-id" placeholder="如 xin-ge">
+      <details style="margin-top:6px">
+        <summary>手动上传本地 MP3（自己的音频文件走这里）</summary>
+        <div class="row" style="margin-top:10px">
+          <div>
+            <label>MP3 文件</label>
+            <input type="file" id="u-file" accept=".mp3,audio/mpeg" style="width:100%">
+          </div>
         </div>
-        <div>
-          <label>歌名 <span class="hint">必填</span></label>
-          <input type="text" id="u-title">
+        <div class="row">
+          <div>
+            <label>歌曲 ID <span class="hint">1-64 位字母/数字/下划线/连字符</span></label>
+            <input type="text" id="u-id" placeholder="如 xin-ge">
+          </div>
+          <div>
+            <label>歌名 <span class="hint">必填</span></label>
+            <input type="text" id="u-title">
+          </div>
         </div>
-      </div>
-      <div class="row">
-        <div><label>艺术家 <span class="hint">留空取 ID3</span></label><input type="text" id="u-artist"></div>
-        <div><label>专辑</label><input type="text" id="u-album"></div>
-        <div><label>流派</label><input type="text" id="u-genre"></div>
-        <div><label>年份</label><input type="number" id="u-year" min="1" max="9999"></div>
-      </div>
-      <div class="actions">
-        <button id="btn-upload">上传并入库</button>
-        <span id="upload-progress" style="color:var(--muted);font-size:12px"></span>
-      </div>
+        <div class="row">
+          <div><label>艺术家 <span class="hint">留空取 ID3</span></label><input type="text" id="u-artist"></div>
+          <div><label>专辑</label><input type="text" id="u-album"></div>
+          <div><label>流派</label><input type="text" id="u-genre"></div>
+          <div><label>年份</label><input type="number" id="u-year" min="1" max="9999"></div>
+        </div>
+        <div class="actions">
+          <button id="btn-upload">上传并入库</button>
+          <span id="upload-progress" style="color:var(--muted);font-size:12px"></span>
+        </div>
+      </details>
     </details>
     <details id="batch-details">
       <summary>🌐 批量匹配缺字段（全库，串行限速）</summary>
@@ -603,6 +619,46 @@ $('btn-upload').onclick = async () => {
   } catch (e) { toast('上传失败：' + e.message, false); }
   finally { $('btn-upload').disabled = false; $('upload-progress').textContent = ''; }
 };
+// ---- 从 Hi歌曲搜索并导入整首新歌（单曲手动触发；结果行全部 textContent 渲染，外部文本不可信）----
+$('btn-hi-search').onclick = async () => {
+  const q = $('hi-query').value.trim();
+  if (!q) return toast('请输入搜索词', false);
+  $('btn-hi-search').disabled = true;
+  $('hi-progress').textContent = '搜索中…';
+  const box = $('hi-results');
+  box.innerHTML = '';
+  try {
+    const r = await api('/api/higequ/search', { method: 'POST', body: JSON.stringify({ query: q }) });
+    if (!r.results?.length) { box.appendChild(el('div', '没有搜到结果', 'color:var(--muted);font-size:12px')); return; }
+    for (const row of r.results) {
+      const line = el('div', null, 'display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border, #eee)');
+      const info = el('div', null, 'flex:1;min-width:0');
+      const t = el('div', row.title + ' — ' + row.artist, 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis');
+      const sub = el('div', row.album || '（无专辑信息）', 'color:var(--muted);font-size:12px');
+      info.appendChild(t); info.appendChild(sub);
+      const btn = el('button', '导入', 'white-space:nowrap');
+      btn.onclick = async () => {
+        btn.disabled = true;
+        $('hi-progress').textContent = '导入中…（音频 + 信息 + 歌词 + 封面）';
+        try {
+          const imp = await api('/api/higequ/import', { method: 'POST', body: JSON.stringify({ rid: row.rid, album: row.album }) });
+          toast(imp.message || '已导入');
+          box.innerHTML = ''; $('hi-query').value = '';
+          await refresh(false);
+          select(imp.id);
+        } catch (e) { toast('导入失败：' + e.message, false); btn.disabled = false; }
+        finally { $('hi-progress').textContent = ''; }
+      };
+      line.appendChild(info); line.appendChild(btn);
+      box.appendChild(line);
+    }
+  } catch (e) {
+    box.appendChild(el('div', '搜索失败：' + e.message, 'color:var(--danger, #c00);font-size:12px'));
+  } finally {
+    $('btn-hi-search').disabled = false;
+    $('hi-progress').textContent = '';
+  }
+};
 // ---- 联网匹配元数据（MusicBrainz）----
 // 候选值来自外部源，属不可信文本：一律用 textContent / dataset 建行，绝不拼 innerHTML。
 const SYNC_FIELDS = [['artist', '艺术家'], ['album', '专辑'], ['genre', '流派'], ['year', '年份']];
@@ -792,19 +848,19 @@ $('btn-apply-sync').onclick = async () => {
   } catch (e) { toast('写入失败：' + e.message, false); $('btn-apply-sync').disabled = false; }
 };
 
-// 从 Hi歌曲抓取本曲音频（单曲手动、仅开发测试；服务端做身份校验+白名单+魔数校验，旧文件保留）。
+// 从 Hi歌曲整首替换本曲（单曲手动、仅开发测试）：音频+名字+歌手+专辑+歌词+封面一次到位，
+// **不要求先保存表单**——服务端以 Hi 候选直接覆盖并 refresh()，未保存的编辑会被新值取代（即"直接替换"语义）。
 $('btn-higequ-audio').onclick = async () => {
   if (!currentId) return;
-  if (dirty) return toast('请先保存修改，再抓取音频', false);
-  if (!confirm('从 Hi歌曲下载这首的音频并替换编目指针？\n旧音频文件原地保留，可随时改回。')) return;
+  if (!confirm('从 Hi歌曲整首替换这首歌？\n将覆盖：音频、名字、歌手、专辑、歌词、封面（Hi 提供的部分）。\n旧文件全部原地保留，可随时手工改回。')) return;
   $('btn-higequ-audio').disabled = true;
-  $('sync-status').textContent = '音频下载中…（搜索→详情→直链，几秒到几十秒）';
+  $('sync-status').textContent = '整首替换中…（搜索→详情→音频直链，几秒到几十秒）';
   try {
-    const r = await api('/api/tracks/' + encodeURIComponent(currentId) + '/higequ-audio', { method: 'POST' });
-    toast(r.message || '已下载', r.ok !== false);
+    const r = await api('/api/tracks/' + encodeURIComponent(currentId) + '/higequ-replace', { method: 'POST' });
+    toast(r.message || '已替换', r.ok !== false);
     await refresh();
   } catch (e) {
-    toast('音频抓取失败：' + e.message, false);
+    toast('整首替换失败：' + e.message, false);
   } finally {
     $('btn-higequ-audio').disabled = false;
     $('sync-status').textContent = '';
