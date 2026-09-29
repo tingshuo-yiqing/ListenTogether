@@ -1,0 +1,78 @@
+{
+  "at": "2026-09-28T14:34:41.901Z",
+  "results": [
+    {
+      "title": "晴天",
+      "error": "The operation was aborted due to timeout"
+    },
+    {
+      "title": "有何不可",
+      "source": "higequ",
+      "candidate": {
+        "source": "higequ",
+        "id": "455880",
+        "title": "有何不可",
+        "artist": "许嵩",
+        "album": "自定义",
+        "year": null,
+        "genre": "",
+        "durationMs": null,
+        "score": 100,
+        "sourceUrl": "https://higequ.com/player/455880/"
+      },
+      "score": 0.95,
+      "coverUrl": "https://img1.kuwo.cn/star/albumcover/300/s4s74/96/246019334.jpg",
+      "lyricsSource": "Hi歌曲",
+      "lyricsBytes": 2383,
+      "lookedUp": true,
+      "coverProbe": {
+        "bytes": 12925,
+        "format": "jpg"
+      }
+    },
+    {
+      "title": "单车",
+      "source": "higequ",
+      "candidate": {
+        "source": "higequ",
+        "id": "320058",
+        "title": "单车",
+        "artist": "陈奕迅",
+        "album": "Shall We Dance? Shall We Talk!",
+        "year": null,
+        "genre": "",
+        "durationMs": null,
+        "score": 100,
+        "sourceUrl": "https://higequ.com/player/320058/"
+      },
+      "score": 0.95,
+      "coverUrl": "https://img1.kuwo.cn/star/albumcover/300/s4s73/65/381920143.jpg",
+      "lyricsSource": "Hi歌曲",
+      "lyricsBytes": 1505,
+      "lookedUp": true,
+      "coverProbe": {
+        "bytes": 20050,
+        "format": "jpg"
+      }
+    }
+  ],
+  "retry": {
+    "title": "晴天",
+    "at": "2026-09-28T14:36:04.325Z",
+    "candidate": {
+      "source": "higequ",
+      "id": "228908",
+      "title": "晴天",
+      "artist": "周杰伦",
+      "album": "叶惠美",
+      "year": null,
+      "genre": "",
+      "durationMs": null,
+      "score": 100,
+      "sourceUrl": "https://higequ.com/player/228908/"
+    },
+    "score": 0.95,
+    "coverUrl": "https://img1.kuwo.cn/star/albumcover/300/s3s94/93/211513640.jpg",
+    "lyricsBytes": 2488
+  }
+}

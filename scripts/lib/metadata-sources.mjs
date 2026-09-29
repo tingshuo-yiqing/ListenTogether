@@ -1,11 +1,12 @@
 /**
- * 一起听歌 · 外部音乐元数据源共享实现（QQ 音乐 / 网易云音乐 / MusicBrainz）
+ * 一起听歌 · 外部音乐元数据源共享实现（Hi歌曲 / QQ 音乐 / 网易云音乐 / MusicBrainz）
  *
  * 谁在用：scripts/metadata-manager.mjs 的界面端点。原先它是独立命令行脚本
  *   scripts/fetch-metadata.mjs，2026-09-27 并入可视化管理器后删除，避免同一套
  *   查询与打分口径存在两份实现——两份会漂移，届时"界面判可写、脚本判需复核"。
  *
- * 为什么是三个源：本库以华语流行为主，MusicBrainz 的中文录音条目常缺 artist-credit
+ * Hi歌曲HTML适配见 higequ.mjs；管理器默认优先使用它，再回退以下三个API源。
+ * 为什么保留三个API源：本库以华语流行为主，MusicBrainz 的中文录音条目常缺 artist-credit
  *   或只有罗马字转写（代码里"带艺术家查不到就退回只按歌名"的兜底就是为此而写）；
  *   QQ 音乐/网易云的中文目录覆盖远好于它。三者字段口径在此归一为同一 candidate 形状。
  *
@@ -25,6 +26,8 @@
  * 可测性：出网请求与延迟都经注入（request/sleep/now），单测传假实现即可完全离线，
  *   不访问公网（与 docs/modules/10-testing-observability.md 的分层约定一致）。
  */
+
+import { createHiGequ } from './higequ.mjs';
 
 const DEFAULT_ROOT = 'https://musicbrainz.org/ws/2';
 const DEFAULT_USER_AGENT = 'ListenTogetherMetadata/0.1 (local project tool)';
@@ -570,11 +573,12 @@ export function createNetEase(options = {}) {
 
 /** 源注册表：管理器据此校验界面传来的 source 参数，新源在此登记即可出现在界面下拉里。 */
 export const METADATA_SOURCES = [
+  { name: 'higequ', label: 'Hi歌曲优先（未命中时尝试其他来源）', create: options => createHiGequ(scoreCandidate, options) },
   { name: 'qq', label: 'QQ 音乐（华语覆盖最好，一次请求拿全字段）', create: createQQMusic },
   { name: 'netease', label: '网易云音乐（翻唱/AI 版本多，靠阈值卡住）', create: createNetEase },
   { name: 'musicbrainz', label: 'MusicBrainz（有流派与权威专辑年份，中文条目偏弱）', create: createMusicBrainz },
 ];
-export const DEFAULT_SOURCE = 'qq';
+export const DEFAULT_SOURCE = 'higequ';
 
 export function createMetadataSource(name, options = {}) {
   const found = METADATA_SOURCES.find((s) => s.name === name);

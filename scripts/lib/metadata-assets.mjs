@@ -7,7 +7,7 @@ export function allowedCoverUrl(value) {
   try {
     const u = new URL(value);
     return u.protocol === 'https:' && !u.username && !u.password && (!u.port || u.port === '443')
-      && (u.hostname === 'y.gtimg.cn' || /^p[0-9]+\.music\.126\.net$/.test(u.hostname)
+      && (u.hostname === 'y.gtimg.cn' || /^img[0-9]+\.kuwo\.cn$/.test(u.hostname) || /^p[0-9]+\.music\.126\.net$/.test(u.hostname)
         || u.hostname === 'coverartarchive.org' || u.hostname === 'archive.org'
         || /^(?:[a-z0-9-]+\.)+archive\.org$/.test(u.hostname));
   } catch { return false; }

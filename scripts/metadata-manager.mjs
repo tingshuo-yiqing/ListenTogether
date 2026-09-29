@@ -9,7 +9,7 @@
  * 职责：可视化查看/编辑 catalog.json 条目（歌名/艺术家/专辑/流派/年份/歌词路径）、
  *   上传新 MP3 入库、上传/替换/移除独立封面、删除曲目（条目走校验闸门，文件移进回收目录
  *   而非直接删除）、联网匹配外部元数据候选并按勾选受控写回。
- *   匹配源为 QQ 音乐 / 网易云音乐 / MusicBrainz（默认 QQ，华语覆盖最好），除匹配那一步
+ *   匹配源为 Hi歌曲 / QQ 音乐 / 网易云音乐 / MusicBrainz（默认 Hi歌曲优先，未命中再尝试既有三源），除匹配那一步
  *   出网（文字/歌词/封面）外，只做曲库文件读写，不接触运行中的后端。
  *
  * 出网边界：只调平台搜索/详情、LRCLIB公开歌词接口与受信图床，不取音源、不带任何登录态、
@@ -45,6 +45,8 @@ import {
 } from './lib/metadata-sources.mjs';
 
 import { findLyrics, fetchLimited, allowedCoverUrl, imageExtension, COVER_LIMIT } from './lib/metadata-assets.mjs';
+
+import { listTrash, restoreTrash } from './lib/media-trash.mjs';
 
 const SCRIPT_DIR = fileURLToPath(new URL('.', import.meta.url));
 const PROJECT_ROOT = resolve(SCRIPT_DIR, '..');
@@ -346,8 +348,7 @@ async function writeSyncCache(cache) {
 
 /**
  * 单曲匹配。返回里 candidate（外部说了什么）与 changes（我们准备写什么）分开：
- * 低于 minScore 的候选照原样回显供人工判断，但不给 changes，界面据此禁掉"应用"——
- * 不给误写留通道，这是原 CLI 里 needs-review 不能自动落库那条纪律的界面版。
+ * 低于 minScore 的文字候选仍可由用户手动勾选应用，但不给 changes：不默认勾选，也不进入批量补缺。
  * changes 的口径由 onlyIfEmpty 决定：true＝只报可补的空缺（批量补缺用，已有值一律不进候选勾选）；
  * false（默认，单曲匹配）＝歌词匹配到就进勾选，已有歌词也报，替换由人工点"应用"确认。
  */
@@ -362,27 +363,46 @@ async function syncTrack(id, { source = DEFAULT_SOURCE, minScore = DEFAULT_MIN_S
   const cache = await readSyncCache();
   // 缓存键必须含源名：换源重查是常见动作（QQ 查不到就想试网易云），
   // 键里没源就会把"QQ 无候选"直接当成"网易云也无候选"返回。
-  const key = `${source}|${cacheKey(entry)}`;
-  let result = refresh ? null : cache[key];
-  const usedCache = Boolean(result);
-  if (!result) {
+  const requestedSource = source;
+  const attempts = [];
+  const order = source === 'higequ' ? ['higequ', 'qq', 'netease', 'musicbrainz'] : [source];
+  let result = null, usedCache = false, lastError;
+  for (const name of order) {
+    const key = name + '|' + cacheKey(entry) + (name === 'higequ' ? '|' + JSON.stringify(local) : '');
+    let found = !refresh ? cache[key] : null;
+    // Hi歌曲页面缓存一天；未取详情/上次部分失败的结果不能阻止下一次重试。
+    if (name === 'higequ' && found && (!found.lookedUp || !found.cachedAt || !(Date.now() - Date.parse(found.cachedAt) < 86400000))) found = null;
+    const cached = Boolean(found);
     try {
-      result = await SOURCE_CLIENTS[source].findMetadata(local, { minScore });
-      cache[key] = { ...result, cachedAt: new Date().toISOString() };
-      await writeSyncCache(cache);
+      if (!found) {
+        found = await SOURCE_CLIENTS[name].findMetadata(local, { minScore });
+        if (!found.partial) {
+          cache[key] = { ...found, cachedAt: new Date().toISOString() };
+          await writeSyncCache(cache);
+        }
+      }
+      const accepted = Boolean(found.candidate) && found.identityAccepted !== false && Number(found.score) >= minScore;
+      attempts.push({ source: name, status: found.partial ? 'partial' : accepted ? 'matched' : 'missing', message: found.message });
+      if (!result || Number(found.score) > Number(result.score)) { result = found; source = name; usedCache = cached; }
+      if (accepted) { result = found; source = name; usedCache = cached; break; }
     } catch (err) {
-      if (!includeLyrics) throw err;
-      result = { candidate: null, score: 0, message: `文字来源暂不可用：${err.message}` };
+      lastError = err;
+      attempts.push({ source: name, status: 'unavailable', message: err.message });
     }
   }
-  const accepted = Boolean(result.candidate) && Number(result.score) >= minScore;
+  if (!result) {
+    if (!includeLyrics && requestedSource !== 'higequ') throw lastError;
+    result = { candidate: null, score: 0, message: '文字来源暂不可用，已跳过' };
+    source = requestedSource;
+  }
+  const accepted = Boolean(result.candidate) && result.identityAccepted !== false && Number(result.score) >= minScore;
   const candidate = result.candidate || null;
   const changes = accepted ? buildChanges(entry, candidate, false) : {};
   // 国内平台有时返回HTTP图床链接；只尝试升级HTTPS，仍需通过固定来源白名单。
   const secureCover = typeof result.coverUrl === 'string' ? result.coverUrl.replace(/^http:/, 'https:') : null;
   const coverUrl = accepted && allowedCoverUrl(secureCover) ? secureCover : null;
-  let lyrics = null;
-  if (includeLyrics) {
+  let lyrics = includeLyrics && accepted ? result.lyrics || null : null;
+  if (includeLyrics && !lyrics) {
     const profile = { title: entry.title, artist: local.artist || (accepted ? candidate.artist : ''), durationMs: track.durationMs };
     const lyricsKey = 'lyrics-v1|' + JSON.stringify(profile);
     const cached = cache[lyricsKey];
@@ -418,6 +438,7 @@ async function syncTrack(id, { source = DEFAULT_SOURCE, minScore = DEFAULT_MIN_S
     status,
     source,
     sourceLabel: SOURCE_LABELS[source] || source,
+    requestedSource, attempts, sourceUrl: accepted ? candidate?.sourceUrl || null : null,
     metadataAccepted: accepted,
     message: result.message,
     assetToken,
@@ -479,9 +500,41 @@ async function handleRequest(req, res) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
       return res.end(html);
     }
+    if (req.method === 'GET' && url.pathname === '/api/trash') {
+      return json(res, 200, await listTrash(TRASH_DIR));
+    }
+    if (req.method === 'POST' && url.pathname === '/api/trash/restore') {
+      const body = JSON.parse((await readBody(req, 4096)).toString('utf8'));
+      if (typeof body.run !== 'string' || typeof body.key !== 'string') return json(res, 400, { message: '缺少回收记录' });
+      try {
+        const entries = await readCatalogEntries();
+        return json(res, 200, await restoreTrash({ trashDir: TRASH_DIR, mediaDir: MEDIA_DIR, run: body.run, key: body.key,
+          entries, validate: () => loadCatalog(MEDIA_DIR), commit: next => writeAndValidate(entries, next) }));
+      } catch (err) { return json(res, 409, { message: err.message }); }
+    }
     // 列表
     if (req.method === 'GET' && url.pathname === '/api/tracks') {
       return json(res, 200, { dir: MEDIA_DIR, tracks: await listTracks() });
+    }
+    // 仅预览编目已保存的歌词：请求只接收歌曲 ID，路径由 catalog 提供并校验 realpath。
+    const lyricsMatch = url.pathname.match(/^\/api\/tracks\/([a-zA-Z0-9_-]{1,64})\/lyrics$/);
+    if (req.method === 'GET' && lyricsMatch) {
+      const entry = (await readCatalogEntries()).find(e => e.id === lyricsMatch[1]);
+      if (!entry) return json(res, 404, { message: '歌曲不存在' });
+      if (!entry.lyrics) return json(res, 404, { message: '当前歌曲尚未保存歌词' });
+      try {
+        const path = realpathSync(resolve(MEDIA_DIR, entry.lyrics));
+        if (!insideDir(realpathSync(MEDIA_DIR), path) || !path.endsWith('.lrc')) {
+          return json(res, 422, { message: '歌词路径无效，必须是曲库内的 .lrc 文件' });
+        }
+        const info = await stat(path);
+        if (!info.isFile() || info.size > LYRICS_MAX_BYTES) return json(res, 422, { message: '歌词文件无效或超过 256KB' });
+        const data = await readFile(path);
+        if (data.length > LYRICS_MAX_BYTES) return json(res, 422, { message: '歌词文件超过 256KB' });
+        return json(res, 200, { path: entry.lyrics, text: data.toString('utf8').replace(/^\uFEFF/, '') });
+      } catch (err) {
+        return json(res, err.code === 'ENOENT' ? 404 : 422, { message: err.code === 'ENOENT' ? '已保存的歌词文件不存在' : '无法读取当前歌词文件' });
+      }
     }
     // 封面预览（独立图片优先，服务端 loadCatalog 已完成路径/格式/大小校验）
     const coverMatch = url.pathname.match(/^\/api\/cover\/([a-zA-Z0-9_-]{1,64})$/);
@@ -647,6 +700,7 @@ async function handleRequest(req, res) {
     // 可选元数据源清单：界面下拉据此渲染，新源只需在 lib 注册表里加一行。
     if (req.method === 'GET' && url.pathname === '/api/sources') {
       return json(res, 200, {
+        serviceVersion: '20260929-lyrics-preview',
         default: DEFAULT_SOURCE,
         minScore: DEFAULT_MIN_SCORE,
         sources: METADATA_SOURCES.map(({ name, label }) => ({ name, label })),
@@ -837,6 +891,6 @@ try {
 server.listen(PORT, HOST, () => {
   console.log(`元信息管理器：http://${HOST}:${server.address().port}（Ctrl+C 停止）`);
   console.log('保存即写 catalog.json；运行中的后端需重启才会重新加载（重启清空内存房间）。');
-  console.log(`「联网匹配」按所选源出网（QQ 音乐 / 网易云音乐 / MusicBrainz，各自限速见 lib/metadata-sources.mjs），候选只读，勾选后才写库；缓存见 CACHE_PATH。`);
+  console.log(`「联网匹配」按所选源出网（Hi歌曲优先 / QQ 音乐 / 网易云音乐 / MusicBrainz，各自限速见 lib/metadata-sources.mjs），候选只读，勾选后才写库；缓存见 CACHE_PATH。`);
   console.log(`「删除」把曲目移出 catalog 并把文件移进回收目录：${TRASH_DIR}\\<批次>\\<库内相对路径>（同批一份 manifest.jsonl 记录被删条目与文件去向，可手工放回）。`);
 });

@@ -64,3 +64,10 @@ TLS与WS升级、Range响应、进程异常恢复和回滚分别检查。
 **云端已部署且升级/回滚演练双向通过**（2026-09-23 晚，见 [m4-rollback-drill](../test-results/2026-09-23-m4-rollback-drill/README.md)），早期 SSH 公钥阻塞已关闭（见 [部署第 0 节](../deployment.md)）。版本目录方案 = `releases/<id>` + `server` 符号链接，升级/回滚命令与验收见 [deployment.md 第 5 节](../deployment.md)。
 
 2026-09-26：**release 20260926-1822 在产**（prev=20260924-0937）——09-26 后端修复（清扫清空 hostId + 首个上线成员立即接任）上云；42/42 解包校验、旧/新版本 `m4-deploy-verify.sh` 各 14/14、专项验证（HostA 掉线被清扫 → MemberB 加入即接任 hostId=MemberB）通过。见 [2026-09-26 云端部署](../test-results/2026-09-26-cloud-deploy/README.md)。
+
+## 管理器一键启动（2026-09-28）
+双击项目根 `start-metadata.cmd`，调用 `scripts/start-metadata.ps1`。若127.0.0.1:3100已有管理器则直接打开，否则以Hidden窗口启动Node，最多轮询40次后打开浏览器。
+日志：`.workbuddy/metadata-manager.stdout.log` / `metadata-manager.stderr.log`；缺少server/dist时明确提示先npm ci/build，不自动安装依赖、不停止占用端口的进程、不重启播放后端。
+本机脚本门禁使用 `scripts/check.ps1 -Scope scripts`。启动器PowerShell语法与三分支隔离夹具验证通过；实际后台驻留及默认浏览器打开未在本轮触发，详见[本轮记录](../test-results/2026-09-28-higequ-manager/README.md)。
+
+2026-09-29：管理器 /api/sources 增 serviceVersion=20260929-lyrics-preview；启动器仅复用同版本，旧版提示先停止旧 metadata-manager 再启动。HTML 更新不等于 Node 模块更新；本轮只重启本机 3100 管理器，未触及播放后端和云端。

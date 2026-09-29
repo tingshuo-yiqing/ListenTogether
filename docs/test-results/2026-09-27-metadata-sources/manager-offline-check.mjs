@@ -144,9 +144,9 @@ try {
   await waitReady(BASE, stderr);
   console.log('\n[1] 源清单与参数校验');
   const sources = await api('GET', '/api/sources');
-  check('GET /api/sources 返回三个源且默认 qq',
-    sources.status === 200 && sources.body.default === 'qq'
-    && sources.body.sources.map((s) => s.name).join(',') === 'qq,netease,musicbrainz', sources.body);
+  check('GET /api/sources 返回四个源且默认 higequ',
+    sources.status === 200 && sources.body.default === 'higequ'
+    && sources.body.sources.map((s) => s.name).join(',') === 'higequ,qq,netease,musicbrainz', sources.body);
   check('阈值默认值随源清单下发', Number(sources.body?.minScore) === 0.8, sources.body);
 
   const badSource = await api('POST', '/api/tracks/track-a/sync', { source: 'kuwo' });

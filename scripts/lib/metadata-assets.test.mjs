@@ -101,7 +101,7 @@ test('真实管理器：封面与歌词一键落库、失败隔离、票据绑�
       return { code: response.status, value: await response.json() };
     }
     const sync = async (id = 'a', onlyIfEmpty = false) =>
-      (await api('/api/tracks/' + id + '/sync', { includeLyrics: true, onlyIfEmpty })).value;
+      (await api('/api/tracks/' + id + '/sync', { source: 'qq', includeLyrics: true, onlyIfEmpty })).value;
     const snapshot = () => readFile(catalog, 'utf8');
     const matched = await sync();
     assert.equal(matched.lyrics.kind, 'synced');
