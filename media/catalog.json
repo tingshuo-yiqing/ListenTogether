@@ -2,203 +2,218 @@
   {
     "id": "he-bu-ke",
     "title": "有何不可",
-    "file": "audio/he-bu-ke.mp3",
+    "file": "audio/he-bu-ke-9be34483-c992-47ea-9efd-24b24ffe0a87.mp3",
     "artist": "许嵩",
     "album": "自定义",
     "year": 2009,
-    "lyrics": "lyrics/he-bu-ke.lrc",
-    "cover": "covers/he-bu-ke.jpg"
+    "lyrics": "lyrics/he-bu-ke-181e2852-8eab-4352-b2f0-b00fc4edf32e.lrc",
+    "cover": "covers/he-bu-ke-182d0dd5-19bc-49f2-90fc-2e47d78241b6.jpg"
   },
   {
     "id": "chi-xin-jue-dui",
     "title": "痴心绝对",
-    "file": "audio/chi-xin-jue-dui.mp3",
+    "file": "audio/chi-xin-jue-dui-70b36db5-c128-4456-a566-5c3d5cf774c9.mp3",
     "artist": "李圣杰",
     "album": "痴心绝对",
     "year": 2002,
-    "lyrics": "lyrics/chi-xin-jue-dui.lrc",
-    "cover": "covers/chi-xin-jue-dui.jpg"
+    "lyrics": "lyrics/chi-xin-jue-dui-6182d5a5-459a-4187-be0c-413f96d4e205.lrc",
+    "cover": "covers/chi-xin-jue-dui-6d5a66f9-f914-4389-b788-5289c88d351d.jpg"
   },
   {
     "id": "dan-che",
     "title": "单车",
-    "file": "audio/dan-che.mp3",
-    "lyrics": "lyrics/dan-che.lrc"
+    "file": "audio/dan-che-76856a64-4336-4860-b518-5bad5f1d3bf7.mp3",
+    "lyrics": "lyrics/dan-che-4b442b9d-fe22-41dd-901b-7e83839f725b.lrc",
+    "artist": "陈奕迅",
+    "album": "Shall We Dance? Shall We Talk!",
+    "cover": "covers/dan-che-c172cc59-fa07-4ad9-9bd6-88d36af44404.jpg"
   },
   {
     "id": "fu-shi-shan-xia",
     "title": "富士山下",
-    "file": "audio/fu-shi-shan-xia.mp3",
+    "file": "audio/fu-shi-shan-xia-9654865d-6a3d-431e-8595-708ecd6ea345.mp3",
     "artist": "陈奕迅",
-    "album": "What's Going On...?",
+    "album": "What's Going On...? (Remastered 2019)",
     "year": 2006,
-    "lyrics": "lyrics/fu-shi-shan-xia.lrc",
-    "cover": "covers/fu-shi-shan-xia.jpg"
+    "lyrics": "lyrics/fu-shi-shan-xia-fe7d5fba-7bb2-4486-84b0-f67ec6ca3bd3.lrc",
+    "cover": "covers/fu-shi-shan-xia-a71a0e16-999b-40c6-81bb-cf040c863137.png"
   },
   {
     "id": "ju-hao",
     "title": "句号",
-    "file": "audio/ju-hao.mp3",
+    "file": "audio/ju-hao-355e326e-7a53-47ed-92ef-f49e623edb4b.mp3",
     "artist": "G.E.M.邓紫棋",
     "album": "摩天动物园",
     "year": 2019,
-    "lyrics": "lyrics/ju-hao.lrc",
-    "cover": "covers/ju-hao.jpg"
+    "lyrics": "lyrics/ju-hao-96b40a77-e767-4883-b57f-2bd9488aac6b.lrc",
+    "cover": "covers/ju-hao-997478da-e9a4-4d30-8147-0fd60ae371bd.jpg"
   },
   {
     "id": "ai-cuo",
     "title": "爱错",
-    "file": "audio/ai-cuo.mp3",
+    "file": "audio/ai-cuo-8e6cc1bf-c691-4404-941e-ca7c8457f798.mp3",
     "artist": "王力宏",
     "album": "心中的日月",
     "year": 2004,
-    "lyrics": "lyrics/ai-cuo.lrc",
-    "cover": "covers/ai-cuo.jpg"
+    "lyrics": "lyrics/ai-cuo-ded40abc-b5ef-4e7a-9ec2-c7826e7a18ae.lrc",
+    "cover": "covers/ai-cuo-7fac1816-b596-4889-8f32-185e0abccb96.jpg"
   },
   {
     "id": "hong-dou",
     "title": "红豆",
-    "file": "audio/hong-dou.mp3",
+    "file": "audio/hong-dou-71c92ca6-b6c8-4c6f-98fb-5021bd589567.mp3",
     "artist": "王菲",
-    "album": "唱游",
+    "album": "Eyes On Me",
     "year": 1998,
-    "lyrics": "lyrics/hong-dou.lrc",
-    "cover": "covers/hong-dou.jpg"
+    "lyrics": "lyrics/hong-dou-cbd4932f-9d16-4f26-a6cc-39e4ec4f7b81.lrc",
+    "cover": "covers/hong-dou-4d9a9ef2-3e5f-43f7-b52b-215358e15e03.jpg"
   },
   {
     "id": "jue-jiang",
     "title": "倔强",
-    "file": "audio/jue-jiang.mp3",
-    "lyrics": "lyrics/jue-jiang.lrc"
+    "file": "audio/jue-jiang-13781367-666a-4409-821a-7635cf320a06.mp3",
+    "lyrics": "lyrics/jue-jiang-1b311bfb-1e55-4a3f-84e1-838f3c3c22ea.lrc",
+    "artist": "五月天",
+    "album": "步步 自选作品辑 the Best of 1999-2013",
+    "cover": "covers/jue-jiang-a61d2857-1472-42f7-8a55-faf3adc05ef9.jpg"
   },
   {
     "id": "qiu-niao",
     "title": "囚鸟",
-    "file": "audio/qiu-niao.mp3",
+    "file": "audio/qiu-niao-aac74860-a291-42c2-8705-0330f9efa4da.mp3",
     "artist": "彭羚",
-    "album": "从羚开始...",
+    "album": "囚鸟 (Remastered)",
     "year": 2000,
-    "lyrics": "lyrics/qiu-niao.lrc",
-    "cover": "covers/qiu-niao.jpg"
+    "lyrics": "lyrics/qiu-niao-afd264cc-09c3-46dd-b6c7-f3b92022f279.lrc",
+    "cover": "covers/qiu-niao-44553163-2202-4560-aaf9-b514966dd8c7.jpg"
   },
   {
     "id": "te-bie-de-ren",
     "title": "特别的人",
-    "file": "audio/te-bie-de-ren.mp3",
+    "file": "audio/te-bie-de-ren-c5742257-1563-41c6-bc06-07ffd8439aed.mp3",
     "artist": "方大同",
     "album": "危险世界",
     "year": 2014,
-    "lyrics": "lyrics/te-bie-de-ren.lrc",
-    "cover": "covers/te-bie-de-ren.jpg"
+    "lyrics": "lyrics/te-bie-de-ren-54f46c40-9f4d-4570-9edd-1d2badc05535.lrc",
+    "cover": "covers/te-bie-de-ren-18a28766-9353-4c80-b2a6-df591e11651a.jpg"
   },
   {
     "id": "da-mian",
     "title": "大眠",
-    "file": "audio/da-mian.mp3",
+    "file": "audio/da-mian-1dc73d4e-6332-49f7-84a8-a8594e157c68.mp3",
     "artist": "王心凌",
     "album": "CYNDILOVES2SING 爱。心凌",
     "year": 2018,
-    "lyrics": "lyrics/da-mian.lrc",
-    "cover": "covers/da-mian.jpg"
+    "lyrics": "lyrics/da-mian-c05ba2d5-a3ab-4604-bd54-2fb37a16a40e.lrc",
+    "cover": "covers/da-mian-a0701baa-c24f-4cbf-9258-a7190a883fb5.jpg"
   },
   {
     "id": "ai-qing-zhuan-yi",
     "title": "爱情转移",
-    "file": "audio/ai-qing-zhuan-yi.mp3",
+    "file": "audio/ai-qing-zhuan-yi-2b8bdb6c-6dd3-44e2-9493-2fa08e8d28d8.mp3",
     "artist": "陈奕迅",
-    "album": "爱情呼叫转移",
+    "album": "认了吧",
     "year": 2007,
-    "lyrics": "lyrics/ai-qing-zhuan-yi.lrc",
-    "cover": "covers/ai-qing-zhuan-yi.jpg"
+    "lyrics": "lyrics/ai-qing-zhuan-yi-a91e7d0a-0cc9-4d67-a45b-0ce5470c3ac3.lrc",
+    "cover": "covers/ai-qing-zhuan-yi-1f60ff71-d9eb-491f-973d-428e8b09c1f4.jpg"
   },
   {
     "id": "bei-dui-bei-yong-bao",
     "title": "背对背拥抱",
-    "file": "audio/bei-dui-bei-yong-bao.mp3",
+    "file": "audio/bei-dui-bei-yong-bao-d56e77c1-d4d3-413f-a851-5c641ab3252e.mp3",
     "artist": "林俊杰",
     "album": "100天",
     "year": 2009,
-    "lyrics": "lyrics/bei-dui-bei-yong-bao.lrc",
-    "cover": "covers/bei-dui-bei-yong-bao.jpg"
+    "lyrics": "lyrics/bei-dui-bei-yong-bao-0f705e1a-ec88-4d40-b120-41859bfb7e91.lrc",
+    "cover": "covers/bei-dui-bei-yong-bao-d7dc4c2f-107e-4e4e-bc08-5947efbb1ce6.jpg"
   },
   {
     "id": "tao-tai",
     "title": "淘汰",
-    "file": "audio/tao-tai.mp3",
+    "file": "audio/tao-tai-2b91ac51-1d96-47b1-a09f-b3097eea23b2.mp3",
     "artist": "陈奕迅",
     "album": "认了吧",
     "year": 2007,
-    "lyrics": "lyrics/tao-tai.lrc",
-    "cover": "covers/tao-tai.jpg"
+    "lyrics": "lyrics/tao-tai-5c4ee382-beb5-44b8-a88c-535bf9d79d01.lrc",
+    "cover": "covers/tao-tai-cc3656ce-dd7e-488c-b0a8-c21b259375fe.jpg"
   },
   {
     "id": "dang-ni",
     "title": "当你",
-    "file": "audio/dang-ni.mp3",
+    "file": "audio/dang-ni-23546f5d-e7c1-4c11-9871-f97c9be2eb59.mp3",
     "artist": "王心凌",
     "album": "Begin...",
     "year": 2003,
-    "lyrics": "lyrics/dang-ni.lrc",
-    "cover": "covers/dang-ni.jpg"
+    "lyrics": "lyrics/dang-ni-6c6580ee-8932-49d4-b00d-743733d7b323.lrc",
+    "cover": "covers/dang-ni-7f9a5db1-b346-4401-aa39-0787138c5378.jpg"
   },
   {
     "id": "tian-hou",
     "title": "天后",
-    "file": "audio/tian-hou.mp3",
+    "file": "audio/tian-hou-6603738b-2038-4663-882e-9c7d3c185e32.mp3",
     "artist": "陈势安",
     "album": "再爱一遍‧天后",
     "year": 2011,
-    "lyrics": "lyrics/tian-hou.lrc",
-    "cover": "covers/tian-hou.jpg"
+    "lyrics": "lyrics/tian-hou-c02ffd72-1017-4d4f-81b4-d38e6bbe0ab1.lrc",
+    "cover": "covers/tian-hou-686c032d-0a9e-46f3-894f-8a4b88a68cf8.jpg"
   },
   {
     "id": "wei-yi",
     "title": "唯一",
-    "file": "audio/wei-yi.mp3",
+    "file": "audio/wei-yi-fcff4a84-defe-43ef-90dc-c49f7c819476.mp3",
     "artist": "G.E.M.邓紫棋",
     "album": "T.I.M.E.",
     "year": 2023,
-    "lyrics": "lyrics/wei-yi.lrc",
-    "cover": "covers/wei-yi.jpg"
+    "lyrics": "lyrics/wei-yi-4976f313-13e5-4f14-b227-7f860c1062fd.lrc",
+    "cover": "covers/wei-yi-916bbb48-eb59-405e-9355-41c8b7cf6079.jpg"
   },
   {
     "id": "shou-fang-kai",
     "title": "手放开",
-    "file": "audio/shou-fang-kai.mp3",
+    "file": "audio/shou-fang-kai-591d5384-f4df-4552-b55d-a26ed1b41379.mp3",
     "artist": "李圣杰",
     "album": "绝对痴心·手放开",
     "year": 2004,
-    "lyrics": "lyrics/shou-fang-kai.lrc",
-    "cover": "covers/shou-fang-kai.jpg"
+    "lyrics": "lyrics/shou-fang-kai-f6fb0e7b-45a2-49ac-bb9b-8f3190870b19.lrc",
+    "cover": "covers/shou-fang-kai-84a8d65f-56fc-4d04-9389-4f0f50cd2a67.jpg"
   },
   {
     "id": "di-yi-tian",
     "title": "第一天",
-    "file": "audio/di-yi-tian.mp3",
+    "file": "audio/di-yi-tian-0a19bd6b-5f90-43e8-b38b-2496beace821.mp3",
     "artist": "孙燕姿",
     "album": "完美的一天",
     "year": 2005,
-    "lyrics": "lyrics/di-yi-tian.lrc",
-    "cover": "covers/di-yi-tian.jpg"
+    "lyrics": "lyrics/di-yi-tian-4d2d7d55-8e16-49fb-98c6-a16f8c400eee.lrc",
+    "cover": "covers/di-yi-tian-08c6d6ea-b1fd-457e-8b0a-e8f97d6d03d2.jpg"
   },
   {
     "id": "yu-jian",
     "title": "遇见",
-    "file": "audio/yu-jian.mp3",
+    "file": "audio/yu-jian-dfefe547-95a1-46e6-8ccc-9d46a49ef16a.mp3",
     "artist": "孙燕姿",
     "album": "The Moment",
     "year": 2003,
-    "lyrics": "lyrics/yu-jian.lrc",
-    "cover": "covers/yu-jian.jpg"
+    "lyrics": "lyrics/yu-jian-48db1405-afa8-4d68-b015-186ec7e36b4c.lrc",
+    "cover": "covers/yu-jian-03112a0f-36e7-4ec1-bcd1-75fabdc6fdbf.jpg"
   },
   {
     "id": "wang-fei",
     "title": "王妃",
-    "file": "audio/wang-fei.mp3",
+    "file": "audio/wang-fei-3ca7abd2-b018-465b-ab54-5ba21f87b362.mp3",
     "artist": "萧敬腾",
     "album": "王妃",
     "year": 2009,
-    "lyrics": "lyrics/wang-fei.lrc",
+    "lyrics": "lyrics/wang-fei-6144bdeb-b63a-467c-ade8-416296d64c8a.lrc",
     "cover": "covers/wang-fei.jpg"
+  },
+  {
+    "id": "qing-shen-shen-yu-meng-meng",
+    "title": "情深深雨濛濛",
+    "artist": "杨胖雨",
+    "file": "audio/qing-shen-shen-yu-meng-meng.mp3",
+    "album": "情深深雨濛濛",
+    "lyrics": "lyrics/qing-shen-shen-yu-meng-meng-1a8b4622-b9e9-41cd-8470-6d6e37ff5329.lrc",
+    "cover": "covers/qing-shen-shen-yu-meng-meng-d5a30e6c-54f3-4594-8e7a-62f1fc5b60d0.jpg"
   }
 ]
