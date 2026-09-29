@@ -44,7 +44,8 @@ import {
   buildChanges, cacheKey, mergeLocalFields, readId3Tags, DEFAULT_MIN_SCORE,
 } from './lib/metadata-sources.mjs';
 
-import { findLyrics, fetchLimited, allowedCoverUrl, imageExtension, COVER_LIMIT } from './lib/metadata-assets.mjs';
+import { findLyrics, fetchLimited, allowedCoverUrl, allowedAudioUrl, AUDIO_LIMIT, imageExtension, COVER_LIMIT } from './lib/metadata-assets.mjs';
+import { parseHiAudio } from './lib/higequ.mjs';
 
 import { listTrash, restoreTrash } from './lib/media-trash.mjs';
 
@@ -700,7 +701,7 @@ async function handleRequest(req, res) {
     // 可选元数据源清单：界面下拉据此渲染，新源只需在 lib 注册表里加一行。
     if (req.method === 'GET' && url.pathname === '/api/sources') {
       return json(res, 200, {
-        serviceVersion: '20260929-lyrics-preview',
+        serviceVersion: '20260929-hi-audio',
         default: DEFAULT_SOURCE,
         minScore: DEFAULT_MIN_SCORE,
         sources: METADATA_SOURCES.map(({ name, label }) => ({ name, label })),
@@ -819,6 +820,55 @@ async function handleRequest(req, res) {
       return json(res, 200, { ok: failed.length === 0, applied, failed,
         message: (applied.length ? `已应用「${entry.title}」的 ${applied.join('、')}` : '没有字段写入')
           + (failed.length ? '；' + failed.map(f => `${f.field} 未应用：${f.message}`).join('；') : '') });
+    }
+    // 从 Hi歌曲抓取音频（2026-09-29 用户决策：单曲手动触发、仅开发测试用途、不限速）。
+    // 流程：复用 syncTrack 的 higequ 身份校验（拒同名翻唱/现场版）→ 取 player 页 →
+    // 解析 Base64 直链（parseHiAudio）→ allowedAudioUrl 白名单（酷我 CDN 族）→
+    // fetchLimited 按 AUDIO_LIMIT 下载 → MP3 魔数校验 → 新文件 audio/<id>-<uuid>.mp3 +
+    // catalog 指针换新（旧音频原地保留，回收/删除的引用计数继续管它）。
+    const audioSyncMatch = url.pathname.match(/^\/api\/tracks\/([a-zA-Z0-9_-]{1,64})\/higequ-audio$/);
+    if (req.method === 'POST' && audioSyncMatch) {
+      const id = audioSyncMatch[1];
+      const entries = await readCatalogEntries();
+      const entry = entries.find(e => e.id === id);
+      if (!entry) return json(res, 404, { message: '歌曲不存在' });
+      let sync;
+      try {
+        sync = await syncTrack(id, { source: 'higequ' });
+      } catch (err) {
+        return json(res, 502, { message: 'Hi歌曲查询失败：' + (err.message || '网络错误') });
+      }
+      // 音频直链只在 Hi 的 player 页上：回退到了其他来源（QQ/网易云）时 sourceUrl 不是 player 页，直接拒绝。
+      if (sync.source !== 'higequ' || !sync.candidate) {
+        return json(res, 404, { message: 'Hi歌曲没有匹配到候选（无结果或查询失败），未下载音频' });
+      }
+      if (sync.metadataAccepted !== true) {
+        return json(res, 422, { message: 'Hi歌曲候选身份不符（同名翻唱/现场版）或低于阈值，拒绝下载音频' });
+      }
+      const pageHtml = (await fetchLimited(sync.candidate.sourceUrl, 2 * 1024 * 1024, u => {
+        const p = new URL(u);
+        return p.origin === 'https://higequ.com' && /^\/(?:s\/[^/]+\/|player\/\d+\/)$/.test(p.pathname);
+      })).toString('utf8');
+      const audioUrl = parseHiAudio(pageHtml);
+      if (!audioUrl) return json(res, 404, { message: '播放页没有可用的音频直链（页面结构变化或不在白名单域），已放弃' });
+      const bytes = await fetchLimited(audioUrl, AUDIO_LIMIT, allowedAudioUrl);
+      const isMp3 = bytes.length > 1024
+        && ((bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) || (bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0));
+      if (!isMp3) return json(res, 422, { message: '下载内容不是 MP3（魔数不符），已放弃' });
+      const rel = `audio/${id}-${randomUUID()}.mp3`;
+      const newPath = join(MEDIA_DIR, rel);
+      await mkdir(dirname(newPath), { recursive: true });
+      await writeFile(newPath, bytes, { flag: 'wx' });
+      const newEntries = entries.map(e => e.id === id ? { ...e, file: rel } : e);
+      try {
+        await writeAndValidate(entries, newEntries);
+      } catch (err) {
+        // 写库失败时新文件必然还没有任何 catalog 引用，直接清掉；回滚失败则保留供人工恢复。
+        if (!err.message?.includes('回滚失败')) await unlink(newPath).catch(() => {});
+        throw err;
+      }
+      return json(res, 200, { ok: true, file: rel, size: bytes.length,
+        message: `已从 Hi歌曲下载音频：「${entry.title}」${(bytes.length / 1024 / 1024).toFixed(1)}MB → ${rel}；旧音频文件原地保留` });
     }
     // 上传新歌曲（原始字节流，避免 multipart 解析；id/title 走自定义头，中文 URL 编码）
     if (req.method === 'POST' && url.pathname === '/api/upload') {

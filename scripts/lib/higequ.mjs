@@ -1,5 +1,5 @@
-/** Hi歌曲公开HTML适配：只读搜索与详情，不执行页面脚本，不请求音频。 */
-import { fetchLimited, allowedCoverUrl, LYRICS_LIMIT } from './metadata-assets.mjs';
+/** Hi歌曲公开HTML适配：只读搜索与详情；音频下载为 2026-09-29 用户决策新增（单曲手动触发、仅开发测试用途，见 parseHiAudio）。 */
+import { fetchLimited, allowedCoverUrl, allowedAudioUrl, LYRICS_LIMIT } from './metadata-assets.mjs';
 const ROOT = 'https://higequ.com';
 const identity = value => String(value || '').normalize('NFKC').toLowerCase().replace(/[\s\p{P}\p{S}]/gu, '');
 
@@ -61,6 +61,21 @@ export function parseHiDetail(html, candidate, local) {
   const lyrics = !invalid && lines.length && Buffer.byteLength(text) <= LYRICS_LIMIT
     ? { status: 'matched', kind: 'synced', source: 'Hi歌曲', text, sourceUrl: candidate.sourceUrl } : null;
   return { coverUrl, lyrics };
+}
+
+/**
+ * 从 player 页静态 HTML 提取音频直链：站点以 `let code = "<base64>"; let realUrl = atob(code)`
+ * 服务端渲染地址（实测无需签名/Referer，2026-09-29 抓包验证）。只认解码后为 https 且
+ * allowedAudioUrl 白名单（酷我 CDN 族）的 .mp3 地址；页面无该脚本或解码不符返回 null。
+ * 音频字节本身由管理器的 /higequ-audio 端点按 AUDIO_LIMIT 下载，本函数不做网络请求。
+ */
+export function parseHiAudio(html) {
+  const code = html.match(/let\s+code\s*=\s*"([A-Za-z0-9+/=]+)"/)?.[1];
+  if (!code) return null;
+  let url;
+  try { url = Buffer.from(code, 'base64').toString('utf8'); } catch { return null; }
+  if (!/^https:\/\//.test(url) || !/^https:[^?#]+\.mp3(?:[?#]|$)/.test(url)) return null;
+  return allowedAudioUrl(url) ? url : null;
 }
 
 /** 所有请求串行、至少间隔1秒（墙钟毫秒），12秒/2MB上限；失败由上层回退其他来源。 */

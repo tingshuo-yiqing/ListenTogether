@@ -50,3 +50,34 @@ test('Hi歌曲：网络错误和站外跳转均上抛，响应超过2MB被拒绝
   assert.equal(calls,1);
   await assert.rejects(make(async()=>new Response('x'.repeat(2*1024*1024+1))).findMetadata(local),/大小/);
 });
+
+// ---- 音频直链解析（2026-09-29 用户决策新增：单曲手动触发、仅开发测试） ----
+import { parseHiAudio } from './higequ.mjs';
+import { allowedAudioUrl, AUDIO_LIMIT } from './metadata-assets.mjs';
+
+const AUDIO_URL = 'https://kw-lv.kuwo.cn/c7d9/resource/130739/trackmedia/M500016.mp3';
+const playerPage = url => '<script>let code = "' + Buffer.from(url,'utf8').toString('base64') + '";\nlet realUrl = atob(code);</script>';
+
+test('Hi歌曲音频：player 页 Base64 直链解析为 https+白名单 的 .mp3，其余一律拒绝', () => {
+  assert.equal(parseHiAudio(playerPage(AUDIO_URL)), AUDIO_URL);
+  // 站点若把直链放进 <audio src> 而不是 Base64 脚本，本适配器仍不认——那属于结构变化。
+  assert.equal(parseHiAudio('<audio src="' + AUDIO_URL + '"></audio>'), null);
+  assert.equal(parseHiAudio('<script>let realUrl = atob(code);</script>'), null);
+  // 非 https / 非白名单域 / 非 .mp3 后缀 / 坏 Base64 全部拒绝。
+  assert.equal(parseHiAudio(playerPage(AUDIO_URL.replace('https://','http://'))), null);
+  assert.equal(parseHiAudio(playerPage('https://cdn.evil.test/x/M500016.mp3')), null);
+  assert.equal(parseHiAudio(playerPage('https://kw-lv.kuwo.cn/x/trackmedia/M500016.m4a')), null);
+  assert.equal(parseHiAudio(playerPage(AUDIO_URL) + '!!'), AUDIO_URL); // 首个匹配生效，尾部脏数据忽略
+  assert.equal(parseHiAudio('let code = "###";'), null); // 非 Base64 字符集视为无直链
+});
+
+test('Hi歌曲音频：白名单覆盖酷我 CDN 族，拒绝伪装域与非 443 端口', () => {
+  assert.equal(allowedAudioUrl('https://kw-lv.kuwo.cn/a/b.mp3'), true);
+  assert.equal(allowedAudioUrl('https://kw-m.kuwo.cn/a/b.mp3?k=1'), true);
+  assert.equal(allowedAudioUrl('https://img1.kuwo.cn/a.jpg'), true); // 同一 CDN 族
+  assert.equal(allowedAudioUrl('https://kw-lv.kuwo.cn.evil.test/a.mp3'), false);
+  assert.equal(allowedAudioUrl('https://kw-lv.kuwo.cn:8080/a.mp3'), false);
+  assert.equal(allowedAudioUrl('http://kw-lv.kuwo.cn/a.mp3'), false);
+  assert.equal(allowedAudioUrl('https://user:pass@kw-lv.kuwo.cn/a.mp3'), false);
+  assert.equal(AUDIO_LIMIT, 64 * 1024 * 1024);
+});

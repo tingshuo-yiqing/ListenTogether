@@ -34,7 +34,7 @@ test('真管理器：Hi优先与失败回退、只读匹配、歌词落库及回
     for(let i=0;i<120&&!/http:\/\/127.0.0.1:(\d+)/.test(log);i++)await new Promise(r=>setTimeout(r,50));
     const port=log.match(/http:\/\/127.0.0.1:(\d+)/)?.[1];assert.ok(port,log);
     const api=async(path,body,method=body?'POST':'GET')=>{const r=await fetch('http://127.0.0.1:'+port+path,{method,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});return {httpStatus:r.status,...await r.json()};};
-    assert.equal((await api('/api/sources')).serviceVersion,'20260929-lyrics-preview');
+    assert.equal((await api('/api/sources')).serviceVersion,'20260929-hi-audio');
     assert.equal((await api('/api/tracks/a/lyrics')).httpStatus,404);
     assert.equal((await api('/api/tracks/missing/lyrics')).httpStatus,404);
     const sync=()=>api('/api/tracks/a/sync',{includeLyrics:true,refresh:true});
@@ -74,6 +74,76 @@ test('真管理器：Hi优先与失败回退、只读匹配、歌词落库及回
     assert.equal((await api('/api/trash/restore',{run:item.run,key:item.key})).httpStatus,409);
   } finally {
     if(child&&child.exitCode===null){const exited=once(child,'exit');child.kill();await exited;}
+    await rm(temp,{recursive:true,force:true});
+  }
+});
+
+test('真管理器：Hi音频下载（Base64 直链→白名单→魔数校验→指针换新，旧文件原地保留）', {timeout:45000}, async()=>{
+  const root=resolve(import.meta.dirname,'../..'), temp=await mkdtemp(join(tmpdir(),'lt-hi-audio-'));
+  const media=join(temp,'media'), trash=join(temp,'trash');let child;
+  try {
+    await mkdir(media); await cp(join(root,'demo-media/demo-soft.mp3'),join(media,'demo-soft.mp3'));
+    const entries=[
+      {id:'a-ok',title:'Test Song',artist:'Artist',file:'demo-soft.mp3'},
+      {id:'a-id',title:'Other Song',artist:'Artist',file:'demo-soft.mp3'}, // 同名不同曲：Hi 搜索只会返回 Test Song，身份必须判否
+      {id:'a-no',title:'Test Song',artist:'Artist',file:'demo-soft.mp3'},
+      {id:'a-evil',title:'Test Song',artist:'Artist',file:'demo-soft.mp3'},
+      {id:'a-magic',title:'Test Song',artist:'Artist',file:'demo-soft.mp3'},
+    ];
+    const cat=join(media,'catalog.json'),mode=join(temp,'mode');
+    await writeFile(cat,JSON.stringify(entries)); await writeFile(mode,'audio-ok');
+    const preload=join(temp,'preload.mjs');
+    // mockFetch 会被 toString() 序列化进 --import 预加载文件：**不能引用外层任何变量**（player/b64
+    // 都必须内联，否则子进程 ReferenceError 且被端点包成 500，表象与网络失败难以区分）。
+    const mockFetch = async(value)=>{
+      const {readFileSync}=await import('node:fs');
+      const u=new URL(value), state=readFileSync(process.env.HI_MODE,'utf8');
+      const b64=s=>Buffer.from(s,'utf8').toString('base64');
+      const player=(audioCode,artist='Artist')=>'<span id="music-title">Test Song</span><span id="music-artist">'+artist+'</span><meta property="og:image" content="https://img1.kuwo.cn/a.jpg"><div id="lyrics-container"><div class="lyric-line" data-time="0">fixture lyrics</div></div>'+(audioCode?'<script>let code = "'+audioCode+'";</script>':'');
+      if(u.hostname==='higequ.com') {
+        if(u.pathname.startsWith('/s/'))return new Response('<div class="result-item" data-rid="1"><div class="result-info"><div class="result-title">Test Song</div><div class="result-artist">Artist</div></div></div>');
+        if(u.pathname==='/player/1/'){
+          if(state==='audio-identity')return new Response(player(null,'翻唱歌手'));
+          if(state==='audio-noaudio')return new Response(player(null));
+          if(state==='audio-evil')return new Response(player(b64('https://cdn.evil.test/x/M500016.mp3')));
+          return new Response(player(b64('https://kw-lv.kuwo.cn/c7d9/r/1/trackmedia/M500016.mp3')));
+        }
+      }
+      if(u.hostname.endsWith('.kuwo.cn') && u.pathname.endsWith('.mp3')){
+        if(state==='audio-magic')return new Response('<html>not audio</html>');
+        return new Response(readFileSync(process.env.HI_AUDIO));
+      }
+      throw new Error('offline fixture refuses '+u.hostname);
+    };
+    await writeFile(preload,'globalThis.fetch = '+mockFetch.toString()+';');
+    child=spawn(process.execPath,['--import',pathToFileURL(preload).href,join(root,'scripts/metadata-manager.mjs'),'--dir',media,'--trash',trash,'--cache',join(temp,'cache.json'),'--port','0'],{stdio:['ignore','pipe','pipe'],windowsHide:true,env:{...process.env,HI_MODE:mode,HI_AUDIO:join(root,'demo-media/demo-soft.mp3')}});
+    let log='';child.stdout.setEncoding('utf8');child.stderr.setEncoding('utf8');child.stdout.on('data',c=>log+=c);child.stderr.on('data',c=>log+=c);
+    for(let i=0;i<120&&!/http:\/\/127.0.0.1:(\d+)/.test(log);i++)await new Promise(r=>setTimeout(r,50));
+    const port=log.match(/http:\/\/127.0.0.1:(\d+)/)?.[1];assert.ok(port,log);
+    const api=async(path,method='POST')=>{const r=await fetch('http://127.0.0.1:'+port+path,{method});return {httpStatus:r.status,...await r.json()};};
+    const catalog=async()=>JSON.parse(await readFile(cat,'utf8'));
+    // 成功路径：指针换新、旧文件原地保留、新文件以 ID3 开头且 ≥ AUDIO 上限以内。
+    const ok=await api('/api/tracks/a-ok/higequ-audio');assert.equal(ok.httpStatus,200,JSON.stringify(ok));assert.ok(ok.ok);
+    const after=(await catalog()).find(e=>e.id==='a-ok');assert.match(after.file,/^audio\/a-ok-[0-9a-f-]{36}\.mp3$/);
+    const head=await readFile(join(media,after.file));assert.equal(head.subarray(0,3).toString(),'ID3');assert.ok(head.length>1024);
+    await access(join(media,'demo-soft.mp3')); // 旧音频原地保留
+    // 身份不符拒绝：catalog 与文件零变化。
+    const before=(await catalog()).find(e=>e.id==='a-id');
+    await writeFile(mode,'audio-identity');
+    assert.equal((await api('/api/tracks/a-id/higequ-audio')).httpStatus,422);
+    assert.deepEqual((await catalog()).find(e=>e.id==='a-id'),before);
+    // 无直链 / 白名单外域名 / 非 MP3 魔数：分别 404 / 404 / 422，均不动库。
+    await writeFile(mode,'audio-noaudio');
+    assert.equal((await api('/api/tracks/a-no/higequ-audio')).httpStatus,404);
+    await writeFile(mode,'audio-evil');
+    assert.equal((await api('/api/tracks/a-evil/higequ-audio')).httpStatus,404);
+    await writeFile(mode,'audio-magic');
+    assert.equal((await api('/api/tracks/a-magic/higequ-audio')).httpStatus,422);
+    await writeFile(mode,'audio-ok');
+    assert.equal(JSON.stringify((await catalog()).map(e=>e.id)),JSON.stringify(entries.map(e=>e.id)));
+    await access(join(media,'demo-soft.mp3'));
+  } finally {
+    if (child) child.kill();
     await rm(temp,{recursive:true,force:true});
   }
 });

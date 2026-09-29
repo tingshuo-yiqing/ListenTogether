@@ -2,6 +2,8 @@
 const UA = 'ListenTogetherMetadata/0.2 (personal library manager)';
 export const LYRICS_LIMIT = 256 * 1024;
 export const COVER_LIMIT = 1024 * 1024;
+/** Hi歌曲音频直链上限：站点实测单曲 4–15MB（192–320kbps），64MB 已含余量，防异常大文件拖垮内存。 */
+export const AUDIO_LIMIT = 64 * 1024 * 1024;
 
 export function allowedCoverUrl(value) {
   try {
@@ -10,6 +12,19 @@ export function allowedCoverUrl(value) {
       && (u.hostname === 'y.gtimg.cn' || /^img[0-9]+\.kuwo\.cn$/.test(u.hostname) || /^p[0-9]+\.music\.126\.net$/.test(u.hostname)
         || u.hostname === 'coverartarchive.org' || u.hostname === 'archive.org'
         || /^(?:[a-z0-9-]+\.)+archive\.org$/.test(u.hostname));
+  } catch { return false; }
+}
+
+/**
+ * Hi歌曲音频直链白名单：实测交付域为酷我 CDN 族（kw-*.kuwo.cn）。覆盖 *.kuwo.cn 一个后缀即可
+ * 同时容纳图床 imgN.kuwo.cn 与音频 kw-lv/kw-m 等；若站点换 CDN 会在这里被拒——错误信息会点名
+ * 白名单，扩展时只加域名后缀、不放行任意主机。
+ */
+export function allowedAudioUrl(value) {
+  try {
+    const u = new URL(value);
+    return u.protocol === 'https:' && !u.username && !u.password && (!u.port || u.port === '443')
+      && /^(?:[a-z0-9-]+\.)*kuwo\.cn$/.test(u.hostname);
   } catch { return false; }
 }
 

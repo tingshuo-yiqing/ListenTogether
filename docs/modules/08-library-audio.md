@@ -100,4 +100,8 @@ build-cloud-catalog.mjs 不依赖本地平铺布局，无需改动）。新增 s
 
 2026-09-29：新增 GET /api/tracks/:id/lyrics 预览 catalog 已保存的本地歌词，realpath 限曲库内 .lrc/256KB；缺歌词或丢文件 404，非法文件 422。编辑页「预览当前歌词」按纯文本显示，切歌和刷新使用请求序号隔离。Hi来源问题确认是旧 Node 进程未重启，本机服务现已更新；云端未同步。
 
+## Hi歌曲音频下载（2026-09-29，用户决策：单曲手动、仅开发测试、非商用）
+
+`scripts/lib/higequ.mjs` 新增 `parseHiAudio`：player 页以服务端渲染的 `let code="<base64>"` 携带音频直链（实测酷我 CDN、免签名免 Referer），解码后必须过 `allowedAudioUrl` 白名单（`*.kuwo.cn` 族，https/443/无凭证）才是可用地址。管理器新增 `POST /api/tracks/:id/higequ-audio`：复用 `syncTrack` 的 higequ 身份校验（`metadataAccepted`，拒同名翻唱/现场版）→ 取 player 页 → 直链 → `fetchLimited` 按 `AUDIO_LIMIT`（64MB）下载 → MP3 魔数校验 → 新文件 `audio/<id>-<uuid>.mp3` + catalog 指针换新（`writeAndValidate` 闸门，失败撤文件），**旧音频原地保留**（删除轮的引用计数继续管它）。不限速：无批量入口，逐首手动点击（编辑页「⬇ Hi音频」）。serviceVersion 升 `20260929-hi-audio`；云端管理器未包含。设计稿「不下载音频」红线按用户决策修订（见设计稿非目标节的修订注记）。
+
 2026-09-29：按用户指令恢复低置信度文字候选的手动应用。单曲 score < minScore 时只提示核对，不默认勾选，但可手动选择艺术家/专辑/年份/流派并应用；批量仍仅消费达标的 changes。资源未匹配到时不伪造封面或歌词候选。Chrome 实测 0.6 < 0.8 候选默认未选、可勾选并提交五月天；85/85接口回归通过。HTML按请求读取，刷新页面即生效，未改真实曲库。

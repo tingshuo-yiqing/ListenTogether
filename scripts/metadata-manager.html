@@ -227,6 +227,7 @@
           <label><input type="checkbox" id="s-refresh"> 忽略缓存重查</label>
           <button id="btn-sync">匹配这首</button>
           <button id="btn-apply-sync" disabled>应用所勾选字段</button>
+          <button id="btn-higequ-audio" title="单曲手动触发：从 Hi歌曲抓取本曲音频（仅开发测试用途），旧音频文件原地保留">⬇ Hi音频</button>
           <span id="sync-status" style="color:var(--muted);font-size:12px"></span>
         </div>
         <div id="sync-result"></div>
@@ -789,6 +790,25 @@ $('btn-apply-sync').onclick = async () => {
     toast(r.message || '已写入', !r.failed?.length);
     await refresh();
   } catch (e) { toast('写入失败：' + e.message, false); $('btn-apply-sync').disabled = false; }
+};
+
+// 从 Hi歌曲抓取本曲音频（单曲手动、仅开发测试；服务端做身份校验+白名单+魔数校验，旧文件保留）。
+$('btn-higequ-audio').onclick = async () => {
+  if (!currentId) return;
+  if (dirty) return toast('请先保存修改，再抓取音频', false);
+  if (!confirm('从 Hi歌曲下载这首的音频并替换编目指针？\n旧音频文件原地保留，可随时改回。')) return;
+  $('btn-higequ-audio').disabled = true;
+  $('sync-status').textContent = '音频下载中…（搜索→详情→直链，几秒到几十秒）';
+  try {
+    const r = await api('/api/tracks/' + encodeURIComponent(currentId) + '/higequ-audio', { method: 'POST' });
+    toast(r.message || '已下载', r.ok !== false);
+    await refresh();
+  } catch (e) {
+    toast('音频抓取失败：' + e.message, false);
+  } finally {
+    $('btn-higequ-audio').disabled = false;
+    $('sync-status').textContent = '';
+  }
 };
 
 function batchRow(text, cls) {
