@@ -215,5 +215,212 @@
     "album": "情深深雨濛濛",
     "lyrics": "lyrics/qing-shen-shen-yu-meng-meng-1a8b4622-b9e9-41cd-8470-6d6e37ff5329.lrc",
     "cover": "covers/qing-shen-shen-yu-meng-meng-d5a30e6c-54f3-4594-8e7a-62f1fc5b60d0.jpg"
+  },
+  {
+    "id": "cheng-quan",
+    "title": "成全",
+    "artist": "林宥嘉",
+    "file": "audio/cheng-quan.mp3",
+    "album": "成全",
+    "lyrics": "lyrics/cheng-quan-38cae684-f410-4753-81b8-fe0116abf766.lrc",
+    "cover": "covers/cheng-quan-fd12872d-0031-485b-b505-8e9dae94adf1.jpg"
+  },
+  {
+    "id": "mu-ji-jie-shi-ni",
+    "title": "目及皆是你",
+    "artist": "小蓝背心",
+    "file": "audio/mu-ji-jie-shi-ni.mp3",
+    "album": "目及皆是你",
+    "lyrics": "lyrics/mu-ji-jie-shi-ni-b9928a11-3f2d-40d0-92d0-877cd875f27d.lrc",
+    "cover": "covers/mu-ji-jie-shi-ni-17214d60-ce41-46fc-a495-5cc4cda7d377.jpg"
+  },
+  {
+    "id": "di-57-ci-qu-xiao-fa-song",
+    "title": "第57次取消发送",
+    "artist": "菲菲公主（陆绮菲）",
+    "file": "audio/di-57-ci-qu-xiao-fa-song.mp3",
+    "album": "第57次取消发送",
+    "lyrics": "lyrics/di-57-ci-qu-xiao-fa-song-1c1741d5-c5ea-4e73-8c5d-b09bf334b24f.lrc",
+    "cover": "covers/di-57-ci-qu-xiao-fa-song-868c83da-fbe8-4930-986a-2b15bec805f8.jpg"
+  },
+  {
+    "id": "you-xie",
+    "title": "有些",
+    "artist": "颜人中",
+    "file": "audio/you-xie.mp3",
+    "album": "失眠症候群",
+    "lyrics": "lyrics/you-xie-258fad2c-93b5-4fb3-b922-60823e613259.lrc",
+    "cover": "covers/you-xie-ebba89fc-f750-430d-9a58-d438dd6cda6e.jpg"
+  },
+  {
+    "id": "bei-dong",
+    "title": "被动",
+    "artist": "伍佰 & China Blue",
+    "file": "audio/bei-dong.mp3",
+    "album": "爱你伍佰年",
+    "lyrics": "lyrics/bei-dong-fa927ff5-7e4d-4bdf-b869-59f14c8e2b94.lrc",
+    "cover": "covers/bei-dong-395ab655-cb3b-43b2-bf57-546983ecab46.jpg"
+  },
+  {
+    "id": "lei-qiao",
+    "title": "泪桥",
+    "artist": "伍佰 & China Blue",
+    "file": "audio/lei-qiao.mp3",
+    "album": "泪桥",
+    "lyrics": "lyrics/lei-qiao-d51b5894-d012-48f6-9632-4280f15bf702.lrc",
+    "cover": "covers/lei-qiao-3f7fd1b9-1cb1-4da9-9aa4-e0d447b50536.jpg"
+  },
+  {
+    "id": "chun-jiao-yu-zhi-ming",
+    "title": "春娇与志明",
+    "artist": "街道办GDC&欧阳耀莹",
+    "file": "audio/chun-jiao-yu-zhi-ming.mp3",
+    "album": "春娇与志明",
+    "lyrics": "lyrics/chun-jiao-yu-zhi-ming-99f0d8f9-cab3-4cea-8b65-0f02fe9cff9c.lrc",
+    "cover": "covers/chun-jiao-yu-zhi-ming-55fff555-5a3f-4371-947e-9eff68a2af8e.jpg"
+  },
+  {
+    "id": "hong-se-gao-gen-xie",
+    "title": "红色高跟鞋",
+    "artist": "蔡健雅",
+    "file": "audio/hong-se-gao-gen-xie.mp3",
+    "album": "若你碰到他",
+    "lyrics": "lyrics/hong-se-gao-gen-xie-2a89241a-a9cc-44fa-abf2-d68be4e64ed7.lrc",
+    "cover": "covers/hong-se-gao-gen-xie-db9939cb-da9b-4c86-be19-31965d57d1f7.jpg"
+  },
+  {
+    "id": "yue-lai-yue-bu-dong",
+    "title": "越来越不懂",
+    "artist": "蔡健雅",
+    "file": "audio/yue-lai-yue-bu-dong.mp3",
+    "album": "Goodbye & Hello",
+    "lyrics": "lyrics/yue-lai-yue-bu-dong-8ea8c88e-7d22-4d68-8833-757006e4065b.lrc",
+    "cover": "covers/yue-lai-yue-bu-dong-bc4515ba-e450-4232-86ca-5c60647dacbe.jpg"
+  },
+  {
+    "id": "pian-pian-xi-huan-ni",
+    "title": "偏偏喜欢你",
+    "artist": "陈百强",
+    "file": "audio/pian-pian-xi-huan-ni.mp3",
+    "album": "偏偏喜欢你",
+    "lyrics": "lyrics/pian-pian-xi-huan-ni-2067d963-c62f-4d44-9acf-9cb931d44a83.lrc",
+    "cover": "covers/pian-pian-xi-huan-ni-3bdbde13-ec05-4904-a77c-37b80f770ddf.jpg"
+  },
+  {
+    "id": "chen-ai-luo-ding",
+    "title": "尘埃落定",
+    "artist": "张敬轩",
+    "file": "audio/chen-ai-luo-ding.mp3",
+    "album": "张敬轩 是时候...",
+    "lyrics": "lyrics/chen-ai-luo-ding-8e3fc929-136c-47c3-aa7d-87864eec1250.lrc",
+    "cover": "covers/chen-ai-luo-ding-5b508a09-f1e5-457a-8854-550d2001dd34.jpg"
+  },
+  {
+    "id": "qing-ge",
+    "title": "情歌",
+    "artist": "梁静茹",
+    "file": "audio/qing-ge.mp3",
+    "album": "靜茹 & 情歌 別再为他流泪",
+    "lyrics": "lyrics/qing-ge-e6ccc611-245e-42c3-b528-659dc752222a.lrc",
+    "cover": "covers/qing-ge-af1b0efd-dec7-4c1e-bb8b-027073ff5db7.jpg"
+  },
+  {
+    "id": "yong-qi",
+    "title": "勇气",
+    "artist": "梁静茹",
+    "file": "audio/yong-qi.mp3",
+    "album": "勇气",
+    "lyrics": "lyrics/yong-qi-4a20833d-aebc-4c51-a47e-b5523f8f8188.lrc",
+    "cover": "covers/yong-qi-270feb9b-e652-401f-828e-950a9be0f15d.jpg"
+  },
+  {
+    "id": "hui-hu-xi-de-tong",
+    "title": "会呼吸的痛",
+    "artist": "梁静茹",
+    "file": "audio/hui-hu-xi-de-tong.mp3",
+    "album": "崇拜",
+    "lyrics": "lyrics/hui-hu-xi-de-tong-47a6d8ac-e7c9-4f41-a0cc-ab6b1809ea27.lrc",
+    "cover": "covers/hui-hu-xi-de-tong-d1ff5aab-9daa-4764-8910-2d2df3fee294.jpg"
+  },
+  {
+    "id": "nuan-nuan",
+    "title": "暖暖",
+    "artist": "梁静茹",
+    "file": "audio/nuan-nuan.mp3",
+    "album": "亲亲",
+    "lyrics": "lyrics/nuan-nuan-d5658237-56b5-4830-ae28-5b4516097234.lrc",
+    "cover": "covers/nuan-nuan-5e1b89e1-2c22-424a-9330-147cbb32ebef.jpg"
+  },
+  {
+    "id": "nuo-wei-de-sen-lin",
+    "title": "挪威的森林",
+    "artist": "伍佰 & China Blue",
+    "file": "audio/nuo-wei-de-sen-lin.mp3",
+    "album": "爱情的尽头",
+    "lyrics": "lyrics/nuo-wei-de-sen-lin-cb3f37fe-a65e-4af6-86d5-c4db5cdffb14.lrc",
+    "cover": "covers/nuo-wei-de-sen-lin-06d80559-0d1c-4266-be57-51a7acd21154.jpg"
+  },
+  {
+    "id": "wan-feng",
+    "title": "晚风",
+    "artist": "伍佰 & China Blue",
+    "file": "audio/wan-feng.mp3",
+    "album": "泪桥",
+    "lyrics": "lyrics/wan-feng-1aeeebd9-ccac-4eaf-b4f0-7a9909719892.lrc",
+    "cover": "covers/wan-feng-6437636e-87b0-41a0-ab19-52e13c96cd0b.jpg"
+  },
+  {
+    "id": "zai-du-zhong-xiang-feng",
+    "title": "再度重相逢",
+    "artist": "伍佰 & China Blue",
+    "file": "audio/zai-du-zhong-xiang-feng.mp3",
+    "album": "泪桥",
+    "lyrics": "lyrics/zai-du-zhong-xiang-feng-8a9b6f5b-2613-4ea2-beae-9e7eb8c746b0.lrc",
+    "cover": "covers/zai-du-zhong-xiang-feng-5b88802e-c079-4f1f-a2f6-d111c0117e70.jpg"
+  },
+  {
+    "id": "meng-xing-shi-fen",
+    "title": "梦醒时分",
+    "artist": "伍佰 & China Blue",
+    "file": "audio/meng-xing-shi-fen.mp3",
+    "album": "单程车票",
+    "lyrics": "lyrics/meng-xing-shi-fen-d8f4ef51-1109-442b-998f-795670000210.lrc",
+    "cover": "covers/meng-xing-shi-fen-7df102c1-bdc4-4253-9325-dc1def83f526.jpg"
+  },
+  {
+    "id": "last-dance",
+    "title": "Last Dance",
+    "artist": "伍佰 & China Blue",
+    "file": "audio/last-dance.mp3",
+    "album": "爱情的尽头",
+    "lyrics": "lyrics/last-dance-85a87593-9f17-4700-95f6-551df24cf313.lrc",
+    "cover": "covers/last-dance-e6405e21-a760-41df-bc63-7aa5f161eacf.jpg"
+  },
+  {
+    "id": "duo-yuan-dou-yao-zai-yi-qi",
+    "title": "多远都要在一起",
+    "artist": "G.E.M.邓紫棋",
+    "file": "audio/duo-yuan-dou-yao-zai-yi-qi.mp3",
+    "album": "新的心跳",
+    "lyrics": "lyrics/duo-yuan-dou-yao-zai-yi-qi-9a9960e5-6798-4fd0-9065-0bd6abfbcb73.lrc",
+    "cover": "covers/duo-yuan-dou-yao-zai-yi-qi-012e056a-5021-4c18-8e51-af62d81e53d9.jpg"
+  },
+  {
+    "id": "guang-nian-zhi-wai",
+    "title": "光年之外",
+    "artist": "G.E.M.邓紫棋",
+    "file": "audio/guang-nian-zhi-wai.mp3",
+    "album": "光年之外",
+    "lyrics": "lyrics/guang-nian-zhi-wai-64a5c70e-547d-428a-a413-df81e51d7032.lrc",
+    "cover": "covers/guang-nian-zhi-wai-8bc608b8-11f3-4325-ad90-15f3720c7fdc.jpg"
+  },
+  {
+    "id": "pao-mo",
+    "title": "泡沫",
+    "artist": "G.E.M.邓紫棋",
+    "file": "audio/pao-mo.mp3",
+    "album": "Xposed",
+    "lyrics": "lyrics/pao-mo-04e9467b-a525-493b-87f7-082b5568a278.lrc",
+    "cover": "covers/pao-mo-8ffb5d52-2669-4ff6-a4de-a848c0ea5b72.jpg"
   }
 ]
