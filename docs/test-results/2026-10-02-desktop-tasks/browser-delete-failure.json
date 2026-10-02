@@ -1,0 +1,4 @@
+{
+  "checks": [],
+  "error": "TypeError: ws.on is not a function\n    at file:///D:/ListenTogether/docs/test-results/2026-10-02-desktop-tasks/browser-delete.mjs:23:6\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"
+}

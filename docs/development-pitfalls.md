@@ -149,6 +149,16 @@
 - 根因：USB 重新枚举时 adb 未能从设备取到序列号，该 transport 的 serial 为空；但设备内部 `ro.serialno` 没变，`adb shell getprop ro.serialno` 仍返回原值。序列号只是 adb 侧的标识，不是设备身份。
 - 规避：①此时**不要带 `-s`**——现场只有一台设备，`adb shell` / `adb install` 不带 `-s` 直接作用于唯一设备（本轮据此继续完成了验收）；②`adb reverse` 规则随掉线清空，必须重建；③要恢复带 `-s` 的用法就 `adb kill-server && adb start-server` 或在设备端重新确认 USB 调试授权；④设备"消失"先按连接问题处理（换线/换口/重插），不要怀疑装机或构建。
 
+### 2.18 MuMu 安装/启动后旋转状态会覆盖先前的竖屏锁定（2026-10-01）
+- 现象：已执行 `wm user-rotation lock 0`，覆盖安装并启动后仍恢复横向，旧坐标与目标屏幕不一致。
+- 原因：本轮 MuMu 的自动旋转与 user_rotation 设置在安装/启动后恢复原值，单次 wm 设置不足以约束本轮采样。
+- 规避：安装/启动后重新核对分辨率与旋转，测试竖屏时同时设置 accelerometer_rotation=0、user_rotation=0 与 wm lock 0；结束还原本轮开始值 1/1/free。不将横向误操作当竖屏 UI 缺陷。
+
+### 2.19 shell 不能注入受保护的耳机断开广播（2026-10-01）
+- 现象：adb shell am broadcast AUDIO_BECOMING_NOISY 返回 Android Permission Denial；不是设备掉线或自动审批拒绝。
+- 根因：系统保护该广播，普通 shell 不拥有发送资格；重连不能获得额外权限。
+- 规避：权限/参数失败不自动重试，仅 offline/not found/transport closed 重连；真实耳机插拔请用户配合。用用户听感、localPause 诊断与空曲后的 MediaSession 对账，不把注入失败算通过，不绕过权限。
+
 ## 3. UI 自动化（uiautomator/input）
 
 ### 3.1 动态进度界面导致 dump 失效
@@ -203,7 +213,24 @@
 - 规避：①**非 ASCII 昵称不做真机注入**——emoji/代理对截断这类逻辑交给 JVM 单测（`DisplayNameTest`）覆盖，并在验收记录里显式标注"真机未目视"；确需非 ASCII 时人工输入或走存储层写偏好。②URL 整体放进设备端单引号里：`adb shell "input text 'http://8.166.126.136:3000'"`（本轮实测可用），或按 3.6 直接改 `connection.xml`。③清空多行框：`KEYCODE_MOVE_HOME(122)` + 循环 `KEYCODE_FORWARD_DEL(112)` 向后删，或先 `MOVE_HOME` 再一次性 `FORWARD_DEL` 到末尾。
 - 附带：`input keyevent 4` 收 ColorOS 输入法并不总生效（2.11），点空白处（如 y≈1500 的卡片外）也能收起，收完再 dump 取坐标。
 
+### 3.11 MuMu dump 退出非零但已生成有效新树（2026-10-01）
+- 现象：uiautomator dump 返回非零，同时 stdout 显示 `dumped to:`，新文件能解析；也见过真正的 null root。
+- 原因：退出状态与 XML 产出在本轮 MuMu 上并不总是同步；保留旧文件又会混入陷阱 3.8 的陈旧证据。
+- 规避：每次先删除自己上次的 XML，有限重试最多三次；只有产出新文件、完整 XML 可解析且当前焦点正确，才接受该树。失败无新树则停止定位，不用旧坐标继续点。截图落 `/data/local/tmp` 后 pull，避免 PowerShell 二进制重定向与相册污染。
+
 ## 4. Compose / Material3
+
+### 4.14 Scaffold 整体避让会把歌曲栏抬到键盘上方（2026-10-02）
+
+- 现象：聊天输入框与键盘之间夹着 MiniPlayer，消息空间被挤占。
+- 根因：imePadding 作用于整个 Scaffold，bottomBar 也一起避让；输入框未被遮挡不等于布局合理。
+- 规避：按实际 IME 底部占用决定是否显示歌曲栏，键盘打开收起、关闭恢复；明确 adjustResize。播放器状态/Controller/Service 保留在条件外，收起界面不得暂停或重置播放器。浅深、发送/恢复及连续播放分别实测，见 [键盘报告](test-results/2026-10-02-chat-keyboard/README.md)。
+
+### 4.15 MuMu 零高 IME 与复用文案会让键盘检查误判（2026-10-02）
+
+- 现象：Sogou 报 visible=true，但窗口 frame=[0,1920][1080,1920]、高度 0，截图没有键盘；临时标准键盘的 Android 15 转储又带可选 visibleFrame。点歌页用歌名识别歌曲栏，会误把同名曲库行当播放器。
+- 根因：模拟器输入桥可创建零高窗口；转储可扩展，文字也可在多个组件复用。安装后输入法/旋转可能重置，默认 ADB 还可能被其它调试会话重启。
+- 规避：确认真实窗口正高度和截图，允许可选转储字段；按专属播放控件识别歌曲栏。聊天间距与顶部搜索不套同一断言。临时输入法安装后重新设置，收尾还原/卸载；必要时用独立 ADB 端口。初始失败与修正工具均在 [记录](test-results/2026-10-02-chat-keyboard/README.md)。
 
 ### 4.1 API 弃用与签名陷阱
 - `LocalClipboardManager` 已弃用 → 用 `LocalClipboard` + `setClipEntry(ClipEntry(ClipData...))`（suspend，需 rememberCoroutineScope）；注意参数是 **ClipEntry 不是 ClipData**。
@@ -257,6 +284,29 @@
 - 规避：跟随流同时观察当前行与手动暂停状态，暂停发 null 取消旧滚动，恢复时即使行号不变也重新定位；等 `isScrollInProgress=false` 后再开始倒计时（本轮按用户确认改为 **3 秒**，移除「回到当前歌词」按钮）。`LyricsFollowTest` 钉住同一行恢复、翻看中跨行、重复采样、首行前取消四种行为。切歌用 `key(id, hasLyrics)` 重建整个歌词子树，因为 `produceState` 的 key 只重启 producer，**不会重新应用 initialValue 或重置列表状态**。
 - 验收必须补「歌曲暂停、当前行不变」场景；只在持续播放时等几秒，下一句变化会掩盖此缺陷。证据见 [云端真机补验](test-results/2026-09-27-cloud-device-followup/README.md)。
 
+### 4.10 网页 UI 原型：无水平溢出不等于播放控件可见，字号开关不等于真实两倍（2026-09-30）
+
+- 现象：首轮离线原型 13 项交互全过，375px 播放器主播放键却被封面挤到安全区下方；总览画板互相重叠。第二轮字号开关显示已开启，但实际页签为 26px / 16px = 1.625 倍；横屏成员按钮仅 32px 高。
+- 根因：仅检查 document.scrollWidth 漏掉容器内的纵向裁切；播放内容与主控共用滚动区，封面可挤压控制。字体变量的作用域与局部字号覆盖不一致，不能用 data-text 状态代替 computedStyle；总览只缩手机宽度、不整体等比缩放会改变手机内布局。
+- 规避：封面 / 歌词占剩余空间，主控独立固定；几何检查同时比较主控与应用容器 / 视口 bounds，横屏另验。大字号按真实 computedStyle 与正常值比对，触控按可见按钮矩形量测。总览对完整 390×800 画板等比缩放，缩放快照 inert，不将它计入 48px 交互门槛。浏览器结论仍不能替代 Android 系统字号 / IME / TalkBack 验收。证据见 [UI 原型验证](test-results/2026-09-30-ui-concept/README.md)。
+
+### 4.11 UI 自动化：CSS 动画首帧会误判，失败后未释放指针会污染后续检查（2026-10-01）
+
+- 现象：精简原型复验时，滑条已触发 seeking，但立即读渐入时间的 computed opacity 得到 0，报「拖动时间未显示」；断言中途退出没有 pointerup，后续成员播放和长按检查一起失败。
+- 根因：CSS transition 在首帧仍可能为起始值，CDP 已发送事件不代表已到目标动画帧；测试保留按下状态，独立场景变成串联故障。另一次测试误把带相同 data-action 的遮罩当关闭按钮，导致弹层状态未清。
+- 规避：等待目标 computed 样式 / DOM 状态，而非立即读或只等固定毫秒；异常清理取消手势并释放鼠标 / 触摸，再重置场景。动作选择器指定真实 button，遮罩与关闭控件不能混选。证据见 [精简 UI 验收](test-results/2026-10-01-ui-minimal/README.md)；最终完整复跑 24/24。
+- Android 同类补充：ModalBottomSheet 刚打开时立即截图，会捕获进入动画中间帧，误判底部播放控制被裁切。本轮等待弹层稳定后补拍并复核完整控制区，源码无需改变；原生截图也要确认布局与动画已稳定，不能仅以点击注入完成为准。证据见 [Android 原生 UI 交付](test-results/2026-10-01-android-ui/README.md)。
+
+### 4.12 队列长按监听在列表父级时，纯函数通过仍可能无法实际拖排（2026-10-01）
+- 现象：锚点/边缘速度单测通过，但 MuMu 整列长按监听没有产生队列变更；改为稳定 entryId 的行级长按后，同一模拟器真实排序与 13 首跨屏滚动通过。
+- 原因：父级滚动识别与额外坐标命中条件使手势链路更复杂；本轮未将注入工具失败推断成协议失败，也未凭数学单测直接宣布拖排通过。
+- 规避：行级识别长按，按 entryId 查实际位置，短水平拖动交给独立横滑处理；实际验收同时检查高亮预览、跨屏滚动与服务端版本/顺序回显。取消、换版本/权限时恢复快照；所有测试注入都保证释放指针。
+
+### 4.13 聊天未测量列表与 StateFlow 合并会误清未读（2026-10-01）
+- 现象：切页时初始 layoutInfo 为空，被当作列表底部；首次空快照与随后的新消息又可能合并到同一 Compose 帧，导致历史水位错误。
+- 原因：未测量空列表不能证明已读到底；用当前最大 seq 代替第一次完整快照水位，会把新消息归入历史。
+- 规避：RoomClient 固定保存首次完整 chatInitialSeq（含 0），后续 sync 不覆盖；滚动状态等待有效测量后再判断，保存 followBottom 并区分用户滚动和新数据。保留原文/原 ID 和真实 messageId 对账，不按同文猜确认。相关客户端与分页回归纳入本轮 147 项；v2 缺口/窗口/观察者挂账仍开放。
+
 ## 5. 协程与 JVM 单元测试
 
 ### 5.1 测试调度器与生产调度器语义不同
@@ -267,6 +317,8 @@
 ### 5.2 runTest 被无限循环卡死
 - 现象：校时循环每 5 秒 delay 永久续期，runTest 永不结束直至超时。
 - 规避：打开过 Socket 的测试**结束时必须 client.leave()**（取消 syncJob/reconnect）；新增常驻协程时检查测试收尾。
+
+- **2026-10-01 补充**：把 leave 放在正常断言末尾仍会在断言失败时跳过清理，虚拟时钟永久推进校时循环、看似测试挂死。创建的客户端统一在 try/finally 中 leave；查看实际测试线程/任务再处理，不杀全局 Gradle daemon 掩盖失败。
 
 ### 5.3 advanceTimeBy 不执行恰好落在边界的任务
 - 规避：需要触发"t 时刻"的任务时 `advanceTimeBy(t + 1)` 或补 `runCurrent()`。
@@ -507,3 +559,67 @@
 - 现象：管理器页面顶部常驻"管理服务仍是旧版本"横幅，并指引"关闭旧进程重新运行 start-metadata.cmd"——而服务端其实已经更新到最新，用户照做也解不掉横幅。
 - 根因：页面把期望版本硬编码成字符串并用 `===` 比较；09-29 服务端加 aac 转码时把 `serviceVersion` 升了一版，页面常量没跟着动，于是"服务端比页面新"被判成"不兼容"。双方独立发版时，严格相等必然在某一侧先失配。
 - 规避：①版本判定要比**下界**（版本号是日期串时可直接比大小）：服务端不比页面旧即视为兼容，只有服务端更旧才提示重启；②页面与服务端各有版本号时，任一侧发版都要确认另一侧的判定不会反向误报，夹具里要同时准备"更新/更旧"两个版本做双向断言；③这类横幅是给用户的指引文案，误报的代价是让用户做无用操作，发现后按真缺陷登记而不是当噪音忽略。
+
+### 10.9 Node 24 的 `monitorEventLoopDelay` 直方图没有 `unref()`/`ref()`（2026-09-30 QC-D 实测）
+
+- 现象：`buildApp` 里给 `/health` 加事件循环延迟诊断，`enable()` 后调用 `eventLoop.unref()` 直接 `TypeError: eventLoop.unref is not a function`，52 项测试整批挂掉。
+- 根因：老文档/旧版本里 `IntervalHistogram` 带 `unref()/ref()`，Node 24 已移除这两个方法（`enable/disable/percentile` 等仍在）。直方图内部定时器会**阻止进程退出**——测试构建里每次 `buildApp` 都启用一个不 unref 的监视器，测试进程就永远不结束。
+- 规避：①不要依赖 unref；把监视器生命周期挂到 `app.onClose` 里 `disable()`，随应用关闭释放（本仓库 app.ts 即此做法）；②给 /health 之类只读诊断加字段前，先确认既有测试对响应体是 `deepEqual` 还是字段级断言——全量 deepEqual 会被新增字段打破（本轮 rooms.test.ts 同步更新）；③直方图数值是**纳秒**，转 ms 要 ÷1e6；首版只 ÷1e3 导致 /health 读数虚高 1000 倍，靠混合负载冒烟的量级常识（p99 三万毫秒）当场抓住——带单位的换算要先用常识校验量级再落断言。
+
+### 10.10 后台任务接 `| tail` 会因 Gradle 守护进程持有 stdout 而假挂（2026-09-30 QC-E 实测）
+
+- 现象：后台跑 `powershell check.ps1 -Scope all 2>&1 | tail -25`，PowerShell 主进程早已退出（进程表可证），任务却永远"running"，日志文件 0 字节（tail 缓冲全部输出）。
+- 根因：Gradle 启动的 daemon/编译器子进程继承管道句柄且长期驻留，`tail` 等 EOF 等不到；管道另一端又把 check 的全部输出缓冲住——**工作其实完成了，只是读不出来**。
+- 规避：①跑门禁类长任务不要接 `tail`/`grep` 等全缓冲管道，直接重定向到文件（`> log 2>&1`）再 tail 文件；②任务"卡住"先看主进程是否还活着、子进程 CPU 是否在推进，再决定杀不杀——本例杀掉假挂任务后前台重跑同命令 9 秒即过（守护进程已热身）。
+
+### 10.11 契约单测全绿不代表 WS 入站已有运行时校验（2026-09-30 独立验收，10-01 已修复）
+
+本轮关闭：对应实现与常规回归、独立探针见 [10-01 修复报告](test-results/2026-10-01-queue-chat-fixes/README.md)；以下现象保留为修复前历史。
+
+- 现象：56 项服务端门禁通过，但隔离验收中认证成员发送 JSON `null`，route 读 type 抛错后 report 又读 null.requestId，未捕捉 TypeError 逃出消息回调；无 UUID 的 ID 和额外字段也可成功点歌。
+- 根因：protocol.test.ts 能校验测试中的真实产出和 schema 自身，却没有把校验接到 socket 的入站路径；类型断言不是运行时校验，catch 内的错误格式化也可能再次抛错。
+- 规避：解析后验证对象/字段/schema，错误格式化接收 unknown 并安全提取关联 ID；加入真实 WS 输入 null/数组/字段类型/额外字段的存活检查，不只测“schema 拒绝某对象”。本轮仅记录缺陷，未修改实现；证据见 [验收报告](test-results/2026-09-30-queue-chat-acceptance/README.md)。
+
+### 10.12 随机快照 ID 不能按字典序判定新旧（2026-09-30 独立验收，10-01 已修复）
+
+本轮关闭：对应实现与常规回归、独立探针见 [10-01 修复报告](test-results/2026-10-01-queue-chat-fixes/README.md)；以下现象保留为修复前历史。
+
+- 现象：客户端先收 same-ms-zzzzzz/seq=1，再收 same-ms-aaaaaa/seq=2，较新的快照被忽略；定向测试期待 latestSeq=2，实际=1。
+- 根因：服务端 snapshotId 是时间前缀加随机后缀，客户端却用字符串 `<` 判旧；同一毫秒内随机后缀无顺序保证。
+- 规避：快照身份只用于分块归组，新旧依据协议中的单调版本/顺序号或明确的连接内计数；同时处理重连、旧块迟到和缺块超时。不要用人为递增 snap-0/snap-1 的夹具替代真实 ID 语义。
+
+### 10.13 消费数组时不能用不断缩短的长度作扫描预算（2026-09-30 续验，10-01 已修复）
+
+本轮关闭：对应实现与常规回归、独立探针见 [10-01 修复报告](test-results/2026-10-01-queue-chat-fixes/README.md)；以下现象保留为修复前历史。
+
+- 现象：待播 t1/t2/t3 失效、t4 有效，skip-next 消费三项后提前退出，全房停止且有效 t4 留在待播；全部四项失效时也残留一项。
+- 根因：循环 `scanned++ <= room.queue.length` 的左侧递增，右侧随 shift 递减，导致扫描仅覆盖原队列的一部分。
+- 规避：固定初始长度预算，或利用队列原本有界且每轮必消费一项的条件；覆盖多项失效前缀、全部失效与满队列，而不仅是队头一项失效。证据见 [独立验收报告](test-results/2026-09-30-queue-chat-acceptance/README.md)。
+
+### 10.14 聊天保留原文不等于确认丢失的恢复闭环（2026-10-01 复验，本轮已补齐）
+
+本轮关闭：对应实现与常规回归、独立探针见 [10-01 修复报告](test-results/2026-10-01-queue-chat-fixes/README.md)；以下现象保留为修复前历史。
+
+- 现象：发送被拒 / 超时后原文与原 ID 已保留，但确认超时后 chat.sync 发送数仍为 0；广播携带原 clientMessageId、ack 丢失时，正式消息和 pending 仍同时存在。
+- 根因：超时任务只把 Sending 改为 Unconfirmed，没有请求对应状态恢复；ChatEntry 未解析原 clientMessageId，只能等 ack 给出 messageId 再对账。服务端实际广播也缺这个字段，只有客户端接线不能闭环。
+- 规避：分开验证“文本未丢”“不自动重发”“一次恢复”“广播独立到达能收敛”；覆盖发送拒绝、ack / 广播不同顺序与各自丢失。按设计统一协议 / 服务端 / 客户端身份关联，不凭相同文本猜对应关系。证据见 [10-01 复验](test-results/2026-10-01-queue-chat-reacceptance/README.md)。
+
+### 10.15 子 schema 含根引用时，单独取定义校验会失去 $defs（2026-10-01）
+- 现象：头像字段加入 `$ref: #/$defs/avatarId` 后，完整 state 校验通过，独立成员契约检查却报“无法解析 $ref”。
+- 根因：测试把 `schema.$defs.member` 当作根 schema 传入，根内没有原文档的 `$defs`；这是取样方式失去上下文，不能据此删除新字段或放宽枚举。
+- 规避：独立成员校验传 `{ $ref: '#/$defs/member', $defs: schema.$defs }`；完整消息校验继续传完整文档。保留首次失败及复跑结果，见 [头像记录](test-results/2026-10-01-animal-avatars/README.md)。
+
+### 10.16 原生 Node WebSocket 与 ws 库 API 不同，收尾不能遮盖失败（2026-10-02）
+- 现象：Chrome CDP 驱动在原生 WebSocket 上调用 .on 报错；失败后立刻删 profile 又遇 EBUSY，可能覆盖原断言信息。
+- 根因：Node 24 全局 WebSocket 使用 EventTarget（addEventListener），ws 包才使用 EventEmitter；Chrome 仍占用 profile。
+- 规避：按实际客户端 API 注册事件；保留首次失败后再发送 Browser.close、等待自己创建的进程退出、用有界重试清理。清理错误单独记录，不替换主错误。证据 [desktop tasks](test-results/2026-10-02-desktop-tasks/README.md)。
+
+### 10.17 WSL 服务探测要有单次超时，不能凭工具失败判产品失败（2026-10-02）
+- 现象：systemd 隔离演练起步 curl 探测未成功；实际 Node 服务已 listening，使用同版 Node fetch 后获得 health，完成坏 dist/缺依赖与回滚。
+- 根因边界：已确认服务与替代探测可用，但没有证明 curl 失败根因；不能猜测为代理、网络或产品缺陷。
+- 规避：每次健康探测设置明确超时，再按总体等待窗口重试；保留 systemctl/journal/HTTP 三类证据，先证实可观测性再判演练结果。脚本 trap 只清理本次唯一 unit/目录。证据 [desktop tasks](test-results/2026-10-02-desktop-tasks/README.md)。
+
+### 10.18 项目文档检查不能误扫临时运行时的发行包文档（2026-10-02）
+- 现象：本地链接检查在 .workbuddy/linux-node/runtime/CHANGELOG.md 报缺旧版本变更记录和 Node 源码贡献文档。
+- 根因：检查器递归项目根，却未排除已 gitignored 的临时目录；官方运行时包不包含完整 Node 源码仓库，相关链接不属于产品文档。
+- 规避：排除 .workbuddy/deploy-artifacts 与已有构建/依赖目录，继续核对 docs/、根文档和历史证据中的本地链接；保留首次日志，不能通过删除项目真实文档链接规避报错。

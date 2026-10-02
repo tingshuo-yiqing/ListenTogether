@@ -1,0 +1,298 @@
+package com.listentogether.app
+
+import android.Manifest
+import android.content.ComponentName
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.core.content.edit
+import androidx.core.view.WindowCompat
+import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
+import com.listentogether.app.network.RoomClient
+import com.listentogether.app.playback.PlaybackService
+import com.listentogether.app.ui.JoinForm
+import com.listentogether.app.ui.JoinInput
+import com.listentogether.app.ui.JoinInputSaver
+import com.listentogether.app.ui.LocalQrDecoder
+import com.listentogether.app.ui.MiniPlayer
+import com.listentogether.app.ui.PlaybackView
+import com.listentogether.app.ui.PlayerSheet
+import com.listentogether.app.ui.RoomContent
+import com.listentogether.app.ui.ScanSourceSheet
+import com.listentogether.app.ui.TopBar
+import com.listentogether.app.ui.ThemeMode
+import com.listentogether.app.ui.rememberRoomPlayer
+import com.listentogether.app.ui.screenStates
+import com.listentogether.app.ui.theme.ListenTogetherTheme
+import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+@UnstableApi
+class MainActivity : ComponentActivity() {
+    // ActivityResult 契约必须在 Activity 进入 STARTED 前注册，只能留在这里、不能挪进组合。
+    private val permission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
+
+    /** 组合层延迟申请通知权限的入口（见 RoomApp 内 LaunchedEffect）。 */
+    fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= 33) permission.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        val client = (application as ListenApplication).roomClient
+        setContent {
+            val appearance = remember { getSharedPreferences("appearance", MODE_PRIVATE) }
+            var themeMode by remember { mutableStateOf(ThemeMode.entries.firstOrNull { it.name == appearance.getString("themeMode", null) } ?: ThemeMode.Light) }
+            val dark = themeMode == ThemeMode.Dark
+            SideEffect {
+                WindowCompat.getInsetsController(window, window.decorView).apply {
+                    isAppearanceLightStatusBars = !dark
+                    isAppearanceLightNavigationBars = !dark
+                }
+            }
+            ListenTogetherTheme(darkTheme = dark) {
+                RoomApp(client, this, themeMode) { selected ->
+                    themeMode = selected
+                    appearance.edit { putString("themeMode", selected.name) }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 整个应用的组合根：ScreenState 采样、MediaController 接线、扫码落地逻辑与弹窗装配都在这里；
+ * 界面构件在 [TopBar]/[JoinForm]/[RoomContent]/[MiniPlayer]/[PlayerSheet]（ui 包），本文件不画任何具体控件。
+ * [activity] 只用于 Toast/权限/Service Intent 等宿主操作，组合本身不持有 Activity 状态。
+ */
+@UnstableApi
+@Composable
+private fun RoomApp(client: RoomClient, activity: MainActivity, themeMode: ThemeMode, onThemeChange: (ThemeMode) -> Unit) {
+    val screenState = remember(client) { client.state.screenStates() }
+    val initialScreen = remember(client) { client.state.value.copy(positionMs = 0) }
+    val ui by screenState.collectAsState(initial = initialScreen)
+    // 通知权限延迟到有实际播放场景（入房成功）再申请，避免冷启动弹窗；每次安装只问一次。
+    var notificationAsked by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(ui.credentials != null) {
+        if (ui.credentials != null && Build.VERSION.SDK_INT >= 33 && !notificationAsked) {
+            notificationAsked = true
+            activity.requestNotificationPermission()
+        }
+    }
+    // 房间内按返回只退出界面：播放由 Service 继续，提示用户去通知栏停止。
+    if (ui.credentials != null) BackHandler {
+        Toast.makeText(activity, "仍在后台播放，可在通知栏停止", Toast.LENGTH_SHORT).show()
+        activity.finish()
+    }
+    var playback by remember(ui.credentials?.token) { mutableStateOf(PlaybackView()) }
+    // Controller 保持与 Service 连接；Activity 销毁只释放控制器，不销毁后台播放器。
+    DisposableEffect(ui.credentials?.token) {
+        var disposed = false
+        val future = if (ui.credentials != null) {
+            activity.startService(Intent(activity, PlaybackService::class.java))
+            MediaController.Builder(activity, SessionToken(activity, ComponentName(activity, PlaybackService::class.java)))
+                .setListener(object : MediaController.Listener {
+                    override fun onDisconnected(controller: MediaController) {
+                        if (!disposed) playback = PlaybackView()
+                    }
+                }).buildAsync()
+        } else null
+        var bound: MediaController? = null
+        fun readPlayer(player: Player) {
+            if (disposed) return
+            playback = PlaybackView(
+                mediaId = player.currentMediaItem?.mediaId,
+                failed = player.playerError != null
+            )
+        }
+        val listener = object : Player.Listener {
+            override fun onEvents(player: Player, events: Player.Events) = readPlayer(player)
+        }
+        future?.addListener({
+            // 迟到的控制器结果不能更新已离开的页面会话。
+            if (!disposed) runCatching {
+                future.get().also { bound = it; it.addListener(listener); readPlayer(it) }
+            }.onFailure { playback = PlaybackView() }
+        }, ContextCompat.getMainExecutor(activity))
+        onDispose {
+            disposed = true
+            bound?.removeListener(listener)
+            future?.let { MediaController.releaseFuture(it) }
+        }
+    }
+    val input = rememberSaveable(ui.credentials?.token, saver = JoinInputSaver) {
+        JoinInput().apply {
+            address = client.baseUrl
+            client.lastRoom?.let { last -> name = last.nickname; code = last.code; joining = true }
+        }
+    }
+    // 软键盘弹出时给内容区加 IME 内边距，避免输入框与按钮被顶出视野；
+    // 点空白处收起键盘（实测该设备 ESC 无法关闭输入法）。
+    val focusManager = LocalFocusManager.current
+    val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val scanOptions = remember {
+        ScanOptions().setDesiredBarcodeFormats(ScanOptions.QR_CODE).setPrompt("扫描一起听歌邀请二维码")
+            .setBeepEnabled(false).setOrientationLocked(false)
+    }
+    // 相机实时扫与相册选图共用落地逻辑：解析出邀请后填入表单，等待用户确认加入，
+    // 拿到文本但解不出邀请才提示"无效"，用户取消（null）则静默。
+    // 写成局部函数而非 val，避免两个 launcher 回调与它互相前向引用。
+    fun acceptInviteText(raw: String?) {
+        val invite = raw?.let(InviteCode::decode)
+        when {
+            invite != null -> { input.accept(invite); input.joining = true }
+            raw != null -> scope.launch { snackbar.showSnackbar("二维码不是有效的一起听歌邀请") }
+        }
+    }
+    val scanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
+        acceptInviteText(result.contents)
+    }
+    val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) scanLauncher.launch(scanOptions)
+        else scope.launch { snackbar.showSnackbar("需要相机权限才能扫描邀请二维码") }
+    }
+    val scanInvite: () -> Unit = {
+        if (ContextCompat.checkSelfPermission(activity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            scanLauncher.launch(scanOptions)
+        } else cameraPermission.launch(Manifest.permission.CAMERA)
+    }
+    // 扫相册里的二维码图：不申请权限（GetContent 走系统文件选择器，无需读存储权限），
+    // 解码放 IO 线程——原图动辄数千像素，主线程解码会卡顿。
+    var showScanSheet by rememberSaveable { mutableStateOf(false) }
+    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val text = withContext(Dispatchers.IO) { LocalQrDecoder.decodeUri(activity.contentResolver, uri) }
+            acceptInviteText(text)
+            if (text == null) snackbar.showSnackbar("图片里没有可识别的邀请二维码")
+        }
+    }
+    // 非房主点切歌入口的统一提示；展开播放页与歌单共用同一份。
+    val onLockedTap: () -> Unit = { scope.launch { snackbar.showSnackbar("只有房主可以切歌") } }
+    var showLeaveConfirm by rememberSaveable { mutableStateOf(false) }
+    val room = ui.room
+    val track = room?.track
+    // 播放器状态挂在房间会话作用域：mini 条与展开 Sheet 共享，Sheet 关闭不中断 seek 确认。
+    val playerState = rememberRoomPlayer(client, ui, track)
+    var showPlayerSheet by rememberSaveable(ui.credentials?.token) { mutableStateOf(false) }
+    Scaffold(
+        modifier = Modifier.imePadding(),
+        topBar = {
+            TopBar(
+                ui,
+                onLeaveRequest = { showLeaveConfirm = true },
+                themeMode = themeMode,
+                onThemeChange = onThemeChange,
+                // 扫码入口收在右上角：只在家里（未入房）且处于"加入房间"分支时出现，
+                // 建房分支不提供扫码；房内邀请集中到成员面板。
+                onScanInvite = if (ui.credentials == null && input.joining) ({ showScanSheet = true }) else null
+            )
+        },
+        bottomBar = {
+            if (ui.credentials != null) {
+                MiniPlayer(client, ui, playerState, track, onExpand = { showPlayerSheet = true })
+            }
+        },
+        snackbarHost = { SnackbarHost(snackbar) },
+        containerColor = MaterialTheme.colorScheme.background
+    ) { padding ->
+        // 大屏上限宽居中，避免表单与卡片被横向拉伸；窄屏行为不变。
+        Box(
+            Modifier.fillMaxSize().padding(padding),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            key(ui.credentials?.token) {
+                if (ui.credentials == null) {
+                    LazyColumn(
+                        Modifier.widthIn(max = 560.dp).fillMaxSize().pointerInput(Unit) {
+                            detectTapGestures { focusManager.clearFocus() }
+                        },
+                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) { JoinForm(client, ui, input) }
+                } else {
+                    RoomContent(client, ui, input, playback)
+                }
+            }
+        }
+    }
+    if (showScanSheet) {
+        ScanSourceSheet(
+            onDismiss = { showScanSheet = false },
+            onCamera = { showScanSheet = false; scanInvite() },
+            onGallery = { showScanSheet = false; galleryLauncher.launch("image/*") }
+        )
+    }
+    if (ui.credentials != null && showPlayerSheet) {
+        PlayerSheet(client, ui, playerState, track, onLockedTap, onDismiss = { showPlayerSheet = false })
+    }
+    if (showLeaveConfirm && ui.credentials != null) {
+        AlertDialog(
+            onDismissRequest = { showLeaveConfirm = false },
+            title = { Text("退出房间？") },
+            text = { Text("退出后需要重新输入邀请码才能回来。") },
+            confirmButton = {
+                TextButton(onClick = { showLeaveConfirm = false; client.leave() }) { Text("退出房间") }
+            },
+            dismissButton = { TextButton(onClick = { showLeaveConfirm = false }) { Text("取消") } }
+        )
+    }
+}
+
+internal fun formatTime(ms: Long): String {
+    val totalSeconds = ms / 1000
+    val h = totalSeconds / 3600
+    return if (h > 0) String.format(Locale.ROOT, "%d:%02d:%02d", h, totalSeconds / 60 % 60, totalSeconds % 60)
+    else String.format(Locale.ROOT, "%d:%02d", totalSeconds / 60, totalSeconds % 60)
+}

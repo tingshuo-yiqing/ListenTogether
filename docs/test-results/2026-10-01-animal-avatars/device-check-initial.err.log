@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "D:\ListenTogether\docs\test-results\2026-10-01-animal-avatars\tools\device-check.py", line 73, in <module>
+    code=[json.loads(line)['code'] for line in (EVIDENCE/'backend.log').read_text(encoding='utf-8').splitlines()
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\CONDA\Lib\pathlib.py", line 1059, in read_text
+    return f.read()
+           ^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte

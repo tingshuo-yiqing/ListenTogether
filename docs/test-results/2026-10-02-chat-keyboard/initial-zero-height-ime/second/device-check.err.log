@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "D:\ListenTogether\docs\test-results\2026-10-02-chat-keyboard\tools\device-check.py", line 178, in <module>
+    focus_editor()
+  File "D:\ListenTogether\docs\test-results\2026-10-02-chat-keyboard\tools\device-check.py", line 56, in focus_editor
+    wait_ime(True)
+  File "D:\ListenTogether\docs\test-results\2026-10-02-chat-keyboard\tools\device-check.py", line 74, in wait_ime
+    raise RuntimeError(f'IME visible δ�ﵽ {expected}')
+RuntimeError: IME visible δ�ﵽ True

@@ -1,0 +1,232 @@
+{
+  "device": "MuMu Android 15 / API 35",
+  "serial": "127.0.0.1:16384",
+  "resolution": "1080x1920",
+  "sha256": "041b42955fb8bf6b740960e5032bb3c0c9e8c0e8932304d8ac70e5693aa3c753",
+  "cases": [
+    {
+      "case": "before-closed",
+      "imeVisible": false,
+      "playerVisible": true,
+      "editorBounds": [
+        [
+          85,
+          1640,
+          897,
+          1752
+        ]
+      ],
+      "imeTopPx": null,
+      "editorClearancePx": null
+    },
+    {
+      "case": "before-keyboard",
+      "imeVisible": true,
+      "playerVisible": true,
+      "editorBounds": [
+        [
+          85,
+          1111,
+          897,
+          1223
+        ]
+      ],
+      "imeTopPx": 1391,
+      "editorClearancePx": 168
+    },
+    {
+      "case": "after-light-closed",
+      "imeVisible": false,
+      "playerVisible": true,
+      "editorBounds": [
+        [
+          85,
+          1640,
+          897,
+          1752
+        ]
+      ],
+      "imeTopPx": null,
+      "editorClearancePx": null
+    },
+    {
+      "case": "after-light-keyboard",
+      "imeVisible": true,
+      "playerVisible": false,
+      "editorBounds": [
+        [
+          85,
+          1258,
+          897,
+          1370
+        ]
+      ],
+      "imeTopPx": 1391,
+      "editorClearancePx": 21
+    },
+    {
+      "case": "after-light-draft",
+      "imeVisible": true,
+      "playerVisible": false,
+      "editorBounds": [
+        [
+          85,
+          1258,
+          897,
+          1370
+        ]
+      ],
+      "imeTopPx": 1391,
+      "editorClearancePx": 21
+    },
+    {
+      "case": "after-light-sent",
+      "imeVisible": true,
+      "playerVisible": false,
+      "editorBounds": [
+        [
+          85,
+          1258,
+          897,
+          1370
+        ]
+      ],
+      "imeTopPx": 1391,
+      "editorClearancePx": 21
+    },
+    {
+      "case": "after-light-restored",
+      "imeVisible": false,
+      "playerVisible": true,
+      "editorBounds": [
+        [
+          85,
+          1640,
+          897,
+          1752
+        ]
+      ],
+      "imeTopPx": null,
+      "editorClearancePx": null
+    },
+    {
+      "case": "after-queue",
+      "imeVisible": false,
+      "playerVisible": true,
+      "editorBounds": [],
+      "imeTopPx": null,
+      "editorClearancePx": null
+    },
+    {
+      "case": "after-catalog",
+      "imeVisible": false,
+      "playerVisible": true,
+      "editorBounds": [
+        [
+          85,
+          392,
+          897,
+          504
+        ]
+      ],
+      "imeTopPx": null,
+      "editorClearancePx": null
+    },
+    {
+      "case": "after-catalog-keyboard",
+      "imeVisible": true,
+      "playerVisible": false,
+      "editorBounds": [
+        [
+          85,
+          392,
+          897,
+          504
+        ]
+      ],
+      "imeTopPx": 1391,
+      "editorClearancePx": 887
+    },
+    {
+      "case": "after-catalog-restored",
+      "imeVisible": false,
+      "playerVisible": true,
+      "editorBounds": [
+        [
+          85,
+          392,
+          897,
+          504
+        ]
+      ],
+      "imeTopPx": null,
+      "editorClearancePx": null
+    },
+    {
+      "case": "after-dark-closed",
+      "imeVisible": false,
+      "playerVisible": true,
+      "editorBounds": [
+        [
+          85,
+          1640,
+          897,
+          1752
+        ]
+      ],
+      "imeTopPx": null,
+      "editorClearancePx": null
+    },
+    {
+      "case": "after-dark-keyboard",
+      "imeVisible": true,
+      "playerVisible": false,
+      "editorBounds": [
+        [
+          85,
+          1258,
+          897,
+          1370
+        ]
+      ],
+      "imeTopPx": 1391,
+      "editorClearancePx": 21
+    },
+    {
+      "case": "after-dark-restored",
+      "imeVisible": false,
+      "playerVisible": true,
+      "editorBounds": [
+        [
+          85,
+          1640,
+          897,
+          1752
+        ]
+      ],
+      "imeTopPx": null,
+      "editorClearancePx": null
+    },
+    {
+      "case": "after-playback-restored",
+      "imeVisible": false,
+      "playerVisible": true,
+      "editorBounds": [
+        [
+          85,
+          1640,
+          897,
+          1752
+        ]
+      ],
+      "imeTopPx": null,
+      "editorClearancePx": null
+    }
+  ],
+  "playbackPositionsMs": [
+    2887,
+    5892,
+    10951
+  ],
+  "sentMessageConfirmed": true
+}

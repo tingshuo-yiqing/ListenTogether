@@ -135,12 +135,15 @@ TRUST_PROXY=true 只信任回环代理。保持后端绑定 127.0.0.1，防止�
 升级（新版本）：
 ```bash
 ID=<时间戳>
-sudo tar -xzf listen-together-0.1.0-<时间戳>.tar.gz -C /opt/listen-together/releases/$ID
+sudo mkdir -p /opt/listen-together/releases/$ID
+sudo tar -xzf listen-together-server-0.1.0-<时间戳>.tar.gz -C /opt/listen-together/releases/$ID
+sudo chown -R listen:listen /opt/listen-together/releases/$ID
 cd /opt/listen-together/releases/$ID/server && sudo -u listen npm ci && sudo -u listen npm run build && sudo -u listen npm prune --omit=dev
 echo "prev=$(readlink /opt/listen-together/server | sed 's|.*/releases/||;s|/server||')" | sudo tee /opt/listen-together/current-version.txt
 sudo ln -sfn /opt/listen-together/releases/$ID/server /opt/listen-together/server
 sudo systemctl restart listen-together
-curl -s http://127.0.0.1:3000/health && sudo systemctl show listen-together -p WorkingDirectory -p ExecStart | head -2
+curl --noproxy '*' --connect-timeout 2 --max-time 5 --fail http://127.0.0.1:3000/health
+sudo systemctl show listen-together -p WorkingDirectory -p ExecStart -p ActiveState -p SubState -p ExecMainStatus
 ```
 
 回滚（升坏时）：
@@ -148,7 +151,7 @@ curl -s http://127.0.0.1:3000/health && sudo systemctl show listen-together -p W
 PREV=$(grep prev= /opt/listen-together/current-version.txt | cut -d= -f2)
 sudo ln -sfn /opt/listen-together/releases/$PREV/server /opt/listen-together/server
 sudo systemctl restart listen-together
-curl -s http://127.0.0.1:3000/health
+curl --noproxy '*' --connect-timeout 2 --max-time 5 --fail http://127.0.0.1:3000/health
 ```
 验收要点：health 恢复 200、`systemctl show` 的 WorkingDirectory/ExecStart 与预期一致；重启会丢失内存房间（协议内行为），验收报告必须标注。
 
@@ -157,11 +160,14 @@ curl -s http://127.0.0.1:3000/health
 打包与上传（本机侧）：
 ```powershell
 cd D:\ListenTogether
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\package-deploy.ps1
-# 产出 deploy-artifacts\listen-together-<版本>-<时间戳>.tar.gz + SHA256SUMS-<时间戳>.txt
-scp deploy-artifacts\listen-together-*.tar.gz deploy-artifacts\SHA256SUMS-*.txt aliyun:/tmp/
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\package-deploy.ps1 -ServerOnly
+# 产出 deploy-artifacts\listen-together-server-<版本>-<时间戳>.tar.gz + SHA256SUMS-<时间戳>.txt
+# 上传本次明确的两份制品，避免通配符带上历史包或曲库包。
+scp deploy-artifacts\<本次候选包>.tar.gz deploy-artifacts\SHA256SUMS-<本次时间戳>.txt aliyun:/tmp/
 ```
-服务器端校验：`sha256sum -c SHA256SUMS-*.txt`（tarball 行需在 /tmp 下手工比对）。
+2026-10-02 起，在产后端升级使用 `-ServerOnly`：不包含 media/demo-media，持久曲库另按第 6 节维护；不加该参数的旧默认包仍会带本机曲库。Node 默认来自 PATH，可用 `-NodePath` 指定；时间戳含秒。先确认 `/health` 的 rooms/onlineMembers/wsConnections 全为 0，再安排重启；重启会结束内存房间。
+
+服务器端先在 `/tmp` 只校验清单的第一行 tarball：`head -n 1 SHA256SUMS-<时间戳>.txt | sha256sum -c -`；解包后在 release 根校验其余行：`tail -n +2 /tmp/SHA256SUMS-<时间戳>.txt | sha256sum -c -`。当前包包含协议文档与 schema 生成脚本，缺任一不能构建当前后端。v2 与旧 APK 不兼容，发布时须同时提供新 APK 与升级说明，不能把旧客户端 426 当偶发网络故障。
 已实跑验证（2026-09-22）：tsc 0 错误、tar.gz 20.5MB、含 demo-media 全部 7 个 mp3、
 SHA256 清单逐文件生成；制品 `deploy-artifacts/listen-together-0.1.0-20260922-2159.tar.gz`。
 
@@ -245,13 +251,11 @@ JPG/PNG/WebP 由浏览器缩放到最长边 1024px，服务端上限为 1MB。�
 
 - **出网范围**：只发歌名/歌手文本、只取回文本字段与封面地址；不下载音频、不需要任何平台登录 Cookie；
   每源独立限速（QQ/网易云约 0.8 秒/请求，MusicBrainz 约 1.1 秒），批量为界面逐首串行。
-- **上云影响**：`album`/`genre`/`year` 目前是工具保留字段，服务端 `loadCatalog` 忽略未知键、catalog 下发也不含它们，
-  因此补齐这些字段**不会改变线上行为**；只有 `artist`（与 `cover`/`lyrics`）会被下发与显示。要随曲库一起生效，
-  仍按第 6 节流程上传 catalog 并 restart（重启清空内存房间）。
+- **上云影响**：当前本地后端已读取 `album` 并作为第 9 公开字段下发，安卓接入 Media3 albumTitle；云端 v1 仍未包含它，须待新后端发布。`genre`/`year` 继续是工具保留字段。artist/cover/lyrics 延续已有下发与缓存版本。曲库保存后仍按第 6 节安排 restart，使启动缓存重载（重启清空内存房间）。
 - 实现与判定口径见 [模块 08](modules/08-library-audio.md) 与 `scripts/lib/metadata-sources.mjs` 头注释；
   该模块的 31 项单测全部离线（`scripts/check.ps1 -Scope scripts`）。
 
-### 6.3 删除曲目（只作用于本机曲库，云端不从这里删）
+### 6.3 删除曲目与回收恢复（已有管理器，生产维护单独执行）
 
 管理器每行有「删除」，顶栏有「多选删除」批量；`files=audio,cover,lyrics` 按类勾选。删除的硬约束是**闸门先行**：
 先整库 `loadCatalog` 自检（本机曲库本来就是坏的回 **409**，一个文件都不许动）→ 移除条目并过写校验（失败 **422**
@@ -259,14 +263,20 @@ JPG/PNG/WebP 由浏览器缩放到最长边 1024px，服务端上限为 1MB。�
 `manifest.jsonl` 记录被删条目原文与每个文件的来去，可手工放回）。工具**绝不 `unlink`**：`media/` 不在 git 里，
 删掉就没有第二个副本。被别的曲目共用的音频/封面/歌词按引用计数留在原地，`covers/` 之外的封面只删条目不动文件。
 
-- **云端不受影响**：本工具只监听 `127.0.0.1:3100`、只读写本机 `media/`，服务端仍只读下发，没有公网管理写接口。
-- **云端下架一首歌目前没有工具，也没有实测过的流程**（本轮未做云端删除，别把下面当成可照抄的手册）：
-  可行方向是服务器侧手工——先备份 `/opt/listen-together/media/catalog.json`、确认 `/health` 的 `rooms` 为 0，
-  再移除该 id 的条目、把对应文件移进隔离目录（不是直接删）、最后 restart（**会清空内存房间**）并用
-  `media-manage.sh verify` 核对剩余曲目。真要下架前先实测一遍并把结果登记进 test-results，再补成正式步骤。
-  已知副作用：正在播放该曲的成员会拿到音频 404 并本机暂停，属预期行为，因此下架只在无人使用时进行。
+- **作用对象看页面顶部路径**：本机 `http://127.0.0.1:3100` 编辑本机 media；第 6.4 节的 SSH 隧道页面编辑云端 `/opt/listen-together/media`。播放后端仍只有只读接口，管理端口不对公网开放。
+- **已有回收站恢复**：点击“回收站”，核对批次、歌曲 ID 与资源，勾选后恢复；不是手工复制 manifest。云端回收根为 `/opt/listen-together/metadata-state/trash`，跨版本保留，勿清理。
 
-### 6.4 云端可视化管理器（2026-09-28 已部署，取代上文“只作用于本机”的限制）
+云端实际下架按以下维护顺序执行；必须先得到目标歌曲与维护授权：
+
+1. 确认 `/health` 的 rooms、onlineMembers、wsConnections 均为 0，记录当前后端版本；备份完整 media 到 `/opt/listen-together/media-originals/pre-remove-<时间戳>/`，保留原属主/权限。没有空闲维护窗口则延后，不能靠删曲让正在播放的成员碰到 404。
+2. 按第 6.4 节开 SSH 隧道，核对页面顶部是云端 media 路径；只运行一个写入工具。选择明确目标，核对确认框 ID/歌名/歌手，按需要勾选音频、独立封面、歌词后确认。
+3. 保存删除前后 catalog、回收批次与文件清单。共享文件按引用计数保留；确认只移走最后引用的三类资源。全部歌曲删光应写 `[]`，后端支持空库。
+4. 检查清单与剩余文件后，在维护窗口 `systemctl restart listen-together`；确认 active/running、health 200，日志无启动错误，用短期测试成员查 catalog 不含目标、剩余歌曲 Range 正常，测试成员退出。
+5. 需要回退时在同一云端页面“回收站”恢复所选批次，核对元数据和三类文件，再重启听歌后端并验证 catalog/Range。恢复失败则使用第 1 步完整备份；不得删除回收目录来“重试”。
+
+2026-10-02 已在本机真实 Chrome 界面与隔离 WSL Linux 夹具验证取消/删曲/删空/共享引用/回收恢复、文件 SHA256 与后端重启前后缓存、Range 206；[证据](test-results/2026-10-02-desktop-tasks/README.md)。这不等于生产云端下架演练已完成；未针对在产曲库执行删除/重启/恢复。下次生产操作另登记目标、时间、版本和结果。
+
+### 6.4 云端可视化管理器（2026-09-28 已部署）
 
 管理服务 `listen-together-metadata` 使用 `deploy/metadata-manager.service`，入口是 `/opt/listen-together/metadata-manager/scripts/metadata-manager.mjs`；只监听云端127.0.0.1:3100，公网不开放管理端口。
 
@@ -278,4 +288,4 @@ JPG/PNG/WebP 由浏览器缩放到最长边 1024px，服务端上限为 1MB。�
 
 刷新管理页面，选歌→「匹配这首」→预览→勾选「封面」「歌词」→「应用所勾选字段」，无需另存图片再上传。歌词统一尝试LRCLIB，未命中或请求失败跳过；纯文本候选会标注无时间轴。批量补缺也支持这两项，已有资源默认保留。单曲匹配到歌词即默认勾选，本曲已有歌词（含占位引用）点应用就会被替换，不需要再手动勾；不想换就取消勾选。替换只改清单里的歌词路径，新文本另起唯一文件名，旧 .lrc 留在原地不删，想回退把路径改回去即可。封面仍维持已有值不自动勾选。候选30分钟后或管理器重启后失效，重新匹配即可。
 
-当前管理器20260928-metadata-02，前版01保留。更新只重启管理器；手机使用更新后的曲库仍需安排听歌后端重启，且既有歌词缓存不会因文件替换自动失效。本轮没有发布播放后端或改变上述限制。[发布记录](test-results/2026-09-28-metadata-assets/README.md)。
+本节发布时为管理器20260928-metadata-02，随后已升级 metadata-03。管理器更新只重启管理器；手机使用更新后的曲库仍需安排听歌后端重启。后端 `20260928-1815` 已下发 lyricsVer，安卓缓存键 id+lyricsVer，换词后无需手动清缓存。[资源发布记录](test-results/2026-09-28-metadata-assets/README.md)，后续版本见 [verification](verification.md)。

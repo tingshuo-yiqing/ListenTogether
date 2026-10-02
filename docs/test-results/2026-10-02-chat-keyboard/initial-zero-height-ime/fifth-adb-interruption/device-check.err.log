@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "D:\ListenTogether\docs\test-results\2026-10-02-chat-keyboard\tools\device-check.py", line 211, in <module>
+    hide_ime()
+  File "D:\ListenTogether\docs\test-results\2026-10-02-chat-keyboard\tools\device-check.py", line 81, in hide_ime
+    if ime_state()[0]:
+       ^^^^^^^^^^^
+  File "D:\ListenTogether\docs\test-results\2026-10-02-chat-keyboard\tools\device-check.py", line 59, in ime_state
+    raw = adb('shell', 'dumpsys', 'input_method')
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ListenTogether\docs\test-results\2026-10-02-chat-keyboard\tools\device-check.py", line 26, in adb
+    raise RuntimeError((result.stdout + result.stderr).decode('utf-8', errors='replace'))
+RuntimeError: * daemon still not running
+
+adb.exe: cannot connect to daemon at tcp:5037: cannot connect to 127.0.0.1:5037: �������ӷ���һ��ʱ���û����ȷ�𸴻����ӵ�����û�з�Ӧ�����ӳ���ʧ�ܡ� (10060)

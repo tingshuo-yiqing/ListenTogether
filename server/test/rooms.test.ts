@@ -7,7 +7,8 @@ import { Rooms, IP_ROOM_QUOTA } from '../src/rooms/store.js';
 import type { ServerEvent } from '../src/events.js';
 import type { Track } from '../src/library/catalog.js';
 
-const track = (id = 'one', durationMs = 10000): Track => ({ id, title: id, durationMs, path: '', size: 10, artist: null, cover: null, coverVer: null, lyricsPath: null, lyricsVer: null });
+const track = (id = 'one', durationMs = 10000): Track => ({ id, title: id, durationMs, path: '', size: 10, artist: null, cover: null, coverVer: null, lyricsPath: null, lyricsVer: null, album: null });
+const V2 = { 'x-listentogether-protocol': '2' };
 async function until(predicate: () => Promise<boolean> | boolean) {
   const end = Date.now() + 5000;
   while (!(await predicate())) { if (Date.now() > end) throw new Error('timeout'); await new Promise(resolve => setTimeout(resolve, 20)); }
@@ -34,7 +35,7 @@ test('per-IP room quota: 4th active room rejected, released after empty rooms ex
 test('HTTP room quota is keyed by the request IP', async t => {
   const { app } = await buildApp([track()], { timers: false });
   t.after(async () => { await app.close(); });
-  const create = (remoteAddress: string) => app.inject({ method: 'POST', url: '/api/rooms', payload: { nickname: 'quota' }, remoteAddress });
+  const create = (remoteAddress: string) => app.inject({ method: 'POST', url: '/api/rooms', payload: { nickname: 'quota' }, remoteAddress, headers: V2 });
   for (let i = 0; i < IP_ROOM_QUOTA; i++) assert.equal((await create('203.0.113.7')).statusCode, 200);
   const rejected = await create('203.0.113.7');
   assert.equal(rejected.statusCode, 429);
@@ -79,14 +80,15 @@ test('health keeps ok:true and exposes room, member and connection counters', as
   const sockets: WebSocket[] = [];
   t.after(async () => { sockets.forEach(ws => ws.terminate()); await app.close(); });
   const empty = await health(app);
-  assert.deepEqual(empty, { ok: true, rooms: 0, onlineMembers: 0, wsConnections: 0 });
-  const host = (await app.inject({ method: 'POST', url: '/api/rooms', payload: { nickname: 'health' } })).json();
+  // eventLoop：QC-D 起随 health 只读下发（ns→ms，累计口径），空载直方图可能为 0。
+  assert.deepEqual(empty, { ok: true, rooms: 0, onlineMembers: 0, wsConnections: 0, eventLoop: { p50Ms: 0, p99Ms: 0, maxMs: 0 } });
+  const host = (await app.inject({ method: 'POST', url: '/api/rooms', payload: { nickname: 'health' }, headers: V2 })).json();
   const created = await health(app);
   assert.equal(created.ok, true);
   assert.equal(created.rooms, 1);
   assert.equal(created.onlineMembers, 0);      // 建房只写 HTTP，成员还没建立 WS
   const address = await app.listen({ port: 0, host: '127.0.0.1' });
-  const ws = new WebSocket(address.replace('http', 'ws') + '/ws/' + host.code, { headers: { authorization: 'Bearer ' + host.token } });
+  const ws = new WebSocket(address.replace('http', 'ws') + '/ws/' + host.code, { headers: { authorization: 'Bearer ' + host.token, ...V2 } });
   sockets.push(ws);
   await new Promise<void>((resolve, reject) => { ws.once('open', resolve); ws.once('error', reject); });
   await until(async () => (await health(app)).wsConnections === 1);
@@ -111,6 +113,10 @@ test('expired host is cleared without repeated transfer events, new connection c
   store.connect(room.code, guest.token, state => snapshots.push(state), () => {});
   assert.equal(room.hostId, guest.memberId);
   assert.equal((snapshots[0] as { hostId: string }).hostId, guest.memberId);
+  // v2：无当前曲时播放 409；点歌提升当前曲后房主可播放。
+  assert.throws(() => store.command(room.code, guest.token, { action: 'play' }), (e: unknown) => e instanceof Error && /没有正在播放的歌曲/.test(e.message) && (e as { code?: string }).code === 'NO_CURRENT_TRACK');
+  const member = room.members.find(m => m.token === guest.token)!;
+  store.queueAdd(room, member, 'one');
   assert.doesNotThrow(() => store.command(room.code, guest.token, { action: 'play' }));
   now = 300_000; store.tick(); assert.equal(store.get(room.code), room);
 });

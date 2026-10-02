@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- 暗色变体：与 values/themes.xml 同名，系统按夜间模式自动切换 -->
-    <style name="Theme.ListenTogether" parent="android:Theme.Material.NoActionBar" />
+    <style name="Theme.ListenTogether" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#17241F</item>
+        <item name="android:colorAccent">#B5D8BD</item>
+    </style>
 </resources>

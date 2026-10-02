@@ -1,0 +1,187 @@
+{
+  "total": 20,
+  "passed": 20,
+  "pairs": [
+    {
+      "theme": "Light",
+      "role": "primary",
+      "background": "285A47",
+      "foreground": "FFFEFA",
+      "contrast": 7.871,
+      "required": 4.5,
+      "passed": true
+    },
+    {
+      "theme": "Light",
+      "role": "primaryContainer",
+      "background": "D2DFCC",
+      "foreground": "263C35",
+      "contrast": 8.52,
+      "required": 4.5,
+      "passed": true
+    },
+    {
+      "theme": "Light",
+      "role": "secondary",
+      "background": "5E685D",
+      "foreground": "FFFEFA",
+      "contrast": 5.758,
+      "required": 4.5,
+      "passed": true
+    },
+    {
+      "theme": "Light",
+      "role": "tertiary",
+      "background": "805B37",
+      "foreground": "FFFEFA",
+      "contrast": 5.998,
+      "required": 4.5,
+      "passed": true
+    },
+    {
+      "theme": "Light",
+      "role": "tertiaryContainer",
+      "background": "F4E5D6",
+      "foreground": "263C35",
+      "contrast": 9.564,
+      "required": 4.5,
+      "passed": true
+    },
+    {
+      "theme": "Light",
+      "role": "background",
+      "background": "F7F5F0",
+      "foreground": "263C35",
+      "contrast": 10.827,
+      "required": 4.5,
+      "passed": true
+    },
+    {
+      "theme": "Light",
+      "role": "surface",
+      "background": "FFFEFA",
+      "foreground": "263C35",
+      "contrast": 11.689,
+      "required": 4.5,
+      "passed": true
+    },
+    {
+      "theme": "Light",
+      "role": "surfaceVariant",
+      "background": "EEEFE7",
+      "foreground": "5E685D",
+      "contrast": 5.018,
+      "required": 4.5,
+      "passed": true
+    },
+    {
+      "theme": "Light",
+      "role": "error",
+      "background": "A63D32",
+      "foreground": "FFFEFA",
+      "contrast": 6.24,
+      "required": 4.5,
+      "passed": true
+    },
+    {
+      "theme": "Light",
+      "role": "errorContainer",
+      "background": "FBE9E3",
+      "foreground": "A63D32",
+      "contrast": 5.357,
+      "required": 4.5,
+      "passed": true
+    },
+    {
+      "theme": "Dark",
+      "role": "primary",
+      "background": "B5D8BD",
+      "foreground": "20352A",
+      "contrast": 8.43,
+      "required": 4.5,
+      "passed": true
+    },
+    {
+      "theme": "Dark",
+      "role": "primaryContainer",
+      "background": "2B3F34",
+      "foreground": "F2F1E8",
+      "contrast": 9.941,
+      "required": 4.5,
+      "passed": true
+    },
+    {
+      "theme": "Dark",
+      "role": "secondary",
+      "background": "BEC8B9",
+      "foreground": "20352A",
+      "contrast": 7.575,
+      "required": 4.5,
+      "passed": true
+    },
+    {
+      "theme": "Dark",
+      "role": "tertiary",
+      "background": "E7C6A5",
+      "foreground": "35291E",
+      "contrast": 8.753,
+      "required": 4.5,
+      "passed": true
+    },
+    {
+      "theme": "Dark",
+      "role": "tertiaryContainer",
+      "background": "4E4031",
+      "foreground": "F2F1E8",
+      "contrast": 8.813,
+      "required": 4.5,
+      "passed": true
+    },
+    {
+      "theme": "Dark",
+      "role": "background",
+      "background": "17241F",
+      "foreground": "F2F1E8",
+      "contrast": 14.155,
+      "required": 4.5,
+      "passed": true
+    },
+    {
+      "theme": "Dark",
+      "role": "surface",
+      "background": "20322A",
+      "foreground": "F2F1E8",
+      "contrast": 11.942,
+      "required": 4.5,
+      "passed": true
+    },
+    {
+      "theme": "Dark",
+      "role": "surfaceVariant",
+      "background": "2B3F34",
+      "foreground": "BEC8B9",
+      "contrast": 6.522,
+      "required": 4.5,
+      "passed": true
+    },
+    {
+      "theme": "Dark",
+      "role": "error",
+      "background": "FFB4A7",
+      "foreground": "4F302A",
+      "contrast": 6.898,
+      "required": 4.5,
+      "passed": true
+    },
+    {
+      "theme": "Dark",
+      "role": "errorContainer",
+      "background": "4F302A",
+      "foreground": "FFB4A7",
+      "contrast": 6.898,
+      "required": 4.5,
+      "passed": true
+    }
+  ],
+  "scope": "实际 Kotlin 语义配色，非设备读屏结论"
+}

@@ -1,12 +1,12 @@
-# 歌曲元数据扩展方案（第一轮/第二轮已落地）
+# 歌曲元数据扩展方案（第一/二轮已落地，专辑与媒体元数据本地通过）
 
-状态：**已实施（第一、二轮）**，2026-09-26。落地进度与口径以 `docs/verification.md` 为准。
-- 第一轮（Track 扩展 + ID3 歌手提取 + catalog 下发 + 封面接口 + 安卓封面/歌手副行）已实施；按用户指示**未做专辑字段与通知栏歌手**；
+状态：第一/二轮已实施；2026-10-02 专辑字段与媒体元数据本地代码/自动化通过，云端与设备显示待验。落地进度与口径以 `docs/verification.md` 为准。
+- 第一轮（Track 扩展 + ID3 歌手提取 + catalog 下发 + 封面接口 + 安卓封面/歌手副行）已实施；该轮按用户指示未做专辑字段与通知栏歌手；后续状态见下方 10-02 更新；
 - 封面管理已补齐：catalog 支持独立 `cover` 相对路径，服务端优先读独立图片、无独立图片时回退 ID3；本地管理器支持浏览器压缩后上传、替换和移除；安卓已有 `coverVer` 缓存按图片版本刷新。
 - 第二轮（`.lrc` 上架通道 + `/lyrics/:id` 接口 + 安卓 LrcParser/LrcCursor 纯函数与播放页滚动歌词）已实施；歌词来源经用户授权改为 lrclib.net 批量抓取（替代本文原"仅人工维护授权来源"约束，21/23 首命中，单车/红日无同步歌词为占位文件）；
 - 元数据抓取已并入可视化管理器（2026-09-27）：`scripts/lib/metadata-sources.mjs` 提供 QQ 音乐 / 网易云 / MusicBrainz 三源匹配（共用一套打分与阈值），`scripts/metadata-manager.mjs` 界面上按曲或批量出候选、勾选后写库；原命令行同步器 `scripts/fetch-metadata.mjs` 已删除。封面仍由管理器上传落盘，歌词继续复用 `fetch-lrc.mjs`。
-- 第三轮（专辑、编目自动生成、通知栏歌手等）仍未开始。
-读完本文需要的背景：`docs/protocol.md`（v1 协议与 JSON Schema 纪律）、`docs/deployment.md` 第 6 节（曲库上架）。
+- 2026-10-02：专辑第 9 字段（手填/ID3/null）、安卓兼容解析和 Media3 artist/albumTitle 构造回归通过；歌手原已有 setArtist，本轮补测试。新 APK 未装机、云端 v1 未发专辑字段；编目自动生成方案未在本轮增加，见 [验收](test-results/2026-10-02-desktop-tasks/README.md)。
+读完本文需要的背景：`docs/protocol.md`（当前协议与 JSON Schema 纪律）、`docs/deployment.md` 第 6 节（曲库上架）。
 
 ## 0. 目标与非目标
 
@@ -20,7 +20,7 @@
   - **2026-09-29 用户决策修订（音频下载）**：Hi歌曲的音频下载**对本地管理器开放**——单曲手动触发（管理器「⬇ Hi音频」按钮）、仅开发测试用途、非商用；实现走 `parseHiAudio`（player 页 Base64 直链）+ `allowedAudioUrl` 域名白名单（酷我 CDN 族 `*.kuwo.cn`）+ `AUDIO_LIMIT` 64MB 上限 + MP3 魔数校验 + 指针换新旧文件保留；不限速（单曲手动无批量入口）。云端管理器未包含此能力；其余来源（QQ/网易云/MusicBrainz）仍不下载音频。
 - 不引入数据库；`catalog.json` 仍是曲库唯一事实来源。
 
-## 1. 现状（2026-09-26 核对）
+## 1. 第一轮前的历史基线（2026-09-26 核对）
 
 | 位置 | 现状 |
 |---|---|
@@ -49,11 +49,12 @@ export type Track = {
 };
 ```
 
-catalog 下发字段（固定 8 个，未知值为 `null`，便于文档作为唯一出处与测试断言；`album` 属第三轮、暂不下发）：
+catalog 下发字段（当前本地固定 9 个；artist/album/coverVer/lyricsVer 未知为 null，hasCover/hasLyrics 为布尔；云端 v1 待发布仍为 8 字段）：
 
 ```json
 { "id": "song-01", "title": "歌名", "durationMs": 213000,
-  "artist": "歌手", "hasCover": true, "hasLyrics": false, "lyricsVer": 502594349944104 }
+  "artist": "歌手", "hasCover": true, "coverVer": 502594349944105,
+  "hasLyrics": false, "lyricsVer": null, "album": "专辑" }
 ```
 
 `coverVer` 也一并下发（`hasCover=false` 时为 `null`）：客户端封面缓存键 = `id + coverVer`，图片替换后版本变化，缓存自然失效。`lyricsVer`（`hasLyrics=false` 时为 `null`）：客户端歌词缓存键 = `id + lyricsVer`，换词后旧缓存自然失配。`path`/`size`/`cover`/`lyricsPath` 仍不出服务端。
@@ -85,7 +86,7 @@ catalog 下发字段（固定 8 个，未知值为 `null`，便于文档作为�
 
 ## 5. 客户端设计（安卓）
 
-- **解析**（`Models.kt`）：`artist/album` 用 `isNull` 判空取值；`hasCover/hasLyrics` 布尔；`coverVer` 可空数字。加解析单测。
+- **解析**（`Models.kt`）：`artist` 沿用旧解析；`album` 只接收非空 trim 后字符串，缺字段/null/错类型为 null；`hasCover/hasLyrics` 布尔；`coverVer` 可空数字。加解析单测。
 - **歌单行**（`MainActivity.kt` `PlaylistRow`）：左侧 44dp 封面缩略图（无封面回退为现在的序号圆片），歌名下方加歌手副行（`bodySmall`、`onSurfaceVariant`，artist 为 null 不占位）。
 - **MiniPlayer / PlayerSheet**（`RoomPlayer.kt`）：MiniPlayer 左侧 44dp 封面；PlayerSheet 顶部放 ~180dp 封面与"歌名 + 歌手"两行。
 - **封面加载**：接口带令牌头，不能直接丢给 Coil 的 url 加载器。做法：OkHttp 请求（带 Authorization）下载到 `cacheDir/covers/<id>-<coverVer>`，命中即读文件；`coverVer` 变了键就变，旧文件被 LRU 淘汰。

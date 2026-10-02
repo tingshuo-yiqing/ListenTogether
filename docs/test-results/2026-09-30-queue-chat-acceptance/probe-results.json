@@ -1,0 +1,65 @@
+{
+  "date": "2026-09-30",
+  "scope": "isolated-local-probe",
+  "results": [
+    {
+      "name": "运行时拒绝不符合 schema 的 ID 与额外字段",
+      "passed": false,
+      "evidence": {
+        "accepted": true
+      }
+    },
+    {
+      "name": "播放命令复用 ID 去重且返回 ack",
+      "passed": false,
+      "evidence": {
+        "versionIncrements": 2,
+        "ackReceived": false
+      }
+    },
+    {
+      "name": "聊天限频错误关联 clientMessageId",
+      "passed": false,
+      "evidence": {
+        "status": 429,
+        "hasClientMessageId": false,
+        "retryAfterMs": 9998
+      }
+    },
+    {
+      "name": "满队列快照按 32KiB 输出分块",
+      "passed": false,
+      "evidence": {
+        "entries": 100,
+        "bytes": 81873,
+        "hasChunkCount": false
+      }
+    },
+    {
+      "name": "恰好到期的重试不重新执行",
+      "passed": false,
+      "evidence": {
+        "permitsNewExecutionAtExactExpiry": true
+      }
+    },
+    {
+      "name": "去重记录每房间 4MiB 上限",
+      "passed": false,
+      "evidence": {
+        "records": 1700,
+        "bytes": 5540890,
+        "capacityRejected": false
+      }
+    },
+    {
+      "name": "WS JSON null 安全返回错误，不抛未捕捉异常",
+      "passed": false,
+      "evidence": {
+        "uncaught": {
+          "name": "TypeError",
+          "message": "Cannot read properties of null (reading 'requestId')"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+Performing Streamed Install
+Success: streamed 630347 bytes
+Success
+
+Performing Streamed Install
+Success: streamed 21516433 bytes
+Success
+
+{"case": "before-closed", "imeVisible": false, "playerVisible": true, "editorBounds": [[85, 1640, 897, 1752]], "imeTopPx": null, "editorClearancePx": null}
+Emulator keyboard/rotation/preferences restored; isolated backend stopped

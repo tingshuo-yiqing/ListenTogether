@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.listentogether.app.SnapshotCollectorTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-10-01T16:41:23" hostname="LAPTOP-8H39RU28" time="0.062">
+  <properties/>
+  <testcase name="missingChunkClearsBudgetAndRequestsRecoveryOnce" classname="com.listentogether.app.SnapshotCollectorTest" time="0.002"/>
+  <testcase name="invalidIndexCannotBeCountedAsComplete" classname="com.listentogether.app.SnapshotCollectorTest" time="0.002"/>
+  <testcase name="sessionResetCancelsDeadlineAndAllowsSameIdInNewSession" classname="com.listentogether.app.SnapshotCollectorTest" time="0.003"/>
+  <testcase name="sharedBudgetAndMaximumFrameAreCheckedBeforeRetaining" classname="com.listentogether.app.SnapshotCollectorTest" time="0.048"/>
+  <testcase name="metadataMismatchAndConflictingDuplicateRecoverWithoutPublishing" classname="com.listentogether.app.SnapshotCollectorTest" time="0.002"/>
+  <testcase name="newVersionRetiresOldAssemblyRegardlessOfRandomId" classname="com.listentogether.app.SnapshotCollectorTest" time="0.002"/>
+  <testcase name="outOfOrderChunksAreAtomicAndRepeatedChunksDoNotCompleteEarly" classname="com.listentogether.app.SnapshotCollectorTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

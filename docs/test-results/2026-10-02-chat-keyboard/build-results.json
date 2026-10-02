@@ -1,0 +1,13 @@
+{
+  "tests": 180,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "suites": 24,
+  "startedUtc": "2026-10-01T16:41:12.215968+00:00",
+  "completedUtc": "2026-10-01T16:41:54.110245+00:00",
+  "lintIssues": 0,
+  "apkBytes": 21787637,
+  "sha256": "041b42955fb8bf6b740960e5032bb3c0c9e8c0e8932304d8ac70e5693aa3c753",
+  "mainActivitySha256": "93e227c6c54388df16b03f9de5c6a1ae7dc892ced4d718396aa4be5e1cf0ed90"
+}

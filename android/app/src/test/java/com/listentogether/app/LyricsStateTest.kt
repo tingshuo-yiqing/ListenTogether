@@ -37,15 +37,15 @@ class LyricsStateTest {
     }
 
     @Test
-    fun nullAfterFetchFailureShowsNoLyrics() {
-        // 回归点：hasLyrics=true 但取值失败（404/网络/引用缺失）必须显示"没有歌词"，不能停在加载中
-        assertEquals(LyricsUiState.NoLyrics, lyricsUiState(track(hasLyrics = true), null, 0))
-        assertEquals("这首歌还没有歌词", lyricsPlaceholderText(LyricsUiState.NoLyrics))
+    fun nullAfterFetchFailureOffersRetryState() {
+        // 有歌词引用但读取失败独立显示失败状态，不能停在加载中或误报为没有歌词
+        assertEquals(LyricsUiState.Failed, lyricsUiState(track(hasLyrics = true), null, 0))
+        assertEquals("歌词暂时没读到", lyricsPlaceholderText(LyricsUiState.Failed))
     }
 
     @Test
     fun noFlagShowsNoLyrics() {
-        // hasLyrics=false 时 produceState 初值即 null，同样归为"没有歌词"
+        // hasLyrics=false 时不请求网络，服务端明确没有歌词引用
         assertEquals(LyricsUiState.NoLyrics, lyricsUiState(track(hasLyrics = false), null, 0))
     }
 
@@ -67,7 +67,7 @@ class LyricsStateTest {
     fun loadingAndFailureTextsDiffer() {
         // 两条文案不得相同：这正是原缺陷的表现（失败态被当成加载态）
         val loading = lyricsPlaceholderText(LyricsUiState.Loading)
-        val failed = lyricsPlaceholderText(LyricsUiState.NoLyrics)
+        val failed = lyricsPlaceholderText(LyricsUiState.Failed)
         assertEquals(true, loading != failed)
     }
 }

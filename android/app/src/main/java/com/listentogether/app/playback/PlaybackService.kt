@@ -20,7 +20,6 @@ import com.listentogether.app.ListenApplication
 import com.listentogether.app.MainActivity
 import com.listentogether.app.sync.SyncMath
 import com.listentogether.app.sync.PlaybackPolicy
-import com.listentogether.app.sync.TrackQueue
 import kotlin.math.abs
 import kotlinx.coroutines.*
 
@@ -44,6 +43,7 @@ class PlaybackService : MediaSessionService() {
 
     /** 创建时绑定的会话代次；清理动作只允许作用于相同代次。 */
     private var boundGeneration: Int? = null
+    private var loadedEntryId: String? = null
     private var lastBuffering = false
     private var localPauseLogged = false
 
@@ -148,6 +148,13 @@ class PlaybackService : MediaSessionService() {
         if (credentials == null) {
             player.stop(); player.clearMediaItems(); stopSelf(); return
         }
+        // 空曲必须在本机暂停判定前清理，否则耗尽队列后会留下上一首媒体和通知。
+        if (room != null && room.track == null) {
+            player.stop(); player.clearMediaItems(); loadedEntryId = null
+            player.playbackParameters = player.playbackParameters.withSpeed(1.0f)
+            client.updatePosition(0)
+            return
+        }
         // 状态未就绪（连接中/校时中/重连中）或本地暂停时只暂停；恢复必须来自明确播放动作。
         if (!client.synchronized || room == null || ui.locallyPaused) {
             player.pause()
@@ -164,15 +171,19 @@ class PlaybackService : MediaSessionService() {
             return
         }
         localPauseLogged = false
-        val track = ui.tracks.find { it.id == room.trackId }
+        // v2：当前曲公开元数据随播放 state 下发（空曲目为 null）。
+        val track = room.track
         if (track == null) {
+            // 当前曲清空：pause、清媒体项、复位倍速；通知栏由 MediaSession 随播放器状态更新，
+            // 房间连接与队列保留，不因清媒体项退出房间。
             player.pause()
             player.playbackParameters = player.playbackParameters.withSpeed(1.0f)
+            player.clearMediaItems()
             return
         }
         http.setDefaultRequestProperties(mapOf("Authorization" to "Bearer " + credentials.token))
         val expected = SyncMath.target(room.positionMs, room.timestampMs, room.playing, client.serverNow, track.durationMs)
-        val changed = player.currentMediaItem?.mediaId != track.id
+        val changed = player.currentMediaItem?.mediaId != track.id || loadedEntryId != room.entryId
         val buffering = player.playbackState == Player.STATE_BUFFERING
         val actualBefore = player.currentPosition
         // 不另存倍速缓存：换曲/seek 不会自动清除 ExoPlayer 的 PlaybackParameters。
@@ -181,9 +192,10 @@ class PlaybackService : MediaSessionService() {
         )
         var correction = ""
         if (changed) {
+            loadedEntryId = room.entryId
             val item = MediaItem.Builder().setMediaId(track.id)
                 .setUri(client.baseUrl + "/api/rooms/" + credentials.code + "/audio/" + track.id)
-                .setMediaMetadata(MediaMetadata.Builder().setTitle(track.title).setArtist("一起听歌").build()).build()
+                .setMediaMetadata(track.mediaMetadata()).build()
             player.setMediaItem(item, expected); player.prepare()
             correction = "load"
         } else if (!buffering && SyncMath.needsSeek(actualBefore, expected)) {
@@ -217,12 +229,16 @@ class PlaybackService : MediaSessionService() {
         }
     }
 
-    /** 通知栏/耳机/车机切歌：按歌单环形顺序发 select 指令（服务端仍是播放唯一来源）；非房主忽略。 */
+    /**
+     * 通知栏/耳机/车机切歌（v2）：下一首 = 服务端 skip-next（队列消费队头，仍是播放唯一来源）；
+     * 上一首 = 回到当前曲开头（seek 保留播放/暂停意图），不实现播放历史。均仅房主生效。
+     */
     private fun skipTrack(direction: Int) {
         if (!client.isHost) return
-        val ui = client.state.value
-        val target = TrackQueue.skip(ui.tracks, ui.room?.trackId, direction) ?: return
-        client.command("select", trackId = target)
+        when (direction) {
+            1 -> client.skipNext()
+            else -> client.command("seek", positionMs = 0)
+        }
     }
 
     /** 沿异常链找 HTTP 数据源状态码；无 HTTP 状态的错误（断网、解码失败）返回 null。 */

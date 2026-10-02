@@ -1,0 +1,8 @@
+// 仅本次显式 -I 使用，常规 Gradle 构建不加载验收探针。
+allprojects {
+    afterEvaluate {
+        if (plugins.hasPlugin('com.android.application')) {
+            android.sourceSets.test.java.srcDir(new File(rootProject.projectDir.parentFile, 'docs/test-results/2026-10-01-queue-chat-reacceptance/client-probe'))
+        }
+    }
+}

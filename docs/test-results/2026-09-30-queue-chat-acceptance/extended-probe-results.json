@@ -1,0 +1,69 @@
+{
+  "capturedAt": "2026-09-30T13:40:29.571Z",
+  "scope": "isolated-domain-and-sender-injection",
+  "hashes": {
+    "server/src/rooms/store.ts": "f03ed4109f77c669a35309a595751117e1bf2cd50dd1d1992d12f6d9ba19a299",
+    "server/dist/rooms/store.js": "7eaf861c35c24b24e53959070db80196e784aa3fd83f2b2c30d4f6e36b4bda59",
+    "server/src/realtime/socket.ts": "e0d0bf13e4edc27cd96e10bf9b47e0c032a1f492d1aa7d6772be50bcc69d114b",
+    "server/dist/realtime/socket.js": "50ffeb2ec1d4fcb94779d5bffb164896f13a0e5f89f1786051c5aa6df72e4907"
+  },
+  "results": [
+    {
+      "name": "正常下一首保留播放意图",
+      "passed": true,
+      "evidence": {
+        "currentTrackId": "t1",
+        "playing": true
+      }
+    },
+    {
+      "name": "连续三个失效条目之后继续播放有效曲",
+      "passed": false,
+      "evidence": {
+        "currentTrackId": null,
+        "playing": false,
+        "remaining": [
+          "t4"
+        ]
+      }
+    },
+    {
+      "name": "所有待播条目失效时完整消费并停止",
+      "passed": false,
+      "evidence": {
+        "currentTrackId": null,
+        "playing": false,
+        "remaining": [
+          "t4"
+        ]
+      }
+    },
+    {
+      "name": "发送完成后全服计数归零",
+      "passed": true,
+      "evidence": {
+        "globalPendingBytes": 0
+      }
+    },
+    {
+      "name": "容量内分块快照遇慢写时等待发送完成而非提前关闭",
+      "passed": false,
+      "evidence": {
+        "logicalSnapshotBytes": 210630,
+        "applicationLimitBytes": 524288,
+        "socketLimitBytes": 131072,
+        "sentFrames": 5,
+        "totalFrames": 7,
+        "closed": [
+          {
+            "code": 1013,
+            "reason": "slow client"
+          }
+        ],
+        "pendingAtClose": 150450,
+        "globalPendingAfterCallbacks": 0,
+        "method": "可控发送器延迟 callback，验证调度；并非真实 TCP 速度测量"
+      }
+    }
+  ]
+}

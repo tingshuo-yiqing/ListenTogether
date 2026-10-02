@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "D:\ListenTogether\docs\test-results\2026-10-02-chat-keyboard\tools\device-check.py", line 164, in <module>
+    leave()
+  File "D:\ListenTogether\docs\test-results\2026-10-02-chat-keyboard\tools\device-check.py", line 134, in leave
+    hide_ime()
+  File "D:\ListenTogether\docs\test-results\2026-10-02-chat-keyboard\tools\device-check.py", line 76, in hide_ime
+    wait_ime(False)
+  File "D:\ListenTogether\docs\test-results\2026-10-02-chat-keyboard\tools\device-check.py", line 71, in wait_ime
+    raise RuntimeError(f'IME visible δ�ﵽ {expected}')
+RuntimeError: IME visible δ�ﵽ False

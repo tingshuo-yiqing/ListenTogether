@@ -1,0 +1,77 @@
+[
+  {
+    "path": "android/app/src/main/res/drawable-nodpi/avatar_bear.webp",
+    "bytes": 54430,
+    "sha256": "d02bda1bc0a1ac53ae15428dff785aa2801f4f61c49f047355a1e7892827362e"
+  },
+  {
+    "path": "android/app/src/main/res/drawable-nodpi/avatar_cat.webp",
+    "bytes": 56824,
+    "sha256": "8af6cefa9c930eb0f2b63f97c25ca7a296a81ae32aac972d38b567b7af1e3436"
+  },
+  {
+    "path": "android/app/src/main/res/drawable-nodpi/avatar_corgi.webp",
+    "bytes": 59734,
+    "sha256": "25a0414f7deb51af1e030561bd25161e27e5d79e6b023892a2527fbffca8b1bd"
+  },
+  {
+    "path": "android/app/src/main/res/drawable-nodpi/avatar_deer.webp",
+    "bytes": 56426,
+    "sha256": "da92e85d684148fe78b9775cce94e89e318948c591c3790938254176fcae8dcf"
+  },
+  {
+    "path": "android/app/src/main/res/drawable-nodpi/avatar_fox.webp",
+    "bytes": 57128,
+    "sha256": "037d91a0f277426373b13131d12fd3799c7e79a49924559710367f2d8ac5b708"
+  },
+  {
+    "path": "android/app/src/main/res/drawable-nodpi/avatar_hamster.webp",
+    "bytes": 58930,
+    "sha256": "5eccf1eb8ca69c5f6ed32332745b1aad35a8d0fcf8fd28d841b3607e61b67a01"
+  },
+  {
+    "path": "android/app/src/main/res/drawable-nodpi/avatar_hedgehog.webp",
+    "bytes": 65088,
+    "sha256": "da2d5110287372040a2df8d817394acd84332bebeb443fea9efd23064cdc68d3"
+  },
+  {
+    "path": "android/app/src/main/res/drawable-nodpi/avatar_koala.webp",
+    "bytes": 53064,
+    "sha256": "dd734553606512a1f2028657e83341d7380df4b60335bfb32a03658d776f15fd"
+  },
+  {
+    "path": "android/app/src/main/res/drawable-nodpi/avatar_otter.webp",
+    "bytes": 55114,
+    "sha256": "3c686627b983c4de812626edfbf51c255680fdd655594cb0b1d4619dc3cc74cc"
+  },
+  {
+    "path": "android/app/src/main/res/drawable-nodpi/avatar_panda.webp",
+    "bytes": 53436,
+    "sha256": "e2c9594c4a6c5f3928d15e85914b49036d92fee3011142bb4c3552ace1a89fbe"
+  },
+  {
+    "path": "android/app/src/main/res/drawable-nodpi/avatar_penguin.webp",
+    "bytes": 48758,
+    "sha256": "115910109deb0250fe30a58e6ac3d29d0a28858604abed056d414b0b2494b51a"
+  },
+  {
+    "path": "android/app/src/main/res/drawable-nodpi/avatar_rabbit.webp",
+    "bytes": 48088,
+    "sha256": "7504130f0997da19f173ccbe6e6cfa6ece76978e0e4447978e73b69d54a0860f"
+  },
+  {
+    "path": "android/app/src/main/res/drawable-nodpi/avatar_red_panda.webp",
+    "bytes": 62546,
+    "sha256": "c4f9397fda98b1cc2a165145409634a087b9345f7845da6686a8482e245ac623"
+  },
+  {
+    "path": "android/app/src/main/res/drawable-nodpi/avatar_seal.webp",
+    "bytes": 52500,
+    "sha256": "1eba6eacfeeb16a2682f361da792871b831484c6095144c039063e49a612b668"
+  },
+  {
+    "path": "android/app/src/main/res/drawable-nodpi/avatar_tiger.webp",
+    "bytes": 65008,
+    "sha256": "da78beb60714dee51bba9bd7d7db6909e60f708f32ff2c1c22312adf3f16ca11"
+  }
+]

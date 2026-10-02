@@ -1,0 +1,69 @@
+Node=v24.21.0
+Systemd=systemd 255 (255.4-1ubuntu8.17)
+Unit=lt-desktop-drill-lt-desktop-drill.eeKlgN.service
+
+SCENARIO=baseline
+NRestarts=0
+ExecMainStatus=0
+ActiveState=active
+SubState=running
+
+SCENARIO=bad-dist
+NRestarts=1
+ExecMainStatus=1
+ActiveState=activating
+SubState=auto-restart
+Oct 02 01:12:36 LAPTOP-8H39RU28 node[1498]: file:///run/lt-desktop-drill.eeKlgN/bad-dist/dist/index.js:2
+Oct 02 01:12:36 LAPTOP-8H39RU28 node[1498]: SyntaxError: Unexpected end of input
+Oct 02 01:12:36 LAPTOP-8H39RU28 node[1498]:     at compileSourceTextModule (node:internal/modules/esm/utils:319:16)
+Oct 02 01:12:36 LAPTOP-8H39RU28 node[1498]:     at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:89:18)
+Oct 02 01:12:36 LAPTOP-8H39RU28 node[1498]:     at #translate (node:internal/modules/esm/loader:438:20)
+Oct 02 01:12:36 LAPTOP-8H39RU28 node[1498]:     at afterLoad (node:internal/modules/esm/loader:506:29)
+Oct 02 01:12:36 LAPTOP-8H39RU28 node[1498]:     at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:511:12)
+Oct 02 01:12:36 LAPTOP-8H39RU28 node[1498]:     at #getOrCreateModuleJobAfterResolve (node:internal/modules/esm/loader:564:36)
+Oct 02 01:12:36 LAPTOP-8H39RU28 node[1498]:     at afterResolve (node:internal/modules/esm/loader:611:52)
+Oct 02 01:12:36 LAPTOP-8H39RU28 node[1498]:     at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:617:12)
+Oct 02 01:12:36 LAPTOP-8H39RU28 node[1498]:     at node:internal/modules/esm/loader:636:32
+Oct 02 01:12:36 LAPTOP-8H39RU28 node[1498]:     at TracingChannel.tracePromise (node:diagnostics_channel:362:14)
+Oct 02 01:12:36 LAPTOP-8H39RU28 node[1498]: Node.js v24.21.0
+Oct 02 01:12:36 LAPTOP-8H39RU28 systemd[1]: lt-desktop-drill-lt-desktop-drill.eeKlgN.service: Main process exited, code=exited, status=1/FAILURE
+Oct 02 01:12:36 LAPTOP-8H39RU28 systemd[1]: lt-desktop-drill-lt-desktop-drill.eeKlgN.service: Failed with result 'exit-code'.
+
+SCENARIO=bad-dist-rollback
+NRestarts=0
+ExecMainStatus=0
+ActiveState=active
+SubState=running
+{"ok":true,"rooms":0,"onlineMembers":0,"wsConnections":0,"eventLoop":{"p50Ms":20.103,"p99Ms":20.136,"maxMs":20.136}}
+
+
+SCENARIO=missing-deps
+NRestarts=1
+ExecMainStatus=1
+ActiveState=activating
+SubState=auto-restart
+Oct 02 01:13:10 LAPTOP-8H39RU28 node[2373]:     at Object.getPackageJSONURL (node:internal/modules/package_json_reader:331:9)
+Oct 02 01:13:10 LAPTOP-8H39RU28 node[2373]:     at packageResolve (node:internal/modules/esm/resolve:784:25)
+Oct 02 01:13:10 LAPTOP-8H39RU28 node[2373]:     at moduleResolve (node:internal/modules/esm/resolve:873:18)
+Oct 02 01:13:10 LAPTOP-8H39RU28 node[2373]:     at defaultResolve (node:internal/modules/esm/resolve:1006:11)
+Oct 02 01:13:10 LAPTOP-8H39RU28 node[2373]:     at #cachedDefaultResolve (node:internal/modules/esm/loader:705:20)
+Oct 02 01:13:10 LAPTOP-8H39RU28 node[2373]:     at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:725:38)
+Oct 02 01:13:10 LAPTOP-8H39RU28 node[2373]:     at ModuleLoader.resolveSync (node:internal/modules/esm/loader:763:56)
+Oct 02 01:13:10 LAPTOP-8H39RU28 node[2373]:     at #resolve (node:internal/modules/esm/loader:687:17)
+Oct 02 01:13:10 LAPTOP-8H39RU28 node[2373]:     at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:607:35)
+Oct 02 01:13:10 LAPTOP-8H39RU28 node[2373]:     at ModuleJob.syncLink (node:internal/modules/esm/module_job:276:33) {
+Oct 02 01:13:10 LAPTOP-8H39RU28 node[2373]:   code: 'ERR_MODULE_NOT_FOUND'
+Oct 02 01:13:10 LAPTOP-8H39RU28 node[2373]: }
+Oct 02 01:13:10 LAPTOP-8H39RU28 node[2373]: Node.js v24.21.0
+Oct 02 01:13:10 LAPTOP-8H39RU28 systemd[1]: lt-desktop-drill-lt-desktop-drill.eeKlgN.service: Main process exited, code=exited, status=1/FAILURE
+Oct 02 01:13:10 LAPTOP-8H39RU28 systemd[1]: lt-desktop-drill-lt-desktop-drill.eeKlgN.service: Failed with result 'exit-code'.
+
+SCENARIO=missing-deps-rollback
+NRestarts=0
+ExecMainStatus=0
+ActiveState=active
+SubState=running
+{"ok":true,"rooms":0,"onlineMembers":0,"wsConnections":0,"eventLoop":{"p50Ms":20.169,"p99Ms":20.234,"maxMs":20.234}}
+
+
+PASS=baseline,bad-dist-auto-restart,bad-dist-rollback,missing-deps-auto-restart,missing-deps-rollback

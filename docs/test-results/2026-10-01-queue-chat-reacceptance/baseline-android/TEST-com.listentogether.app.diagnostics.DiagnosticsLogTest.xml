@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.listentogether.app.diagnostics.DiagnosticsLogTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-01T01:23:31" hostname="LAPTOP-8H39RU28" time="0.042">
+  <properties/>
+  <testcase name="syncWritesJsonlLineWithEstimatedServerMs" classname="com.listentogether.app.diagnostics.DiagnosticsLogTest" time="0.011"/>
+  <testcase name="disabledLogWritesNothing" classname="com.listentogether.app.diagnostics.DiagnosticsLogTest" time="0.002"/>
+  <testcase name="eachLineIsValidJson" classname="com.listentogether.app.diagnostics.DiagnosticsLogTest" time="0.004"/>
+  <testcase name="connectionWritesJsonlLineWithRequiredFields" classname="com.listentogether.app.diagnostics.DiagnosticsLogTest" time="0.003"/>
+  <testcase name="playbackWritesJsonlLineWithAllFields" classname="com.listentogether.app.diagnostics.DiagnosticsLogTest" time="0.002"/>
+  <testcase name="tokenNeverAppearsInOutput" classname="com.listentogether.app.diagnostics.DiagnosticsLogTest" time="0.01"/>
+  <testcase name="stopsWritingAfter60MinuteWindow" classname="com.listentogether.app.diagnostics.DiagnosticsLogTest" time="0.004"/>
+  <testcase name="stopsWritingAfter20MbLimit" classname="com.listentogether.app.diagnostics.DiagnosticsLogTest" time="0.004"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

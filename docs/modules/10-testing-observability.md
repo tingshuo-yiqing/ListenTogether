@@ -1,11 +1,27 @@
 # 10 测试、诊断与验收
 
-## 当前资产与覆盖
+## 当前无真机门禁（2026-10-02）
+
+server build + 74/74、Android cleanTest 强制 180 项/24 套件（0 失败/错误/跳过）、assembleDebug 与 Lint XML issue=0、scripts 51/51。新增 server metadata 2/token-revocation 2、Android TrackMetadataTest 3；使用实际 ID3 标签、实际 HTTP/WS 与实际 Media3 builder，避免只重复实现的测试。
+
+隔离 Chrome 8/8、WSL 原生 Linux 回收 3/3、实际 systemd 失败/回滚 5/5。截图、首次驱动失败、JUnit、源码/编译产物 hash 与 APK 041b4295… 固定副本独立归档，不用 HEAD 或旧设备证据替代；本轮未操作设备/云端/真实曲库。末轮 Lint UP-TO-DATE 如实记录。[报告与复跑入口](../test-results/2026-10-02-desktop-tasks/README.md)。
+
+2026-10-02 最新 UI 门禁见 [聊天键盘报告](../test-results/2026-10-02-chat-keyboard/README.md)及 [verification](../verification.md)：安卓 180 项/24 套件、Lint 0；041B4295… 已安装/回拉 MuMu，实际 IME 浅深/发送/歌曲栏恢复/连续播放通过。PHQ110 新布局待验；server 70/70、脚本 51/51 为此前结果，本轮未重跑。
+
+键盘轮以 15 组 MuMu 实际窗口/输入检查和 MediaSession 连续位置验证，未新增镜像显示条件的 JVM 用例。180 项包含工作区现有 TrackMetadataTest 3 项，不作为键盘新增单测；固定 APK 和回拉按同一哈希核对，后续构建不覆盖这轮设备证据。
+
+头像轮新增服务端 7 项（满房唯一、同昵称、离线/重连/房主转移、释放/历史、独立房间、协议资源一致及真实 WS），安卓 AnimalAvatarTest 4 项（服务器身份、缺字段/未知值、离房历史与旧聊天兼容）。本轮 JUnit、Lint 与浅深主题/聊天/重叠截图已独立归档；一个 PHQ110 加两个持 WS 脚本成员不作双真机同步结论。Markdown 本地链接和 git diff --check 通过。
+
+此前 ACC 修复新增 server/test/acceptance-regression.test.ts 七项回归，QueueChatRecoveryTest 共 19 项、SnapshotCollectorTest 七项；原附加 11 项转入默认门禁，另有缺块恢复/观察者两项与能力/重连六项。保留原独立探针并验证真实 WS 帧与完整性；服务端 7/7、队列/慢写 5/5。该轮强制实跑 Android 173 项/22 套件，0 失败/错误/跳过；短时 15 人混合负载不替代 600 秒或真实出声。设备证据区分初轮 e3074064…、硬件 b5d83aaf… 与修复包 ABCB8582…；文件哈希不以 HEAD 代替。
+
+修复前独立复验入口（历史）：[当前 UI 与 v2 复验](../test-results/2026-10-01-queue-chat-reacceptance/README.md)。普通 147 项 JUnit XML 先归档，再用显式 Gradle init 源集运行 11 项附加用例，避免默认输出被覆盖后混淆门禁结论。服务端两份探针只用隔离合成实例；版本清单记录实际源码 / 编译产物 / APK，不用未包含工作区改动的 HEAD 代替版本证据。修复后保留原断言复跑，再将必要场景纳入常规回归。
+
+## 资产与覆盖（下列数量为 09-27 历史底稿；当前数量见上文）
 server/test：30 项测试（2026-09-27）。app.test.ts 5 项覆盖房间权限与生命周期、HTTP/Range 与限流、15 个真实 WS；
 catalog.test.ts 5 项覆盖真实 MP3 解析、独立封面字节与版本、封面路径/格式边界、坏清单，以及曲库外 `../` 逃逸与目录链接逃逸的拒绝（含"曲库内链接可用"对照）；
 protocol.test.ts 2 项把 [protocol.md](../protocol.md) 的 JSON Schema 当作契约：直接从文档提取 schema，校验 buildApp 产出的真实
 state/clock/error 与出站 sync/command，并用构造性漂移（多字段/缺字段/类型错/未知 action）证明校验器有牙——
-实现与文档任一侧改动都会变红。校验器是 `test/mini-schema.ts` 的最小实现，无运行时依赖、无 codegen；
+实现与文档任一侧改动都会变红。测试校验器是 `test/mini-schema.ts` 的最小实现，独立于产品运行时；10-01 运行时另接 Ajv 与文档生成 schema，二者结果一致性受测试约束；
 realtime.test.ts 6 项钉住传输防线：消息级 20 条/秒第 21 条回 429、握手限连（同令牌+IP 超限 429、换源 IP 不受影响、无效令牌仍 401）、
 bufferedAmount 超 128KiB 时 close(1013)、15 秒无 pong 的 terminate（假 timer）；
 rooms.test.ts 7 项覆盖同 IP 存量房间配额（含回收释放与按 IP 隔离）、房间领域事件全生命周期与"不含令牌/昵称"红线、health 计数随连接变化；另验证房主清扫、首次上线立即接任与 60 秒宽限边界。
@@ -92,3 +108,10 @@ Debug诊断JSONL已实现（限60分钟或20MB，用户主动测试时采集）�
 必须来自本轮执行，见 [陷阱清单](../development-pitfalls.md) 与 verification.md）。
 
 2026-09-28：scripts档现37项离线测试，新增metadata-assets.test.mjs（含启动真管理器的临时曲库集成用例，须先构建server/dist）；封面/歌词来源全部注入，不访问公网。原驱动85项，Chrome页面夹具与真实平台只读抽查分开登记：[资源应用验证](../test-results/2026-09-28-metadata-assets/README.md)。
+
+## QC-D 规模与慢客户端脚本（2026-09-30）
+
+- `scripts/qcd-fixture.mjs`：合成 1000/2000 首隔离夹具——LCG 伪随机像素 PNG 生成近 1MiB 大图（deflate 不可压缩，稳定落在服务端 1MiB 门槛内）、ID3v2.3 APIC 内嵌封面、LRC 含近 256KB 大词；catalog 相对路径一律正斜杠。输出在 `.workbuddy/`（gitignore），**不碰真实 media/**、不含真实版权音频。
+- `scripts/qcd-bench.mjs`：进程内冷启动（loadCatalog+buildApp）/RSS 峰值/解析峰值并发/搜索延迟（固定查询集：空/精确/部分/无命中/中英文，预热 100 次后测 1000 次、错误率全报）/封面缓存峰值与清退稳定值；门槛以 assert 行直读（p95 ≤100ms、缓存 ≤32MiB、并发 ≤4）。
+- `scripts/qcd-mixed-load.mjs`：15 名脚本成员（1 房主）按配额内节奏并发校时/聊天/点歌/撤回/播放，默认 600 秒；断言零 429/零意外错误/聊天 seq 连续；play/pause/seek 无 ack，以跟随的 state 广播计确认延迟；eventLoop 每 10s 采样自 /health（累计口径，含启动哈希阶段，稳态值更低）。自起本地服务端（`--target` 可指向已有实例）。
+- `scripts/qcd-slow-client.mjs`：①单成员 20 条/秒刷屏（超聊天配额 5/10s、低于 100/s 硬保护）→ 应 429 带 retryAfterMs 且连接保持、停手即恢复、其他成员零影响；②10 名成员灌满 100 条 500 码点长消息 → 新成员经 fault-proxy（300ms 延迟）入房收 ≤32KiB 分块快照并完整重组，断开重连后逐条一致、连接不误踢。

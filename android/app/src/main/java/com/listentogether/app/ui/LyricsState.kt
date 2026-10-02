@@ -16,8 +16,11 @@ enum class LyricsUiState {
     /** hasLyrics=true 且尚未取到文本：加载中。 */
     Loading,
 
-    /** 取值结束但没拿到文本：无歌词 / 服务端 404 / 网络失败，一律按"没有歌词"提示。 */
+    /** 服务端明确没有歌词引用。 */
     NoLyrics,
+
+    /** 服务端有歌词引用但读取返回 null，提供重试而不伪报为没有歌词。 */
+    Failed,
 
     /** 取到文本但没有一行时间戳（如仅有注释的占位 .lrc）。 */
     NoTimeline,
@@ -36,19 +39,17 @@ fun lyricsUiState(hasTrack: Boolean, lyricText: String?, hasLyrics: Boolean, lin
     !hasTrack -> LyricsUiState.Empty
     // 只有 "" 算加载中：它是 produceState 的初值，唯一含义是"还在取"。
     lyricText == "" -> LyricsUiState.Loading
-    // 其余"没拿到"都归为无歌词：
-    //  - hasLyrics=false → 初值就是 null，从来没打算取；
-    //  - hasLyrics=true  → 取值成功必得非空文本，走到这里只可能是 404 / 网络失败 / 引用缺失。
-    // 关键点：失败态绝不能被当成加载态（原缺陷即此处把 null 与 "" 混为一谈，导致卡在"加载中"）。
-    lyricText == null -> LyricsUiState.NoLyrics
+    // 无引用与读取失败分开：失败不能退回加载态，也不把有引用误报为无歌词。
+    lyricText == null -> if (hasLyrics) LyricsUiState.Failed else LyricsUiState.NoLyrics
     lineCount == 0 -> LyricsUiState.NoTimeline
     else -> LyricsUiState.Ready
 }
 
-/** 歌词区三处占位文案；Ready 返回 null（由调用方渲染歌词列表）。 */
+/** 歌词区占位文案；Ready 返回 null（由调用方渲染歌词列表）。 */
 fun lyricsPlaceholderText(state: LyricsUiState): String? = when (state) {
     LyricsUiState.Loading -> "歌词加载中"
     LyricsUiState.NoLyrics -> "这首歌还没有歌词"
+    LyricsUiState.Failed -> "歌词暂时没读到"
     LyricsUiState.NoTimeline -> "这首歌的歌词没有时间轴，暂时没法逐行跟随"
     LyricsUiState.Empty, LyricsUiState.Ready -> null
 }

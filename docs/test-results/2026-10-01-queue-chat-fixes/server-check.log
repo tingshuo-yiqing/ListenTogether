@@ -1,0 +1,88 @@
+
+> listen-together-server@0.1.0 prebuild
+> node scripts/protocol-schema.mjs
+
+
+> listen-together-server@0.1.0 build
+> tsc
+
+
+> listen-together-server@0.1.0 pretest
+> node scripts/protocol-schema.mjs
+
+
+> listen-together-server@0.1.0 test
+> tsx --test test/*.test.ts
+
+✔ 认证 WS：null/数组/额外字段/错误 UUID 安全拒绝；command 去重、限频关联、队列实际帧分块 (346.4947ms)
+✔ 入站角色、数值和 Unicode 边界由真实 schema 校验 (0.9133ms)
+✔ TTL 精确边界与时间回拨不复活；预留取消、房间释放和全服容量不会漏账 (1.3083ms)
+✔ 去重每房间 4MiB 先预留后执行，指纹与结果均按实际存储计费 (66.907ms)
+✔ 连续失效前缀和全部失效队列完整消费，播放意图与条目身份保持 (1.2624ms)
+✔ 分块完整帧 ≤32KiB；慢写逐块调度、在途快照保留、未开始快照合并 (8.551ms)
+✔ 发送同步抛错、回调错误、关闭迟到回调与全服上限只释放一次 (0.7412ms)
+✔ room state: queue promotion, authorization, pause, seek and queue advance (5.1891ms)
+✔ host grace period, reconnect replacement, transfer, capacity cleanup and room expiry (1.0398ms)
+✔ explicit host leave transfers immediately; empty catalog and invalid nickname (1.1911ms)
+✔ HTTP: private catalog, byte ranges, missing file, bad JSON, 426 gate and rate limiting (209.7525ms)
+✔ 15 real WebSockets: broadcast, clock sync, forbidden command, malformed message and 16th rejection (208.4656ms)
+✔ normalizeText：NFKC + 小写 + 合并空白 (1.8303ms)
+✔ revision：同内容恒定、封面/歌词版本变化即变 (0.6289ms)
+✔ 稳定排序：规范化歌名 → 歌手 → id (9.1608ms)
+✔ 参数校验：非法 q/offset/limit 抛 SearchError 400 (1.8777ms)
+✔ 分页：空查询浏览全库，切片连续不重叠 (37.9505ms)
+✔ 千首夹具：中文子串命中跨页连续，无命中 total=0 (12.3835ms)
+✔ track(id)：O(1) 查找，未命中 undefined；toSummary 不含路径与字节 (2.4799ms)
+✔ HTTP catalog/search: 鉴权、分页、revision 冲突与参数校验 (181.1656ms)
+✔ real MP3 metadata is loaded from the file, without trusting declared duration (48.0335ms)
+✔ manual artist field wins; missing ID3 yields null artist/cover/coverVer (58.507ms)
+✔ catalog loads an independent cover and returns a content-based cache version (45.4435ms)
+✔ loadCatalog caps parse concurrency at 4 and reports the peak (90.6181ms)
+✔ catalog rejects cover paths outside the library and invalid image bytes (75.6375ms)
+✔ catalog validates optional lyrics references at load time (191.4817ms)
+✔ catalog rejects malformed structure, duplicate IDs, missing and invalid audio (66.3141ms)
+✔ catalog rejects ../ escape and links pointing outside the library (62.1862ms)
+✔ 聊天领域：中文/emoji/换行通过；空白与超长拒绝；发送者取认证成员（不可伪造）；窗口截断与 gap (3.2725ms)
+✔ WS 聊天：隔房广播隔离、独立限频 10 秒 5 条、同 clientMessageId 重试回放同一 ack 不重发 (266.499ms)
+✔ 聊天快照分块：>32KiB 窗口按块发送且 latestSeq 一致、收齐可拼回 (58.884ms)
+✔ cover cache: concurrent reads of the same resource merge into one read (70.3753ms)
+✔ cover: authentication, missing track/cover, on-demand bytes and missing file (151.9633ms)
+✔ cover cache: byte-accounted LRU evicts least recent and re-reads on demand (33.3095ms)
+✔ lyrics: authentication, missing track/lyrics, UTF-8 text and no-store (144.5566ms)
+✔ protocol.md 的 v2 schema 声明了 17 类消息，且能校验 buildApp 产出的真实消息 (192.285ms)
+✔ schema 有牙：字段漂移、缺字段、类型错误、select 移除与未知 action 都会被拦下 (2.4968ms)
+✔ 并发点歌同曲：首人成功、后人 409 TRACK_ALREADY_QUEUED；当前曲同曲同样拒绝 (3.933ms)
+✔ 随机加歌：空房加 5 首时 1 首成为暂停的当前曲、其余待播；候选不足部分成功；重试返回同批 (0.9768ms)
+✔ 个人配额：普通成员 10 秒内最多 5 首待播，当前曲不计配额；房主不受限；降为普通成员后只禁添加 (1.2616ms)
+✔ 队列容量 100：满后 409 QUEUE_FULL (1.7593ms)
+✔ 去重：过期 409 REQUEST_EXPIRED、同 ID 异参 409 IDEMPOTENCY_CONFLICT、超前 400、业务失败同样入缓存 (1.566ms)
+✔ 权限与重排：成员只能撤回自己的点歌；重排仅房主；版本冲突回 QUEUE_VERSION_CONFLICT；锚点重排生效 (1.4797ms)
+✔ 曲终与跳过：跳过保留原 playing；无待播跳过清空并停止；无当前曲 skip/play → NO_CURRENT_TRACK (0.5362ms)
+✔ 房主变化与离房：点歌人离房保留已点歌曲；房主转移不清队列 (0.4292ms)
+✔ 快照一致性：queueSnapshot 与实际队列逐条对应，含显示元数据与点歌人；旧连接迟到不污染新连接状态 (0.4992ms)
+✔ WS：同 requestId 重试回放同一 ack；点歌 10 秒 5 次限流；缺协议头握手 426 (181.565ms)
+✔ sync quota: 3rd sync within one second gets a 429 error frame, queue.sync quota is separate (152.6226ms)
+✔ input hard limit: 101st message within one second closes 1008 (17.7397ms)
+✔ handshake limit: same token and IP beyond the window quota is rejected before upgrade (20.3827ms)
+✔ handshake limit: the same token from another source IP is not throttled (17.171ms)
+✔ handshake limit: invalid token still gets 401 after the quota is exhausted (18.0713ms)
+✔ slow client: bufferedAmount over the threshold closes 1013, projected overflow waits for drain (0.8427ms)
+✔ slow client: application-level pending beyond the cap closes 1013, drained callbacks keep sending (3.2078ms)
+✔ snapshot coalescing: burst queue.sync/chat.sync produce one latest snapshot each (137.3415ms)
+✔ heartbeat: pings every round, terminates only after a round without pong (0.5662ms)
+✔ per-IP room quota: 4th active room rejected, released after empty rooms expire (3.0174ms)
+✔ HTTP room quota is keyed by the request IP (95.1054ms)
+✔ structured events cover room lifecycle without leaking tokens or nicknames (0.6901ms)
+✔ health keeps ok:true and exposes room, member and connection counters (45.3079ms)
+✔ expired host is cleared without repeated transfer events, new connection claims host immediately (0.922ms)
+✔ joining during host grace does not steal host; exact expiry transfers to earliest online member (0.2387ms)
+✔ host leaving with only offline members lets the next connection become host before tick (0.2403ms)
+ℹ tests 63
+ℹ suites 0
+ℹ pass 63
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2532.6267
+后端构建与测试通过。

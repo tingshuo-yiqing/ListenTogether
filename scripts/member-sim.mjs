@@ -45,7 +45,8 @@ const HOLD_SECONDS = Math.max(0, Number(argOf('--hold', 60)) || 60)
 const out = line => console.log(JSON.stringify(line))
 
 async function jsonFetch(path, options = {}) {
-  const res = await fetch(TARGET + path, { signal: AbortSignal.timeout(8000), ...options })
+  // v2 HTTP/WS 都要求协议头；旧 v1 后端忽略新增头，既有联调继续兼容。
+  const res = await fetch(TARGET + path, { signal: AbortSignal.timeout(8000), ...options, headers: { 'X-ListenTogether-Protocol': '2', ...options.headers } })
   const body = await res.json().catch(() => null)
   return { status: res.status, body }
 }
@@ -53,7 +54,7 @@ async function jsonFetch(path, options = {}) {
 /** 持有 WS 直到 --hold 到期或收到 SIGINT；返回前不主动 DELETE，进程退出即"掉线"。 */
 function hold(code, token) {
   return new Promise((resolve, reject) => {
-    const ws = new WebSocket(TARGET.replace(/^http/, 'ws') + '/ws/' + code, { headers: { Authorization: 'Bearer ' + token } })
+    const ws = new WebSocket(TARGET.replace(/^http/, 'ws') + '/ws/' + code, { headers: { Authorization: 'Bearer ' + token, 'X-ListenTogether-Protocol': '2' } })
     let lastSignature = ''
     let timer = null
     const done = () => { if (timer) clearTimeout(timer); try { ws.terminate() } catch { /* 已关闭 */ } resolve() }

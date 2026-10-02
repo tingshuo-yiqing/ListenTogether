@@ -32,3 +32,6 @@ android/*.exit.txt
 
 # 装机核对用的 APK 副本不入库（可由源码重建，哈希锚在 README）
 docs/test-results/**/installed-*.apk
+
+# 协议模块由文档在 build/test 前生成
+server/src/realtime/protocol-schema.generated.ts

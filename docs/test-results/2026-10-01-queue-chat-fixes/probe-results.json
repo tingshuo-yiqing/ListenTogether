@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-01",
+  "scope": "isolated-local-probe",
+  "results": [
+    {
+      "name": "运行时拒绝不符合 schema 的 ID 与额外字段",
+      "passed": true,
+      "evidence": {
+        "accepted": false
+      }
+    },
+    {
+      "name": "播放命令复用 ID 去重且返回 ack",
+      "passed": true,
+      "evidence": {
+        "versionIncrements": 1,
+        "ackReceived": true
+      }
+    },
+    {
+      "name": "聊天限频错误关联 clientMessageId",
+      "passed": true,
+      "evidence": {
+        "status": 429,
+        "hasClientMessageId": true,
+        "retryAfterMs": 9999
+      }
+    },
+    {
+      "name": "满队列快照按 32KiB 输出分块",
+      "passed": true,
+      "evidence": {
+        "entries": 100,
+        "logicalBytes": 81873,
+        "frameBytes": [
+          32031,
+          32040,
+          18135
+        ],
+        "chunkCount": 3,
+        "method": "观察实际 WS 帧，领域逻辑快照保留完整数组"
+      }
+    },
+    {
+      "name": "恰好到期的重试不重新执行",
+      "passed": true,
+      "evidence": {
+        "permitsNewExecutionAtExactExpiry": false
+      }
+    },
+    {
+      "name": "去重记录每房间 4MiB 上限",
+      "passed": true,
+      "evidence": {
+        "records": 1700,
+        "bytes": 520200,
+        "capacityRejected": false
+      }
+    },
+    {
+      "name": "WS JSON null 安全返回错误，不抛未捕捉异常",
+      "passed": true,
+      "evidence": {
+        "uncaught": null
+      }
+    }
+  ]
+}

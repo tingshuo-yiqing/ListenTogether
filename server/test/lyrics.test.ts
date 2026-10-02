@@ -7,7 +7,7 @@ import { buildApp } from '../src/app.js';
 import type { Track } from '../src/library/catalog.js';
 
 function track(id: string, overrides: Partial<Track> = {}): Track {
-  return { id, title: id, durationMs: 10000, path: '', size: 100, artist: null, cover: null, coverVer: null, lyricsPath: null, lyricsVer: null, ...overrides };
+  return { id, title: id, durationMs: 10000, path: '', size: 100, artist: null, cover: null, coverVer: null, lyricsPath: null, lyricsVer: null, album: null, ...overrides };
 }
 
 test('lyrics: authentication, missing track/lyrics, UTF-8 text and no-store', async t => {
@@ -21,7 +21,7 @@ test('lyrics: authentication, missing track/lyrics, UTF-8 text and no-store', as
     track('dangling', { lyricsPath: join(directory, '不存在.lrc') })
   ], { timers: false });
   t.after(async () => { await app.close(); await rm(directory, { recursive: true, force: true }); });
-  const host = (await app.inject({ method: 'POST', url: '/api/rooms', payload: { nickname: 'host' } })).json();
+  const host = (await app.inject({ method: 'POST', url: '/api/rooms', payload: { nickname: 'host' }, headers: { 'x-listentogether-protocol': '2' } })).json();
   const headers = { authorization: 'Bearer ' + host.token };
   const base = '/api/rooms/' + host.code;
   // ① 鉴权：未带 token 直接 401（与音频/封面路由同一套成员令牌）。

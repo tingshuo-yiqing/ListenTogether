@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.listentogether.app.LrcTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-10-01T02:46:08" hostname="LAPTOP-8H39RU28" time="0.018">
+  <properties/>
+  <testcase name="cursorFindsLastLineAtOrBeforePosition" classname="com.listentogether.app.LrcTest" time="0.003"/>
+  <testcase name="parsesBasicLines" classname="com.listentogether.app.LrcTest" time="0.007"/>
+  <testcase name="dropsMetadataCommentsAndStamplessLines" classname="com.listentogether.app.LrcTest" time="0.001"/>
+  <testcase name="toleratesLeadingBom" classname="com.listentogether.app.LrcTest" time="0.0"/>
+  <testcase name="sortsOutOfOrderInput" classname="com.listentogether.app.LrcTest" time="0.001"/>
+  <testcase name="millisecondFracFormats" classname="com.listentogether.app.LrcTest" time="0.001"/>
+  <testcase name="multipleTagsShareOneLine" classname="com.listentogether.app.LrcTest" time="0.001"/>
+  <testcase name="cursorOnEmptyTableIsMinusOne" classname="com.listentogether.app.LrcTest" time="0.001"/>
+  <testcase name="garbageInputYieldsNothing" classname="com.listentogether.app.LrcTest" time="0.001"/>
+  <testcase name="toleratesBlankAndCrlf" classname="com.listentogether.app.LrcTest" time="0.0"/>
+  <testcase name="enhancedWordTagsTreatedAsPlain" classname="com.listentogether.app.LrcTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

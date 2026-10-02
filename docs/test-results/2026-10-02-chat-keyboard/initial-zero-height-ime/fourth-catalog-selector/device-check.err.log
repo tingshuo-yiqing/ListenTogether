@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "D:\ListenTogether\docs\test-results\2026-10-02-chat-keyboard\tools\device-check.py", line 209, in <module>
+    capture('after-catalog-keyboard', False, True)
+  File "D:\ListenTogether\docs\test-results\2026-10-02-chat-keyboard\tools\device-check.py", line 90, in capture
+    assert has_player == player, (name, has_player)
+           ^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('after-catalog-keyboard', True)

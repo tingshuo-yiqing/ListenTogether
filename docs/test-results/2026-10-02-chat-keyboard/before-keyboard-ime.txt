@@ -1,0 +1,895 @@
+Input Method Manager Service state:
+  mSystemReady=true
+  mInteractive=true
+  mConcurrentMultiUserModeEnabled=false
+  mCurrentImeUserId=0
+  mStylusIds=
+  mMenuControllerNew:
+    isShowing: false
+  mClientController:
+    ClientState{f45644f mUid=10051 mPid=8190 mSelfReportedDisplayId=0}:
+      client=com.android.server.inputmethod.IInputMethodClientInvoker@fcf6cdf
+      fallbackInputConnection=com.android.internal.inputmethod.IRemoteInputConnection$Stub$Proxy@1f77d2c
+      sessionRequested=false
+      sessionRequestedForAccessibility=true
+      curSession=SessionState{uid=10051 pid=8190 method=a8be3f5 session=182e58a channel=ClientState{f45644f mUid=10051 mPid=8190 mSelfReportedDisplayId=0} userId=0}
+      selfReportedDisplayId=0
+      uid=10051
+      pid=8190
+    ClientState{967f7fb mUid=10056 mPid=8117 mSelfReportedDisplayId=0}:
+      client=com.android.server.inputmethod.IInputMethodClientInvoker@5f54018
+      fallbackInputConnection=com.android.internal.inputmethod.IRemoteInputConnection$Stub$Proxy@d83ca71
+      sessionRequested=false
+      sessionRequestedForAccessibility=false
+      curSession=null
+      selfReportedDisplayId=0
+      uid=10056
+      pid=8117
+    ClientState{3cca537 mUid=1000 mPid=1601 mSelfReportedDisplayId=0}:
+      client=com.android.server.inputmethod.IInputMethodClientInvoker@8034aa4
+      fallbackInputConnection=com.android.internal.inputmethod.IRemoteInputConnection$Stub$Proxy@8fcf00d
+      sessionRequested=false
+      sessionRequestedForAccessibility=false
+      curSession=null
+      selfReportedDisplayId=0
+      uid=1000
+      pid=1601
+    ClientState{322503b mUid=10018 mPid=1080 mSelfReportedDisplayId=0}:
+      client=com.android.server.inputmethod.IInputMethodClientInvoker@be45bc2
+      fallbackInputConnection=com.android.internal.inputmethod.IRemoteInputConnection$Stub$Proxy@e3c5dd3
+      sessionRequested=false
+      sessionRequestedForAccessibility=false
+      curSession=SessionState{uid=10018 pid=1080 method=a8be3f5 session=d31d056 channel=ClientState{322503b mUid=10018 mPid=1080 mSelfReportedDisplayId=0} userId=0}
+      selfReportedDisplayId=0
+      uid=10018
+      pid=1080
+    ClientState{958009 mUid=10032 mPid=1090 mSelfReportedDisplayId=0}:
+      client=com.android.server.inputmethod.IInputMethodClientInvoker@ca0720e
+      fallbackInputConnection=com.android.internal.inputmethod.IRemoteInputConnection$Stub$Proxy@7e5042f
+      sessionRequested=false
+      sessionRequestedForAccessibility=false
+      curSession=null
+      selfReportedDisplayId=0
+      uid=10032
+      pid=1090
+  mUserDataRepository:
+    userId=0
+      unlocked=true
+      hasMainConnection=true
+      isVisibleBound=true
+      boundToMethod=true
+      curClient=ClientState{f45644f mUid=10051 mPid=8190 mSelfReportedDisplayId=0}
+      curEditorInfo:
+        inputType=0x28001 imeOptions=0x42000000 privateImeOptions=null
+        actionLabel=null actionId=0
+        initialSelStart=0 initialSelEnd=0 initialToolType=1 initialCapsMode=0x0
+        hintText=null label=null
+        packageName=com.listentogether.app autofillId=1073741824 fieldId=-1 fieldName=null
+        hintLocales=null
+        supportedHandwritingGestureTypes=SELECT|SELECT_RANGE|INSERT|DELETE|DELETE_RANGE|REMOVE_SPACE|JOIN_OR_SPLIT
+        supportedHandwritingGesturePreviewTypes=SELECT|SELECT_RANGE|DELETE|DELETE_RANGE
+        isStylusHandwritingEnabled=true
+        writingToolsEnabled=true
+        contentMimeTypes=null
+      imeBindingState:
+        mFocusedWindow=android.os.BinderProxy@bda980a
+        mFocusedWindowSoftInputMode=STATE_UNSPECIFIED|ADJUST_PAN|IS_FORWARD_NAVIGATION
+        mFocusedWindowClient=ClientState{f45644f mUid=10051 mPid=8190 mSelfReportedDisplayId=0}
+      enabledSession=SessionState{uid=10051 pid=8190 method=a8be3f5 session=182e58a channel=ClientState{f45644f mUid=10051 mPid=8190 mSelfReportedDisplayId=0} userId=0}
+      inFullscreenMode=false
+      imeDrawsNavBar=false
+      switchingController:
+        mSwitchingAwareRotationList:
+          rank=0 item=ImeSubtypeListItem{mImeName=Simple Keyboard mSubtypeName= mSubtypeIndex=0 mIsSystemLocale=false mIsSystemLanguage=false}
+        mSwitchingUnawareRotationList:
+          rank=0 item=ImeSubtypeListItem{mImeName=SogouIME-chuizi mSubtypeName=英语（美国） mSubtypeIndex=0 mIsSystemLocale=false mIsSystemLanguage=false}
+        mRotationList:
+          Static order:
+            i=0 item=ImeSubtypeListItem{mImeName=Simple Keyboard mSubtypeName= mSubtypeIndex=0 mIsSystemLocale=false mIsSystemLanguage=false}
+            i=1 item=ImeSubtypeListItem{mImeName=SogouIME-chuizi mSubtypeName=英语（美国） mSubtypeIndex=0 mIsSystemLocale=false mIsSystemLanguage=false}
+          Recency order:
+            i=0 item=ImeSubtypeListItem{mImeName=Simple Keyboard mSubtypeName= mSubtypeIndex=0 mIsSystemLocale=false mIsSystemLanguage=false}
+            i=1 item=ImeSubtypeListItem{mImeName=SogouIME-chuizi mSubtypeName=英语（美国） mSubtypeIndex=0 mIsSystemLocale=false mIsSystemLanguage=false}
+        mHardwareRotationList:
+          Static order:
+            i=0 item=ImeSubtypeListItem{mImeName=SogouIME-chuizi mSubtypeName=英语（美国） mSubtypeIndex=0 mIsSystemLocale=false mIsSystemLanguage=false}
+            i=1 item=ImeSubtypeListItem{mImeName=Simple Keyboard mSubtypeName= mSubtypeIndex=0 mIsSystemLocale=false mIsSystemLanguage=false}
+          Recency order:
+            i=0 item=ImeSubtypeListItem{mImeName=SogouIME-chuizi mSubtypeName=英语（美国） mSubtypeIndex=0 mIsSystemLocale=false mIsSystemLanguage=false}
+            i=1 item=ImeSubtypeListItem{mImeName=Simple Keyboard mSubtypeName= mSubtypeIndex=0 mIsSystemLocale=false mIsSystemLanguage=false}
+        User action since last switch: false
+      mLastEnabledInputMethodsStr=com.sohu.inputmethod.sogou.chuizi/com.sohu.inputmethod.sogou.SogouIME:rkr.simplekeyboard.inputmethod/.latin.LatinIME
+  mStartInputHistory:
+    StartInput #19:
+      time=2026-10-02 01:02:07.817 (timestamp=2796870) reason=CHECK_FOCUS restarting=false
+      imeToken=android.os.Binder@7e6b438 [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@8fd6df1 [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=25
+      softInputMode=STATE_UNSPECIFIED|ADJUST_PAN|IS_FORWARD_NAVIGATION
+      inputType=0x28001 imeOptions=0x42000000 fieldId=0xffffffff fieldName=null actionId=0 actionLabel=null
+    StartInput #20:
+      time=2026-10-02 01:02:07.819 (timestamp=2796872) reason=APP_CALLED_RESTART_INPUT_API restarting=true
+      imeToken=android.os.Binder@7e6b438 [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@8fd6df1 [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=26
+      softInputMode=STATE_UNSPECIFIED|ADJUST_PAN|IS_FORWARD_NAVIGATION
+      inputType=0x28001 imeOptions=0x42000000 fieldId=0xffffffff fieldName=null actionId=0 actionLabel=null
+    StartInput #21:
+      time=2026-10-02 01:02:17.519 (timestamp=2806573) reason=WINDOW_FOCUS_GAIN restarting=false
+      imeToken=android.os.Binder@7e6b438 [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@e4e3424 [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=27
+      softInputMode=STATE_UNSPECIFIED|ADJUST_PAN
+      inputType=0x0 imeOptions=0x0 fieldId=0x0 fieldName=null actionId=0 actionLabel=null
+    StartInput #22:
+      time=2026-10-02 01:02:20.730 (timestamp=2809784) reason=WINDOW_FOCUS_GAIN restarting=false
+      imeToken=android.os.Binder@7e6b438 [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@8fd6df1 [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=28
+      softInputMode=STATE_UNSPECIFIED|ADJUST_PAN
+      inputType=0x0 imeOptions=0x0 fieldId=0x0 fieldName=null actionId=0 actionLabel=null
+    StartInput #23:
+      time=2026-10-02 01:02:21.474 (timestamp=2810527) reason=WINDOW_FOCUS_GAIN restarting=false
+      imeToken=android.os.Binder@7e6b438 [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@e82e1d6 [app.lawnchair] targetUserId=0 targetDisplayId=0 clientBindSeq=29
+      softInputMode=STATE_UNSPECIFIED|ADJUST_NOTHING
+      inputType=0x0 imeOptions=0x0 fieldId=0x0 fieldName=null actionId=0 actionLabel=null
+    StartInput #24:
+      time=2026-10-02 01:02:24.502 (timestamp=2813556) reason=SESSION_CREATED_BY_IME restarting=false
+      imeToken=android.os.Binder@7e6b438 [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@f989609 [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=30
+      softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE|IS_FORWARD_NAVIGATION
+      inputType=0x0 imeOptions=0x0 fieldId=0x0 fieldName=null actionId=0 actionLabel=null
+    StartInput #25:
+      time=2026-10-02 01:02:40.403 (timestamp=2829456) reason=CHECK_FOCUS restarting=false
+      imeToken=android.os.Binder@7e6b438 [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@f989609 [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=31
+      softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE|IS_FORWARD_NAVIGATION
+      inputType=0x28001 imeOptions=0x42000000 fieldId=0xffffffff fieldName=null actionId=0 actionLabel=null
+    StartInput #26:
+      time=2026-10-02 01:02:40.404 (timestamp=2829457) reason=APP_CALLED_RESTART_INPUT_API restarting=true
+      imeToken=android.os.Binder@7e6b438 [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@f989609 [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=32
+      softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE|IS_FORWARD_NAVIGATION
+      inputType=0x28001 imeOptions=0x42000000 fieldId=0xffffffff fieldName=null actionId=0 actionLabel=null
+    StartInput #27:
+      time=2026-10-02 01:02:56.422 (timestamp=2845475) reason=APP_CALLED_RESTART_INPUT_API restarting=true
+      imeToken=android.os.Binder@7e6b438 [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@f989609 [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=33
+      softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE|IS_FORWARD_NAVIGATION
+      inputType=0x28001 imeOptions=0x42000000 fieldId=0xffffffff fieldName=null actionId=0 actionLabel=null
+    StartInput #28:
+      time=2026-10-02 01:03:09.130 (timestamp=2858184) reason=APP_CALLED_RESTART_INPUT_API restarting=true
+      imeToken=android.os.Binder@7e6b438 [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@f989609 [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=34
+      softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE
+      inputType=0x0 imeOptions=0x0 fieldId=0x0 fieldName=null actionId=0 actionLabel=null
+    StartInput #29:
+      time=2026-10-02 01:03:22.877 (timestamp=2871931) reason=APP_CALLED_RESTART_INPUT_API restarting=true
+      imeToken=android.os.Binder@7e6b438 [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@f989609 [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=35
+      softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE
+      inputType=0x8001 imeOptions=0x2000006 fieldId=0xffffffff fieldName=null actionId=0 actionLabel=null
+    StartInput #30:
+      time=2026-10-02 01:03:35.690 (timestamp=2884743) reason=WINDOW_FOCUS_GAIN restarting=false
+      imeToken=android.os.Binder@7e6b438 [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@e82e1d6 [app.lawnchair] targetUserId=0 targetDisplayId=0 clientBindSeq=36
+      softInputMode=STATE_UNSPECIFIED|ADJUST_NOTHING
+      inputType=0x0 imeOptions=0x0 fieldId=0x0 fieldName=null actionId=0 actionLabel=null
+    StartInput #31:
+      time=2026-10-02 01:03:36.222 (timestamp=2885276) reason=SESSION_CREATED_BY_IME restarting=false
+      imeToken=android.os.Binder@c9025d [com.sohu.inputmethod.sogou.chuizi/com.sohu.inputmethod.sogou.SogouIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@e82e1d6 [app.lawnchair] targetUserId=0 targetDisplayId=0 clientBindSeq=38
+      softInputMode=STATE_UNSPECIFIED|ADJUST_NOTHING
+      inputType=0x0 imeOptions=0x0 fieldId=0x0 fieldName=null actionId=0 actionLabel=null
+    StartInput #32:
+      time=2026-10-02 01:17:51.514 (timestamp=3740567) reason=SESSION_CREATED_BY_IME restarting=false
+      imeToken=android.os.Binder@1adc16b [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@e82e1d6 [app.lawnchair] targetUserId=0 targetDisplayId=0 clientBindSeq=40
+      softInputMode=STATE_UNSPECIFIED|ADJUST_NOTHING
+      inputType=0x0 imeOptions=0x0 fieldId=0x0 fieldName=null actionId=0 actionLabel=null
+    StartInput #33:
+      time=2026-10-02 01:17:54.955 (timestamp=3744009) reason=SESSION_CREATED_BY_IME restarting=false
+      imeToken=android.os.Binder@1adc16b [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@5538fc5 [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=41
+      softInputMode=STATE_UNSPECIFIED|ADJUST_PAN|IS_FORWARD_NAVIGATION
+      inputType=0x0 imeOptions=0x0 fieldId=0x0 fieldName=null actionId=0 actionLabel=null
+    StartInput #34:
+      time=2026-10-02 01:18:10.510 (timestamp=3759564) reason=CHECK_FOCUS restarting=false
+      imeToken=android.os.Binder@1adc16b [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@5538fc5 [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=42
+      softInputMode=STATE_UNSPECIFIED|ADJUST_PAN|IS_FORWARD_NAVIGATION
+      inputType=0x28001 imeOptions=0x42000000 fieldId=0xffffffff fieldName=null actionId=0 actionLabel=null
+    StartInput #35:
+      time=2026-10-02 01:18:10.512 (timestamp=3759565) reason=APP_CALLED_RESTART_INPUT_API restarting=true
+      imeToken=android.os.Binder@1adc16b [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@5538fc5 [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=43
+      softInputMode=STATE_UNSPECIFIED|ADJUST_PAN|IS_FORWARD_NAVIGATION
+      inputType=0x28001 imeOptions=0x42000000 fieldId=0xffffffff fieldName=null actionId=0 actionLabel=null
+    StartInput #36:
+      time=2026-10-02 01:18:19.935 (timestamp=3768989) reason=WINDOW_FOCUS_GAIN restarting=false
+      imeToken=android.os.Binder@1adc16b [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@f89c0e7 [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=44
+      softInputMode=STATE_UNSPECIFIED|ADJUST_PAN
+      inputType=0x0 imeOptions=0x0 fieldId=0x0 fieldName=null actionId=0 actionLabel=null
+    StartInput #37:
+      time=2026-10-02 01:18:23.144 (timestamp=3772197) reason=WINDOW_FOCUS_GAIN restarting=false
+      imeToken=android.os.Binder@1adc16b [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@5538fc5 [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=45
+      softInputMode=STATE_UNSPECIFIED|ADJUST_PAN
+      inputType=0x0 imeOptions=0x0 fieldId=0x0 fieldName=null actionId=0 actionLabel=null
+    StartInput #38:
+      time=2026-10-02 01:18:23.879 (timestamp=3772933) reason=WINDOW_FOCUS_GAIN restarting=false
+      imeToken=android.os.Binder@1adc16b [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@e82e1d6 [app.lawnchair] targetUserId=0 targetDisplayId=0 clientBindSeq=46
+      softInputMode=STATE_UNSPECIFIED|ADJUST_NOTHING
+      inputType=0x0 imeOptions=0x0 fieldId=0x0 fieldName=null actionId=0 actionLabel=null
+    StartInput #39:
+      time=2026-10-02 01:18:26.587 (timestamp=3775641) reason=SESSION_CREATED_BY_IME restarting=false
+      imeToken=android.os.Binder@1adc16b [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@9c51cc7 [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=47
+      softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE|IS_FORWARD_NAVIGATION
+      inputType=0x0 imeOptions=0x0 fieldId=0x0 fieldName=null actionId=0 actionLabel=null
+    StartInput #40:
+      time=2026-10-02 01:18:42.213 (timestamp=3791266) reason=CHECK_FOCUS restarting=false
+      imeToken=android.os.Binder@1adc16b [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@9c51cc7 [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=48
+      softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE|IS_FORWARD_NAVIGATION
+      inputType=0x28001 imeOptions=0x42000000 fieldId=0xffffffff fieldName=null actionId=0 actionLabel=null
+    StartInput #41:
+      time=2026-10-02 01:18:42.214 (timestamp=3791267) reason=APP_CALLED_RESTART_INPUT_API restarting=true
+      imeToken=android.os.Binder@1adc16b [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@9c51cc7 [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=49
+      softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE|IS_FORWARD_NAVIGATION
+      inputType=0x28001 imeOptions=0x42000000 fieldId=0xffffffff fieldName=null actionId=0 actionLabel=null
+    StartInput #42:
+      time=2026-10-02 01:18:57.105 (timestamp=3806158) reason=APP_CALLED_RESTART_INPUT_API restarting=true
+      imeToken=android.os.Binder@1adc16b [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@9c51cc7 [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=50
+      softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE|IS_FORWARD_NAVIGATION
+      inputType=0x28001 imeOptions=0x42000000 fieldId=0xffffffff fieldName=null actionId=0 actionLabel=null
+    StartInput #43:
+      time=2026-10-02 01:19:09.462 (timestamp=3818516) reason=APP_CALLED_RESTART_INPUT_API restarting=true
+      imeToken=android.os.Binder@1adc16b [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@9c51cc7 [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=51
+      softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE
+      inputType=0x0 imeOptions=0x0 fieldId=0x0 fieldName=null actionId=0 actionLabel=null
+    StartInput #44:
+      time=2026-10-02 01:19:23.539 (timestamp=3832593) reason=APP_CALLED_RESTART_INPUT_API restarting=true
+      imeToken=android.os.Binder@1adc16b [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@9c51cc7 [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=52
+      softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE
+      inputType=0x8001 imeOptions=0x2000006 fieldId=0xffffffff fieldName=null actionId=0 actionLabel=null
+    StartInput #45:
+      time=2026-10-02 01:19:57.957 (timestamp=3867010) reason=WINDOW_FOCUS_GAIN restarting=false
+      imeToken=android.os.Binder@1adc16b [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@e82e1d6 [app.lawnchair] targetUserId=0 targetDisplayId=0 clientBindSeq=53
+      softInputMode=STATE_UNSPECIFIED|ADJUST_NOTHING
+      inputType=0x0 imeOptions=0x0 fieldId=0x0 fieldName=null actionId=0 actionLabel=null
+    StartInput #46:
+      time=2026-10-02 01:19:58.625 (timestamp=3867679) reason=SESSION_CREATED_BY_IME restarting=false
+      imeToken=android.os.Binder@5a7158e [com.sohu.inputmethod.sogou.chuizi/com.sohu.inputmethod.sogou.SogouIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@e82e1d6 [app.lawnchair] targetUserId=0 targetDisplayId=0 clientBindSeq=55
+      softInputMode=STATE_UNSPECIFIED|ADJUST_NOTHING
+      inputType=0x0 imeOptions=0x0 fieldId=0x0 fieldName=null actionId=0 actionLabel=null
+    StartInput #47:
+      time=2026-10-02 01:23:06.391 (timestamp=4055445) reason=SESSION_CREATED_BY_IME restarting=false
+      imeToken=android.os.Binder@f91178b [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@e82e1d6 [app.lawnchair] targetUserId=0 targetDisplayId=0 clientBindSeq=57
+      softInputMode=STATE_UNSPECIFIED|ADJUST_NOTHING
+      inputType=0x0 imeOptions=0x0 fieldId=0x0 fieldName=null actionId=0 actionLabel=null
+    StartInput #48:
+      time=2026-10-02 01:23:10.287 (timestamp=4059340) reason=SESSION_CREATED_BY_IME restarting=false
+      imeToken=android.os.Binder@f91178b [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@bda980a [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=58
+      softInputMode=STATE_UNSPECIFIED|ADJUST_PAN|IS_FORWARD_NAVIGATION
+      inputType=0x0 imeOptions=0x0 fieldId=0x0 fieldName=null actionId=0 actionLabel=null
+    StartInput #49:
+      time=2026-10-02 01:23:25.547 (timestamp=4074601) reason=CHECK_FOCUS restarting=false
+      imeToken=android.os.Binder@f91178b [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@bda980a [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=59
+      softInputMode=STATE_UNSPECIFIED|ADJUST_PAN|IS_FORWARD_NAVIGATION
+      inputType=0x28001 imeOptions=0x42000000 fieldId=0xffffffff fieldName=null actionId=0 actionLabel=null
+    StartInput #50:
+      time=2026-10-02 01:23:25.549 (timestamp=4074602) reason=APP_CALLED_RESTART_INPUT_API restarting=true
+      imeToken=android.os.Binder@f91178b [rkr.simplekeyboard.inputmethod/.latin.LatinIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@bda980a [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=60
+      softInputMode=STATE_UNSPECIFIED|ADJUST_PAN|IS_FORWARD_NAVIGATION
+      inputType=0x28001 imeOptions=0x42000000 fieldId=0xffffffff fieldName=null actionId=0 actionLabel=null
+  mSoftInputShowHideHistory:
+    SoftInputShowHide[0] #5:
+      time=2026-10-02 00:54:33.148 (timestamp=2342201)
+      reason=HIDE_REMOVE_CLIENT inFullscreenMode=false
+      requestClient=ClientState{306d396 mUid=10051 mPid=4181 mSelfReportedDisplayId=0}
+      focusedWindowName=4db667d com.listentogether.app/com.listentogether.app.MainActivity
+      requestWindowName=4db667d com.listentogether.app/com.listentogether.app.MainActivity
+      imeControlTargetName=4db667d com.listentogether.app/com.listentogether.app.MainActivity
+      imeTargetNameFromWm=4db667d com.listentogether.app/com.listentogether.app.MainActivity
+      imeSurfaceParentName=Surface(name=ActivityRecord{219935100 u0 com.listentogether.app/.MainActivity)/@0xf16af62
+      editorInfo: inputType=0 privateImeOptions=null fieldId (viewId)=0
+      focusedWindowSoftInputMode=STATE_UNSPECIFIED|ADJUST_PAN|IS_FORWARD_NAVIGATION
+    SoftInputShowHide[0] #6:
+      time=2026-10-02 01:02:07.828 (timestamp=2796882)
+      reason=SHOW_SOFT_INPUT inFullscreenMode=false
+      requestClient=ClientState{49ccd6b mUid=10051 mPid=4924 mSelfReportedDisplayId=0}
+      focusedWindowName=4cd6dd6 com.listentogether.app/com.listentogether.app.MainActivity
+      requestWindowName=4cd6dd6 com.listentogether.app/com.listentogether.app.MainActivity
+      imeControlTargetName=4cd6dd6 com.listentogether.app/com.listentogether.app.MainActivity
+      imeTargetNameFromWm=4cd6dd6 com.listentogether.app/com.listentogether.app.MainActivity
+      imeSurfaceParentName=Surface(name=ActivityRecord{60483668 u0 com.listentogether.app/.MainActivity)/@0xabb3304
+      editorInfo: inputType=0 privateImeOptions=null fieldId (viewId)=0
+      focusedWindowSoftInputMode=STATE_UNSPECIFIED|ADJUST_PAN|IS_FORWARD_NAVIGATION
+    SoftInputShowHide[0] #7:
+      time=2026-10-02 01:02:13.651 (timestamp=2802704)
+      reason=HIDE_SOFT_INPUT inFullscreenMode=false
+      requestClient=ClientState{49ccd6b mUid=10051 mPid=4924 mSelfReportedDisplayId=0}
+      focusedWindowName=4cd6dd6 com.listentogether.app/com.listentogether.app.MainActivity
+      requestWindowName=4cd6dd6 com.listentogether.app/com.listentogether.app.MainActivity
+      imeControlTargetName=4cd6dd6 com.listentogether.app/com.listentogether.app.MainActivity
+      imeTargetNameFromWm=4cd6dd6 com.listentogether.app/com.listentogether.app.MainActivity
+      imeSurfaceParentName=Surface(name=ActivityRecord{60483668 u0 com.listentogether.app/.MainActivity)/@0xabb3304
+      editorInfo: inputType=0 privateImeOptions=null fieldId (viewId)=0
+      focusedWindowSoftInputMode=STATE_UNSPECIFIED|ADJUST_PAN|IS_FORWARD_NAVIGATION
+    SoftInputShowHide[0] #8:
+      time=2026-10-02 01:02:40.410 (timestamp=2829463)
+      reason=SHOW_SOFT_INPUT inFullscreenMode=false
+      requestClient=ClientState{8053772 mUid=10051 mPid=5426 mSelfReportedDisplayId=0}
+      focusedWindowName=5a4d00e com.listentogether.app/com.listentogether.app.MainActivity
+      requestWindowName=5a4d00e com.listentogether.app/com.listentogether.app.MainActivity
+      imeControlTargetName=5a4d00e com.listentogether.app/com.listentogether.app.MainActivity
+      imeTargetNameFromWm=5a4d00e com.listentogether.app/com.listentogether.app.MainActivity
+      imeSurfaceParentName=Surface(name=ActivityRecord{195787596 u0 com.listentogether.app/.MainActivity)/@0x532f323
+      editorInfo: inputType=0 privateImeOptions=null fieldId (viewId)=0
+      focusedWindowSoftInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE|IS_FORWARD_NAVIGATION
+    SoftInputShowHide[0] #9:
+      time=2026-10-02 01:02:56.422 (timestamp=2845476)
+      reason=SHOW_SOFT_INPUT inFullscreenMode=false
+      requestClient=ClientState{8053772 mUid=10051 mPid=5426 mSelfReportedDisplayId=0}
+      focusedWindowName=5a4d00e com.listentogether.app/com.listentogether.app.MainActivity
+      requestWindowName=5a4d00e com.listentogether.app/com.listentogether.app.MainActivity
+      imeControlTargetName=5a4d00e com.listentogether.app/com.listentogether.app.MainActivity
+      imeTargetNameFromWm=5a4d00e com.listentogether.app/com.listentogether.app.MainActivity
+      imeSurfaceParentName=Surface(name=ActivityRecord{195787596 u0 com.listentogether.app/.MainActivity)/@0x532f323
+      editorInfo: inputType=0 privateImeOptions=null fieldId (viewId)=0
+      focusedWindowSoftInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE|IS_FORWARD_NAVIGATION
+    SoftInputShowHide[0] #10:
+      time=2026-10-02 01:03:01.633 (timestamp=2850687)
+      reason=HIDE_SOFT_INPUT inFullscreenMode=false
+      requestClient=ClientState{8053772 mUid=10051 mPid=5426 mSelfReportedDisplayId=0}
+      focusedWindowName=5a4d00e com.listentogether.app/com.listentogether.app.MainActivity
+      requestWindowName=5a4d00e com.listentogether.app/com.listentogether.app.MainActivity
+      imeControlTargetName=5a4d00e com.listentogether.app/com.listentogether.app.MainActivity
+      imeTargetNameFromWm=5a4d00e com.listentogether.app/com.listentogether.app.MainActivity
+      imeSurfaceParentName=Surface(name=ActivityRecord{195787596 u0 com.listentogether.app/.MainActivity)/@0x532f323
+      editorInfo: inputType=0 privateImeOptions=null fieldId (viewId)=0
+      focusedWindowSoftInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE|IS_FORWARD_NAVIGATION
+    SoftInputShowHide[0] #11:
+      time=2026-10-02 01:03:22.891 (timestamp=2871945)
+      reason=SHOW_SOFT_INPUT inFullscreenMode=false
+      requestClient=ClientState{8053772 mUid=10051 mPid=5426 mSelfReportedDisplayId=0}
+      focusedWindowName=5a4d00e com.listentogether.app/com.listentogether.app.MainActivity
+      requestWindowName=5a4d00e com.listentogether.app/com.listentogether.app.MainActivity
+      imeControlTargetName=5a4d00e com.listentogether.app/com.listentogether.app.MainActivity
+      imeTargetNameFromWm=5a4d00e com.listentogether.app/com.listentogether.app.MainActivity
+      imeSurfaceParentName=Surface(name=ActivityRecord{195787596 u0 com.listentogether.app/.MainActivity)/@0x532f323
+      editorInfo: inputType=0 privateImeOptions=null fieldId (viewId)=0
+      focusedWindowSoftInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE
+    SoftInputShowHide[0] #12:
+      time=2026-10-02 01:03:35.545 (timestamp=2884599)
+      reason=HIDE_REMOVE_CLIENT inFullscreenMode=false
+      requestClient=ClientState{8053772 mUid=10051 mPid=5426 mSelfReportedDisplayId=0}
+      focusedWindowName=5a4d00e com.listentogether.app/com.listentogether.app.MainActivity
+      requestWindowName=5a4d00e com.listentogether.app/com.listentogether.app.MainActivity
+      imeControlTargetName=5a4d00e com.listentogether.app/com.listentogether.app.MainActivity
+      imeTargetNameFromWm=5a4d00e com.listentogether.app/com.listentogether.app.MainActivity
+      imeSurfaceParentName=Surface(name=ActivityRecord{195787596 u0 com.listentogether.app/.MainActivity)/@0x532f323
+      editorInfo: inputType=0 privateImeOptions=null fieldId (viewId)=0
+      focusedWindowSoftInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE
+    SoftInputShowHide[0] #13:
+      time=2026-10-02 01:18:10.519 (timestamp=3759572)
+      reason=SHOW_SOFT_INPUT inFullscreenMode=false
+      requestClient=ClientState{58f731f mUid=10051 mPid=6621 mSelfReportedDisplayId=0}
+      focusedWindowName=1c06d1a com.listentogether.app/com.listentogether.app.MainActivity
+      requestWindowName=1c06d1a com.listentogether.app/com.listentogether.app.MainActivity
+      imeControlTargetName=1c06d1a com.listentogether.app/com.listentogether.app.MainActivity
+      imeTargetNameFromWm=1c06d1a com.listentogether.app/com.listentogether.app.MainActivity
+      imeSurfaceParentName=Surface(name=ActivityRecord{198557240 u0 com.listentogether.app/.MainActivity)/@0x8f50
+      editorInfo: inputType=0 privateImeOptions=null fieldId (viewId)=0
+      focusedWindowSoftInputMode=STATE_UNSPECIFIED|ADJUST_PAN|IS_FORWARD_NAVIGATION
+    SoftInputShowHide[0] #14:
+      time=2026-10-02 01:18:16.343 (timestamp=3765397)
+      reason=HIDE_SOFT_INPUT inFullscreenMode=false
+      requestClient=ClientState{58f731f mUid=10051 mPid=6621 mSelfReportedDisplayId=0}
+      focusedWindowName=1c06d1a com.listentogether.app/com.listentogether.app.MainActivity
+      requestWindowName=1c06d1a com.listentogether.app/com.listentogether.app.MainActivity
+      imeControlTargetName=1c06d1a com.listentogether.app/com.listentogether.app.MainActivity
+      imeTargetNameFromWm=1c06d1a com.listentogether.app/com.listentogether.app.MainActivity
+      imeSurfaceParentName=Surface(name=ActivityRecord{198557240 u0 com.listentogether.app/.MainActivity)/@0x8f50
+      editorInfo: inputType=0 privateImeOptions=null fieldId (viewId)=0
+      focusedWindowSoftInputMode=STATE_UNSPECIFIED|ADJUST_PAN|IS_FORWARD_NAVIGATION
+    SoftInputShowHide[0] #15:
+      time=2026-10-02 01:18:42.220 (timestamp=3791274)
+      reason=SHOW_SOFT_INPUT inFullscreenMode=false
+      requestClient=ClientState{cc8b451 mUid=10051 mPid=7125 mSelfReportedDisplayId=0}
+      focusedWindowName=9c12f4 com.listentogether.app/com.listentogether.app.MainActivity
+      requestWindowName=9c12f4 com.listentogether.app/com.listentogether.app.MainActivity
+      imeControlTargetName=9c12f4 com.listentogether.app/com.listentogether.app.MainActivity
+      imeTargetNameFromWm=9c12f4 com.listentogether.app/com.listentogether.app.MainActivity
+      imeSurfaceParentName=Surface(name=ActivityRecord{79990934 u0 com.listentogether.app/.MainActivity)/@0x9261579
+      editorInfo: inputType=0 privateImeOptions=null fieldId (viewId)=0
+      focusedWindowSoftInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE|IS_FORWARD_NAVIGATION
+    SoftInputShowHide[0] #16:
+      time=2026-10-02 01:18:57.105 (timestamp=3806159)
+      reason=SHOW_SOFT_INPUT inFullscreenMode=false
+      requestClient=ClientState{cc8b451 mUid=10051 mPid=7125 mSelfReportedDisplayId=0}
+      focusedWindowName=9c12f4 com.listentogether.app/com.listentogether.app.MainActivity
+      requestWindowName=9c12f4 com.listentogether.app/com.listentogether.app.MainActivity
+      imeControlTargetName=9c12f4 com.listentogether.app/com.listentogether.app.MainActivity
+      imeTargetNameFromWm=9c12f4 com.listentogether.app/com.listentogether.app.MainActivity
+      imeSurfaceParentName=Surface(name=ActivityRecord{79990934 u0 com.listentogether.app/.MainActivity)/@0x9261579
+      editorInfo: inputType=0 privateImeOptions=null fieldId (viewId)=0
+      focusedWindowSoftInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE|IS_FORWARD_NAVIGATION
+    SoftInputShowHide[0] #17:
+      time=2026-10-02 01:19:02.159 (timestamp=3811212)
+      reason=HIDE_SOFT_INPUT inFullscreenMode=false
+      requestClient=ClientState{cc8b451 mUid=10051 mPid=7125 mSelfReportedDisplayId=0}
+      focusedWindowName=9c12f4 com.listentogether.app/com.listentogether.app.MainActivity
+      requestWindowName=9c12f4 com.listentogether.app/com.listentogether.app.MainActivity
+      imeControlTargetName=9c12f4 com.listentogether.app/com.listentogether.app.MainActivity
+      imeTargetNameFromWm=9c12f4 com.listentogether.app/com.listentogether.app.MainActivity
+      imeSurfaceParentName=Surface(name=ActivityRecord{79990934 u0 com.listentogether.app/.MainActivity)/@0x9261579
+      editorInfo: inputType=0 privateImeOptions=null fieldId (viewId)=0
+      focusedWindowSoftInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE|IS_FORWARD_NAVIGATION
+    SoftInputShowHide[0] #18:
+      time=2026-10-02 01:19:23.543 (timestamp=3832596)
+      reason=SHOW_SOFT_INPUT inFullscreenMode=false
+      requestClient=ClientState{cc8b451 mUid=10051 mPid=7125 mSelfReportedDisplayId=0}
+      focusedWindowName=9c12f4 com.listentogether.app/com.listentogether.app.MainActivity
+      requestWindowName=9c12f4 com.listentogether.app/com.listentogether.app.MainActivity
+      imeControlTargetName=9c12f4 com.listentogether.app/com.listentogether.app.MainActivity
+      imeTargetNameFromWm=9c12f4 com.listentogether.app/com.listentogether.app.MainActivity
+      imeSurfaceParentName=Surface(name=ActivityRecord{79990934 u0 com.listentogether.app/.MainActivity)/@0x9261579
+      editorInfo: inputType=0 privateImeOptions=null fieldId (viewId)=0
+      focusedWindowSoftInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE
+    SoftInputShowHide[0] #19:
+      time=2026-10-02 01:19:57.787 (timestamp=3866841)
+      reason=HIDE_REMOVE_CLIENT inFullscreenMode=false
+      requestClient=ClientState{cc8b451 mUid=10051 mPid=7125 mSelfReportedDisplayId=0}
+      focusedWindowName=9c12f4 com.listentogether.app/com.listentogether.app.MainActivity
+      requestWindowName=9c12f4 com.listentogether.app/com.listentogether.app.MainActivity
+      imeControlTargetName=9c12f4 com.listentogether.app/com.listentogether.app.MainActivity
+      imeTargetNameFromWm=9c12f4 com.listentogether.app/com.listentogether.app.MainActivity
+      imeSurfaceParentName=Surface(name=ActivityRecord{79990934 u0 com.listentogether.app/.MainActivity)/@0x9261579
+      editorInfo: inputType=0 privateImeOptions=null fieldId (viewId)=0
+      focusedWindowSoftInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE
+    SoftInputShowHide[0] #20:
+      time=2026-10-02 01:23:25.554 (timestamp=4074607)
+      reason=SHOW_SOFT_INPUT inFullscreenMode=false
+      requestClient=ClientState{f45644f mUid=10051 mPid=8190 mSelfReportedDisplayId=0}
+      focusedWindowName=821f87b com.listentogether.app/com.listentogether.app.MainActivity
+      requestWindowName=821f87b com.listentogether.app/com.listentogether.app.MainActivity
+      imeControlTargetName=821f87b com.listentogether.app/com.listentogether.app.MainActivity
+      imeTargetNameFromWm=821f87b com.listentogether.app/com.listentogether.app.MainActivity
+      imeSurfaceParentName=Surface(name=ActivityRecord{108647148 u0 com.listentogether.app/.MainActivity)/@0xd224945
+      editorInfo: inputType=0 privateImeOptions=null fieldId (viewId)=0
+      focusedWindowSoftInputMode=STATE_UNSPECIFIED|ADJUST_PAN|IS_FORWARD_NAVIGATION
+  mImeTrackerService#History:
+    mLiveEntries: 0 elements
+    mEntries: 60 elements
+      #0 TYPE_HIDE - STATUS_CANCEL - app.lawnchair:814adaa5 (2ms):
+        startTime=2026-10-02 00:15:39.598 ORIGIN_SERVER
+        reason=HIDE_UNSPECIFIED_WINDOW PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #1 TYPE_HIDE - STATUS_CANCEL - com.listentogether.app:a6bd2e20 (2ms):
+        startTime=2026-10-02 00:32:07.025 ORIGIN_SERVER
+        reason=HIDE_UNSPECIFIED_WINDOW PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #3 TYPE_SHOW - STATUS_CANCEL - com.listentogether.app:87673ba9 (1ms):
+        startTime=2026-10-02 00:32:24.459 ORIGIN_CLIENT
+        reason=SHOW_SOFT_INPUT PHASE_CLIENT_REPORT_REQUESTED_VISIBLE_TYPES
+        requestWindowName=not set
+      #2 TYPE_SHOW - STATUS_CANCEL - com.listentogether.app:9453173e (104ms):
+        startTime=2026-10-02 00:32:24.385 ORIGIN_CLIENT
+        reason=SHOW_SOFT_INPUT_BY_INSETS_API PHASE_WM_POST_LAYOUT_NOTIFY_CONTROLS_CHANGED
+        requestWindowName=66b71f7 com.listentogether.app/com.listentogether.app.MainActivity
+      #4 TYPE_HIDE - STATUS_CANCEL - com.sohu.inputmethod.sogou.chuizi:32c078dc (5ms):
+        startTime=2026-10-02 00:32:29.451 ORIGIN_IME
+        reason=HIDE_SOFT_INPUT_BY_BACK_KEY PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #5 TYPE_HIDE - STATUS_CANCEL - com.listentogether.app:81a9122 (0ms):
+        startTime=2026-10-02 00:32:45.948 ORIGIN_SERVER
+        reason=HIDE_REMOVE_CLIENT PHASE_SERVER_SHOULD_HIDE
+        requestWindowName=not set
+      #6 TYPE_HIDE - STATUS_CANCEL - app.lawnchair:78537f8c (1ms):
+        startTime=2026-10-02 00:32:46.240 ORIGIN_SERVER
+        reason=HIDE_UNSPECIFIED_WINDOW PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #7 TYPE_HIDE - STATUS_CANCEL - com.listentogether.app:c874edf6 (1ms):
+        startTime=2026-10-02 00:45:23.701 ORIGIN_SERVER
+        reason=HIDE_UNSPECIFIED_WINDOW PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #9 TYPE_SHOW - STATUS_CANCEL - com.listentogether.app:30ce8815 (1ms):
+        startTime=2026-10-02 00:45:40.331 ORIGIN_CLIENT
+        reason=SHOW_SOFT_INPUT PHASE_CLIENT_REPORT_REQUESTED_VISIBLE_TYPES
+        requestWindowName=not set
+      #8 TYPE_SHOW - STATUS_SUCCESS - com.listentogether.app:a6c86522 (288ms):
+        startTime=2026-10-02 00:45:40.310 ORIGIN_CLIENT
+        reason=SHOW_SOFT_INPUT_BY_INSETS_API PHASE_CLIENT_ANIMATION_FINISHED_SHOW
+        requestWindowName=b8beee4 com.listentogether.app/com.listentogether.app.MainActivity
+      #10 TYPE_HIDE - STATUS_SUCCESS - com.listentogether.app:a13b22ad (10ms):
+        startTime=2026-10-02 00:45:56.705 ORIGIN_SERVER
+        reason=HIDE_REMOVE_CLIENT PHASE_CLIENT_NOTIFY_IME_VISIBILITY_CHANGED
+        requestWindowName=b8beee4 com.listentogether.app/com.listentogether.app.MainActivity
+      #11 TYPE_HIDE - STATUS_CANCEL - app.lawnchair:bb1c21 (6ms):
+        startTime=2026-10-02 00:45:56.889 ORIGIN_SERVER
+        reason=HIDE_UNSPECIFIED_WINDOW PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #12 TYPE_HIDE - STATUS_CANCEL - com.listentogether.app:449beb63 (5ms):
+        startTime=2026-10-02 00:54:00.285 ORIGIN_SERVER
+        reason=HIDE_UNSPECIFIED_WINDOW PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #14 TYPE_SHOW - STATUS_CANCEL - com.listentogether.app:478e1652 (1ms):
+        startTime=2026-10-02 00:54:16.104 ORIGIN_CLIENT
+        reason=SHOW_SOFT_INPUT PHASE_CLIENT_REPORT_REQUESTED_VISIBLE_TYPES
+        requestWindowName=not set
+      #13 TYPE_SHOW - STATUS_CANCEL - com.listentogether.app:6f117882 (87ms):
+        startTime=2026-10-02 00:54:16.085 ORIGIN_CLIENT
+        reason=SHOW_SOFT_INPUT_BY_INSETS_API PHASE_WM_POST_LAYOUT_NOTIFY_CONTROLS_CHANGED
+        requestWindowName=4db667d com.listentogether.app/com.listentogether.app.MainActivity
+      #15 TYPE_HIDE - STATUS_SUCCESS - com.listentogether.app:1f16fdcc (25ms):
+        startTime=2026-10-02 00:54:33.146 ORIGIN_SERVER
+        reason=HIDE_REMOVE_CLIENT PHASE_WM_NOTIFY_IME_VISIBILITY_CHANGED_FROM_CLIENT
+        requestWindowName=4db667d com.listentogether.app/com.listentogether.app.MainActivity
+      #16 TYPE_HIDE - STATUS_CANCEL - app.lawnchair:f61dc0ab (2ms):
+        startTime=2026-10-02 00:54:33.375 ORIGIN_SERVER
+        reason=HIDE_UNSPECIFIED_WINDOW PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #17 TYPE_HIDE - STATUS_CANCEL - com.listentogether.app:476c1c07 (2ms):
+        startTime=2026-10-02 01:01:52.119 ORIGIN_SERVER
+        reason=HIDE_UNSPECIFIED_WINDOW PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #19 TYPE_SHOW - STATUS_CANCEL - com.listentogether.app:68f37183 (5ms):
+        startTime=2026-10-02 01:02:07.848 ORIGIN_CLIENT
+        reason=SHOW_SOFT_INPUT PHASE_CLIENT_REPORT_REQUESTED_VISIBLE_TYPES
+        requestWindowName=not set
+      #18 TYPE_SHOW - STATUS_SUCCESS - com.listentogether.app:fe63b9b (338ms):
+        startTime=2026-10-02 01:02:07.816 ORIGIN_CLIENT
+        reason=SHOW_SOFT_INPUT_BY_INSETS_API PHASE_CLIENT_ANIMATION_FINISHED_SHOW
+        requestWindowName=4cd6dd6 com.listentogether.app/com.listentogether.app.MainActivity
+      #20 TYPE_HIDE - STATUS_CANCEL - rkr.simplekeyboard.inputmethod:579ed05d (2ms):
+        startTime=2026-10-02 01:02:13.451 ORIGIN_IME
+        reason=HIDE_SOFT_INPUT_BY_BACK_KEY PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #21 TYPE_HIDE - STATUS_CANCEL - com.listentogether.app:6563536e (1ms):
+        startTime=2026-10-02 01:02:17.519 ORIGIN_SERVER
+        reason=HIDE_UNSPECIFIED_WINDOW PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #22 TYPE_HIDE - STATUS_FAIL - com.listentogether.app:7b3c5506 (0ms):
+        startTime=2026-10-02 01:02:20.725 ORIGIN_CLIENT
+        reason=HIDE_SOFT_INPUT PHASE_CLIENT_VIEW_SERVED
+        requestWindowName=not set
+      #23 TYPE_HIDE - STATUS_CANCEL - com.listentogether.app:57b7200a (1ms):
+        startTime=2026-10-02 01:02:20.725 ORIGIN_CLIENT
+        reason=HIDE_SOFT_INPUT_BY_INSETS_API PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #24 TYPE_HIDE - STATUS_CANCEL - com.listentogether.app:3d25d2 (48ms):
+        startTime=2026-10-02 01:02:20.730 ORIGIN_SERVER
+        reason=HIDE_UNSPECIFIED_WINDOW PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #25 TYPE_HIDE - STATUS_CANCEL - com.listentogether.app:9b2c3b62 (0ms):
+        startTime=2026-10-02 01:02:21.314 ORIGIN_SERVER
+        reason=HIDE_REMOVE_CLIENT PHASE_SERVER_SHOULD_HIDE
+        requestWindowName=not set
+      #26 TYPE_HIDE - STATUS_CANCEL - app.lawnchair:de626aae (2ms):
+        startTime=2026-10-02 01:02:21.474 ORIGIN_SERVER
+        reason=HIDE_UNSPECIFIED_WINDOW PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #27 TYPE_HIDE - STATUS_CANCEL - com.listentogether.app:da196f84 (1ms):
+        startTime=2026-10-02 01:02:24.501 ORIGIN_SERVER
+        reason=HIDE_UNSPECIFIED_WINDOW PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #29 TYPE_SHOW - STATUS_CANCEL - com.listentogether.app:5f7f646c (4ms):
+        startTime=2026-10-02 01:02:40.430 ORIGIN_CLIENT
+        reason=SHOW_SOFT_INPUT PHASE_CLIENT_REPORT_REQUESTED_VISIBLE_TYPES
+        requestWindowName=not set
+      #28 TYPE_SHOW - STATUS_SUCCESS - com.listentogether.app:4892a982 (251ms):
+        startTime=2026-10-02 01:02:40.403 ORIGIN_CLIENT
+        reason=SHOW_SOFT_INPUT_BY_INSETS_API PHASE_CLIENT_ANIMATION_FINISHED_SHOW
+        requestWindowName=5a4d00e com.listentogether.app/com.listentogether.app.MainActivity
+      #31 TYPE_HIDE - STATUS_CANCEL - rkr.simplekeyboard.inputmethod:85eba261 (3ms):
+        startTime=2026-10-02 01:03:01.429 ORIGIN_IME
+        reason=HIDE_SOFT_INPUT_BY_BACK_KEY PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #30 TYPE_SHOW - STATUS_TIMEOUT - com.listentogether.app:1e98ad46 (10004ms):
+        startTime=2026-10-02 01:02:56.422 ORIGIN_SERVER
+        reason=ATTACH_NEW_INPUT PHASE_WM_GET_CONTROL_WITH_LEASH
+        requestWindowName=5a4d00e com.listentogether.app/com.listentogether.app.MainActivity
+      #32 TYPE_HIDE - STATUS_CANCEL - com.listentogether.app:44b0ff28 (0ms):
+        startTime=2026-10-02 01:03:09.128 ORIGIN_CLIENT
+        reason=HIDE_SOFT_INPUT_BY_INSETS_API PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #34 TYPE_SHOW - STATUS_CANCEL - com.listentogether.app:896cbef6 (0ms):
+        startTime=2026-10-02 01:03:22.893 ORIGIN_CLIENT
+        reason=SHOW_SOFT_INPUT PHASE_CLIENT_APPLY_ANIMATION
+        requestWindowName=not set
+      #33 TYPE_SHOW - STATUS_CANCEL - com.listentogether.app:24f6ab8a (31ms):
+        startTime=2026-10-02 01:03:22.877 ORIGIN_CLIENT
+        reason=SHOW_SOFT_INPUT_BY_INSETS_API PHASE_WM_POST_LAYOUT_NOTIFY_CONTROLS_CHANGED
+        requestWindowName=5a4d00e com.listentogether.app/com.listentogether.app.MainActivity
+      #35 TYPE_HIDE - STATUS_SUCCESS - com.listentogether.app:c3581616 (25ms):
+        startTime=2026-10-02 01:03:35.517 ORIGIN_SERVER
+        reason=HIDE_REMOVE_CLIENT PHASE_CLIENT_NOTIFY_IME_VISIBILITY_CHANGED
+        requestWindowName=not set
+      #36 TYPE_HIDE - STATUS_CANCEL - app.lawnchair:ceb45754 (1ms):
+        startTime=2026-10-02 01:03:35.689 ORIGIN_SERVER
+        reason=HIDE_UNSPECIFIED_WINDOW PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #37 TYPE_HIDE - STATUS_CANCEL - com.listentogether.app:85629229 (1ms):
+        startTime=2026-10-02 01:17:54.953 ORIGIN_SERVER
+        reason=HIDE_UNSPECIFIED_WINDOW PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #39 TYPE_SHOW - STATUS_CANCEL - com.listentogether.app:7061284b (0ms):
+        startTime=2026-10-02 01:18:10.529 ORIGIN_CLIENT
+        reason=SHOW_SOFT_INPUT PHASE_CLIENT_REPORT_REQUESTED_VISIBLE_TYPES
+        requestWindowName=not set
+      #38 TYPE_SHOW - STATUS_CANCEL - com.listentogether.app:2c37036a (91ms):
+        startTime=2026-10-02 01:18:10.510 ORIGIN_CLIENT
+        reason=SHOW_SOFT_INPUT_BY_INSETS_API PHASE_WM_POST_LAYOUT_NOTIFY_CONTROLS_CHANGED
+        requestWindowName=1c06d1a com.listentogether.app/com.listentogether.app.MainActivity
+      #40 TYPE_HIDE - STATUS_CANCEL - rkr.simplekeyboard.inputmethod:a4b52682 (3ms):
+        startTime=2026-10-02 01:18:16.150 ORIGIN_IME
+        reason=HIDE_SOFT_INPUT_BY_BACK_KEY PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #41 TYPE_HIDE - STATUS_CANCEL - com.listentogether.app:3d449695 (3ms):
+        startTime=2026-10-02 01:18:19.934 ORIGIN_SERVER
+        reason=HIDE_UNSPECIFIED_WINDOW PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #42 TYPE_HIDE - STATUS_FAIL - com.listentogether.app:b18aa972 (0ms):
+        startTime=2026-10-02 01:18:23.138 ORIGIN_CLIENT
+        reason=HIDE_SOFT_INPUT PHASE_CLIENT_VIEW_SERVED
+        requestWindowName=not set
+      #43 TYPE_HIDE - STATUS_CANCEL - com.listentogether.app:731ef5ce (0ms):
+        startTime=2026-10-02 01:18:23.138 ORIGIN_CLIENT
+        reason=HIDE_SOFT_INPUT_BY_INSETS_API PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #44 TYPE_HIDE - STATUS_CANCEL - com.listentogether.app:997e4eab (22ms):
+        startTime=2026-10-02 01:18:23.143 ORIGIN_SERVER
+        reason=HIDE_UNSPECIFIED_WINDOW PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #45 TYPE_HIDE - STATUS_CANCEL - com.listentogether.app:b20334e8 (3ms):
+        startTime=2026-10-02 01:18:23.717 ORIGIN_SERVER
+        reason=HIDE_REMOVE_CLIENT PHASE_SERVER_SHOULD_HIDE
+        requestWindowName=not set
+      #46 TYPE_HIDE - STATUS_CANCEL - app.lawnchair:a26d1468 (1ms):
+        startTime=2026-10-02 01:18:23.878 ORIGIN_SERVER
+        reason=HIDE_UNSPECIFIED_WINDOW PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #47 TYPE_HIDE - STATUS_CANCEL - com.listentogether.app:58626f5d (2ms):
+        startTime=2026-10-02 01:18:26.586 ORIGIN_SERVER
+        reason=HIDE_UNSPECIFIED_WINDOW PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #49 TYPE_SHOW - STATUS_CANCEL - com.listentogether.app:e58254bc (1ms):
+        startTime=2026-10-02 01:18:42.240 ORIGIN_CLIENT
+        reason=SHOW_SOFT_INPUT PHASE_CLIENT_REPORT_REQUESTED_VISIBLE_TYPES
+        requestWindowName=not set
+      #48 TYPE_SHOW - STATUS_SUCCESS - com.listentogether.app:f508fcf1 (260ms):
+        startTime=2026-10-02 01:18:42.212 ORIGIN_CLIENT
+        reason=SHOW_SOFT_INPUT_BY_INSETS_API PHASE_CLIENT_ANIMATION_FINISHED_SHOW
+        requestWindowName=9c12f4 com.listentogether.app/com.listentogether.app.MainActivity
+      #51 TYPE_HIDE - STATUS_CANCEL - rkr.simplekeyboard.inputmethod:b983d301 (2ms):
+        startTime=2026-10-02 01:19:01.970 ORIGIN_IME
+        reason=HIDE_SOFT_INPUT_BY_BACK_KEY PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #50 TYPE_SHOW - STATUS_TIMEOUT - com.listentogether.app:fc65f079 (10005ms):
+        startTime=2026-10-02 01:18:57.105 ORIGIN_SERVER
+        reason=ATTACH_NEW_INPUT PHASE_WM_GET_CONTROL_WITH_LEASH
+        requestWindowName=9c12f4 com.listentogether.app/com.listentogether.app.MainActivity
+      #52 TYPE_HIDE - STATUS_CANCEL - com.listentogether.app:6e65e2b7 (0ms):
+        startTime=2026-10-02 01:19:09.461 ORIGIN_CLIENT
+        reason=HIDE_SOFT_INPUT_BY_INSETS_API PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #53 TYPE_SHOW - STATUS_CANCEL - com.listentogether.app:479eb0fe (10ms):
+        startTime=2026-10-02 01:19:23.539 ORIGIN_CLIENT
+        reason=SHOW_SOFT_INPUT_BY_INSETS_API PHASE_WM_POST_LAYOUT_NOTIFY_CONTROLS_CHANGED
+        requestWindowName=9c12f4 com.listentogether.app/com.listentogether.app.MainActivity
+      #54 TYPE_SHOW - STATUS_CANCEL - com.listentogether.app:7c15e7b5 (0ms):
+        startTime=2026-10-02 01:19:23.550 ORIGIN_CLIENT
+        reason=SHOW_SOFT_INPUT PHASE_CLIENT_APPLY_ANIMATION
+        requestWindowName=not set
+      #55 TYPE_HIDE - STATUS_SUCCESS - com.listentogether.app:ed5344b (7ms):
+        startTime=2026-10-02 01:19:57.765 ORIGIN_SERVER
+        reason=HIDE_REMOVE_CLIENT PHASE_CLIENT_NOTIFY_IME_VISIBILITY_CHANGED
+        requestWindowName=not set
+      #56 TYPE_HIDE - STATUS_CANCEL - app.lawnchair:2b6832df (0ms):
+        startTime=2026-10-02 01:19:57.956 ORIGIN_SERVER
+        reason=HIDE_UNSPECIFIED_WINDOW PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #57 TYPE_HIDE - STATUS_CANCEL - com.listentogether.app:a7b35a61 (13ms):
+        startTime=2026-10-02 01:23:10.282 ORIGIN_SERVER
+        reason=HIDE_UNSPECIFIED_WINDOW PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #59 TYPE_SHOW - STATUS_CANCEL - com.listentogether.app:219ac333 (3ms):
+        startTime=2026-10-02 01:23:25.568 ORIGIN_CLIENT
+        reason=SHOW_SOFT_INPUT PHASE_CLIENT_REPORT_REQUESTED_VISIBLE_TYPES
+        requestWindowName=not set
+      #58 TYPE_SHOW - STATUS_SUCCESS - com.listentogether.app:4a28cc10 (340ms):
+        startTime=2026-10-02 01:23:25.549 ORIGIN_CLIENT
+        reason=SHOW_SOFT_INPUT_BY_INSETS_API PHASE_CLIENT_ANIMATION_FINISHED_SHOW
+        requestWindowName=821f87b com.listentogether.app/com.listentogether.app.MainActivity
+  UserId=0
+    mBindingController:
+      mSelectedMethodId=rkr.simplekeyboard.inputmethod/.latin.LatinIME
+      mCurrentSubtype=android.view.inputmethod.InputMethodSubtype@414521d7
+      mCurSeq=60
+      mCurId=rkr.simplekeyboard.inputmethod/.latin.LatinIME
+      mHasMainConnection=true
+      mVisibleBound=true
+      mCurToken=android.os.Binder@f91178b
+      mCurTokenDisplayId=0
+      mCurHostInputToken=null
+      mCurIntent=Intent { act=android.view.InputMethod cmp=rkr.simplekeyboard.inputmethod/.latin.LatinIME (has extras) }
+      mCurMethod=com.android.server.inputmethod.IInputMethodInvoker@43418d7
+      mImeWindowVis=3
+      mBackDisposition=0
+      mDisplayIdToShowIme=0
+      mDeviceIdToShowIme=0
+      mSupportsStylusHw=false
+      mSupportsConnectionlessStylusHw=false
+    mCurClient=ClientState{f45644f mUid=10051 mPid=8190 mSelfReportedDisplayId=0}
+    mFocusedWindowPerceptible={null=true, android.os.BinderProxy@bda980a=true, android.os.BinderProxy@3f859f6=true, android.os.BinderProxy@e82e1d6=true}
+    mImeBindingState:
+      mFocusedWindow=android.os.BinderProxy@bda980a
+      mFocusedWindowSoftInputMode=STATE_UNSPECIFIED|ADJUST_PAN|IS_FORWARD_NAVIGATION
+      mFocusedWindowClient=ClientState{f45644f mUid=10051 mPid=8190 mSelfReportedDisplayId=0}
+    mBoundToMethod=true
+    mEnabledSession=SessionState{uid=10051 pid=8190 method=a8be3f5 session=182e58a channel=ClientState{f45644f mUid=10051 mPid=8190 mSelfReportedDisplayId=0} userId=0}
+    mVisibilityStateComputer:
+      mRequestedShowExplicitly=true mShowForced=false
+      mImeHiddenByDisplayPolicy=false
+      mInputShown=true
+      mLastImeTargetWindow=android.os.BinderProxy@bda980a
+    mInFullscreenMode=false
+    Input Methods:
+      InputMethod #0:
+        mId=com.sohu.inputmethod.sogou.chuizi/com.sohu.inputmethod.sogou.SogouIME mSettingsActivityName=null mLanguageSettingsActivityName=null mIsVrOnly=false mIsVirtualDeviceOnly=false mSupportsSwitchingToNextInputMethod=false mInlineSuggestionsEnabled=false mSupportsInlineSuggestionsWithTouchExploration=false mSuppressesSpellChecker=false mShowInInputMethodPicker=true mSupportsStylusHandwriting=false mSupportsConnectionlessStylusHandwriting=false mStylusHandwritingSettingsActivityAttr=null
+        mIsDefaultResId=0x0
+        Service:
+          priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=false
+          ServiceInfo:
+            name=com.sohu.inputmethod.sogou.SogouIME
+            packageName=com.sohu.inputmethod.sogou.chuizi
+            enabled=true exported=true directBootAware=true
+            permission=android.permission.BIND_INPUT_METHOD
+            flags=0x0
+            ApplicationInfo:
+              packageName=com.sohu.inputmethod.sogou.chuizi
+              labelRes=0x7f040000 nonLocalizedLabel=null icon=0x0 banner=0x0
+              processName=com.sohu.inputmethod.sogou.chuizi
+              taskAffinity=com.sohu.inputmethod.sogou.chuizi
+              uid=1000 flags=0x2888be4d privateFlags=0xa4101108 theme=0x0
+              requiresSmallestWidthDp=0 compatibleWidthLimitDp=0 largestWidthLimitDp=0
+              sourceDir=/system/priv-app/nemu-vinput-pack/nemu-vinput-pack.apk
+              resourceDirs=[]
+              overlayPaths=[/data/resource-cache/com.android.systemui-neutral-c3xN.frro, /data/resource-cache/com.android.systemui-accent-PjzQ.frro, /data/resource-cache/com.android.systemui-dynamic-wuKy.frro]
+              seinfo=platform:privapp:targetSdkVersion=28:partition=system
+              seinfoUser=:complete
+              dataDir=/data/user/0/com.sohu.inputmethod.sogou.chuizi
+              deviceProtectedDataDir=/data/user_de/0/com.sohu.inputmethod.sogou.chuizi
+              credentialProtectedDataDir=/data/user/0/com.sohu.inputmethod.sogou.chuizi
+              sharedLibraryFiles=[/system/framework/android.test.base.jar, /system/framework/android.hidl.manager-V1.0-java.jar, /system/framework/android.hidl.base-V1.0-java.jar]
+              enabled=true minSdkVersion=28 targetSdkVersion=28 versionCode=233 targetSandboxVersion=1
+              supportsRtl=false
+              fullBackupContent=true
+              crossProfile=false
+              HiddenApiEnforcementPolicy=0
+              usesNonSdkApi=false
+              allowsPlaybackCapture=false
+              nativeHeapZeroInitialized=0
+              enableOnBackInvokedCallback=false
+              allowCrossUidActivitySwitchFromBelow=true
+              mPageSizeAppCompatFlags=0
+              createTimestamp=4057906
+        InputMethodSubtype array: count=1
+          InputMethodSubtype #0:
+            mSubtypeNameOverride= mLayoutLabelNonLocalized= mPkLanguageTag= mPkLayoutType= mSubtypeId=0 mSubtypeLocale=en_US mSubtypeLanguageTag= mSubtypeMode=keyboard mIsAuxiliary=false mOverridesImplicitlyEnabledSubtype=false mIsAsciiCapable=false mSubtypeHashCode=1802354156
+      InputMethod #1:
+        mId=rkr.simplekeyboard.inputmethod/.latin.LatinIME mSettingsActivityName=rkr.simplekeyboard.inputmethod.latin.settings.SettingsActivity mLanguageSettingsActivityName=null mIsVrOnly=false mIsVirtualDeviceOnly=false mSupportsSwitchingToNextInputMethod=true mInlineSuggestionsEnabled=false mSupportsInlineSuggestionsWithTouchExploration=false mSuppressesSpellChecker=false mShowInInputMethodPicker=true mSupportsStylusHandwriting=false mSupportsConnectionlessStylusHandwriting=false mStylusHandwritingSettingsActivityAttr=null
+        mIsDefaultResId=0x0
+        Service:
+          priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=false
+          ServiceInfo:
+            name=rkr.simplekeyboard.inputmethod.latin.LatinIME
+            packageName=rkr.simplekeyboard.inputmethod
+            labelRes=0x7f0d000a nonLocalizedLabel=null icon=0x0 banner=0x0
+            enabled=true exported=false directBootAware=true
+            permission=android.permission.BIND_INPUT_METHOD
+            flags=0x0
+            ApplicationInfo:
+              packageName=rkr.simplekeyboard.inputmethod
+              labelRes=0x7f0d000a nonLocalizedLabel=null icon=0x7f07000b banner=0x0
+              processName=rkr.simplekeyboard.inputmethod
+              taskAffinity=rkr.simplekeyboard.inputmethod
+              uid=10056 flags=0x20c8be44 privateFlags=0x8c001100 theme=0x0
+              requiresSmallestWidthDp=0 compatibleWidthLimitDp=0 largestWidthLimitDp=0
+              sourceDir=/data/app/~~pZ-qaUDEn2_uZC-sBy3SMg==/rkr.simplekeyboard.inputmethod-Ftd1ApCKzI7dg3wk3_XB2A==/base.apk
+              resourceDirs=[]
+              overlayPaths=[/data/resource-cache/com.android.systemui-neutral-c3xN.frro, /data/resource-cache/com.android.systemui-accent-PjzQ.frro, /data/resource-cache/com.android.systemui-dynamic-wuKy.frro]
+              seinfo=default:targetSdkVersion=37
+              seinfoUser=:complete
+              dataDir=/data/user/0/rkr.simplekeyboard.inputmethod
+              deviceProtectedDataDir=/data/user_de/0/rkr.simplekeyboard.inputmethod
+              credentialProtectedDataDir=/data/user/0/rkr.simplekeyboard.inputmethod
+              enabled=true minSdkVersion=24 targetSdkVersion=37 versionCode=148 targetSandboxVersion=1
+              supportsRtl=true
+              fullBackupContent=true
+              crossProfile=false
+              HiddenApiEnforcementPolicy=2
+              usesNonSdkApi=false
+              allowsPlaybackCapture=true
+              nativeHeapZeroInitialized=0
+              enableOnBackInvokedCallback=false
+              allowCrossUidActivitySwitchFromBelow=true
+              mPageSizeAppCompatFlags=0
+              createTimestamp=4057907
+        InputMethodSubtype array: count=1
+          InputMethodSubtype #0:
+            mSubtypeNameOverride= mLayoutLabelNonLocalized= mPkLanguageTag= mPkLayoutType= mSubtypeId=0 mSubtypeLocale= mSubtypeLanguageTag= mSubtypeMode=keyboard mIsAuxiliary=false mOverridesImplicitlyEnabledSubtype=false mIsAsciiCapable=true mSubtypeHashCode=1095049687
+
+Input method client state for android.view.inputmethod.InputMethodManager@4262aaf:
+  mFallbackInputConnection=RemoteInputConnectionImpl{connection=android.view.inputmethod.BaseInputConnection@79baebc mDeactivateRequested=false mServedView=null}
+  mActive=true mRestartOnNextWindowFocus=false mBindSequence=60 mCurImeId=rkr.simplekeyboard.inputmethod/.latin.LatinIME
+  mFullscreenMode=false
+  mCurMethod=com.android.internal.inputmethod.IInputMethodSession$Stub$Proxy@426d729
+  mCurRootView=android.view.ViewRootImpl@4cbd99a
+  mServedView=androidx.compose.ui.platform.AndroidComposeView{a023f11 VFED..... .F...... 0,0-1080,1920 aid=1073741824}
+  mServedView pos x= 0, y= 0
+  mNextServedView=androidx.compose.ui.platform.AndroidComposeView{a023f11 VFED..... .F...... 0,0-1080,1920 aid=1073741824}
+  mServedConnecting=false
+  mCurrentEditorInfo:
+    inputType=0x28001 imeOptions=0x42000000 privateImeOptions=null
+    actionLabel=null actionId=0
+    initialSelStart=0 initialSelEnd=0 initialToolType=1 initialCapsMode=0x0
+    hintText=null label=null
+    packageName=com.listentogether.app autofillId=1073741824 fieldId=-1 fieldName=null
+    hintLocales=null
+    supportedHandwritingGestureTypes=SELECT|SELECT_RANGE|INSERT|DELETE|DELETE_RANGE|REMOVE_SPACE|JOIN_OR_SPLIT
+    supportedHandwritingGesturePreviewTypes=SELECT|SELECT_RANGE|DELETE|DELETE_RANGE
+    isStylusHandwritingEnabled=false
+    writingToolsEnabled=true
+    contentMimeTypes=null
+  mServedInputConnection=RemoteInputConnectionImpl{connection=androidx.compose.ui.text.input.NullableInputConnectionWrapperApi34@cce4aae mDeactivateRequested=false mServedView=androidx.compose.ui.platform.AndroidComposeView{a023f11 VFED..... .F...... 0,0-1080,1920 aid=1073741824}}
+  mServedInputConnectionHandler=null
+  mCompletions=null
+  mCursorRect=Rect(0, 0 - 0, 0)
+  mCursorSelStart=0 mCursorSelEnd=0 mCursorCandStart=-1 mCursorCandEnd=-1
+
+Input method service state for rkr.simplekeyboard.inputmethod.latin.LatinIME@1848fe2:
+  mViewsCreated=true
+  mDecorViewVisible=true mDecorViewWasVisible=true mWindowVisible=true mInShowWindow=false
+  Configuration={1.0 460mcc?mnc [zh_CN_#Hans] ldltr sw617dp w617dp h1097dp 280dpi lrg long port finger -keyb/v/v dpad/v winConfig={ mBounds=Rect(0, 0 - 1080, 1920) mAppBounds=Rect(0, 0 - 1080, 1920) mMaxBounds=Rect(0, 0 - 1080, 1920) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_0} s.271 fontWeightAdjustment=0}
+  mToken=android.os.BinderProxy@baffb63
+  mInputBinding=InputBinding{android.os.BinderProxy@ae4e5b6 / uid 10051 / pid 8190}
+  mInputConnection=RemoteInputConnection{idHash=#23772b7}
+  mStartedInputConnection=RemoteInputConnection{idHash=#7b70baa}
+  mInputStarted=true mInputViewStarted=true mCandidatesViewStarted=false
+  mInputEditorInfo:
+    inputType=0x28001 imeOptions=0x42000000 privateImeOptions=null
+    actionLabel=null actionId=0
+    initialSelStart=0 initialSelEnd=0 initialToolType=1 initialCapsMode=0x0
+    hintText=null label=null
+    packageName=com.listentogether.app autofillId=1073741824 fieldId=-1 fieldName=null
+    hintLocales=null
+    supportedHandwritingGestureTypes=SELECT|SELECT_RANGE|INSERT|DELETE|DELETE_RANGE|REMOVE_SPACE|JOIN_OR_SPLIT
+    supportedHandwritingGesturePreviewTypes=SELECT|SELECT_RANGE|DELETE|DELETE_RANGE
+    isStylusHandwritingEnabled=true
+    writingToolsEnabled=true
+    contentMimeTypes=null
+  mShowInputRequested=true mLastShowInputRequested=true mShowInputFlags=0x1
+  mCandidatesVisibility=4 mFullscreenApplied=true mIsFullscreen=false mExtractViewHidden=false
+  mExtractedText: null
+  mExtractedToken=0
+  mIsInputViewShown=true mStatusIcon=0
+  Last computed insets:
+    contentTopInsets=1349 visibleTopInsets=1349 touchableInsets=3 touchableRegion=SkRegion((0,1349,1080,1978))
+  mSettingsObserver=SettingsObserver{mShowImeWithHardKeyboard=2}
+  mNavigationBarController={mImeDrawsImeNavBar=false mNavigationBarFrame=null mShouldShowImeSwitcherWhenImeIsShown=true mCustomImeSwitcherVisible=false mAppearance=0x10 mDarkIntensity=0.0 mDrawLegacyNavigationBarBackground=false}
+LatinIME state :
+  VersionCode = 148
+  VersionName = 6.7
+  Keyboard mode = 0

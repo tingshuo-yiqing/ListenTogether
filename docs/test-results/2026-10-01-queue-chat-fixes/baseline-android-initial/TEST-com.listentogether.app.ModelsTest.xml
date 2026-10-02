@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.listentogether.app.ModelsTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-01T02:46:08" hostname="LAPTOP-8H39RU28" time="0.036">
+  <properties/>
+  <testcase name="lrcCacheKeyIncludesLyricsVer" classname="com.listentogether.app.ModelsTest" time="0.026"/>
+  <testcase name="nullFieldsMeanAbsent" classname="com.listentogether.app.ModelsTest" time="0.008"/>
+  <testcase name="parsesKnownFields" classname="com.listentogether.app.ModelsTest" time="0.0"/>
+  <testcase name="missingNewFieldsFallBack" classname="com.listentogether.app.ModelsTest" time="0.001"/>
+  <testcase name="emptyArtistIsTreatedAsNull" classname="com.listentogether.app.ModelsTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,247 @@
+Input Method Manager Service state:
+  mSystemReady=true
+  mInteractive=true
+  mConcurrentMultiUserModeEnabled=false
+  mCurrentImeUserId=0
+  mStylusIds=
+  mMenuControllerNew:
+    isShowing: false
+  mClientController:
+    ClientState{326c6e7 mUid=10051 mPid=2558 mSelfReportedDisplayId=0}:
+      client=com.android.server.inputmethod.IInputMethodClientInvoker@1ae7e5b
+      fallbackInputConnection=com.android.internal.inputmethod.IRemoteInputConnection$Stub$Proxy@72db6f8
+      sessionRequested=false
+      sessionRequestedForAccessibility=true
+      curSession=SessionState{uid=10051 pid=2558 method=806a7d1 session=e9d5236 channel=ClientState{326c6e7 mUid=10051 mPid=2558 mSelfReportedDisplayId=0} userId=0}
+      selfReportedDisplayId=0
+      uid=10051
+      pid=2558
+    ClientState{3cca537 mUid=1000 mPid=1601 mSelfReportedDisplayId=0}:
+      client=com.android.server.inputmethod.IInputMethodClientInvoker@8034aa4
+      fallbackInputConnection=com.android.internal.inputmethod.IRemoteInputConnection$Stub$Proxy@8fcf00d
+      sessionRequested=false
+      sessionRequestedForAccessibility=false
+      curSession=null
+      selfReportedDisplayId=0
+      uid=1000
+      pid=1601
+    ClientState{322503b mUid=10018 mPid=1080 mSelfReportedDisplayId=0}:
+      client=com.android.server.inputmethod.IInputMethodClientInvoker@be45bc2
+      fallbackInputConnection=com.android.internal.inputmethod.IRemoteInputConnection$Stub$Proxy@e3c5dd3
+      sessionRequested=false
+      sessionRequestedForAccessibility=false
+      curSession=SessionState{uid=10018 pid=1080 method=806a7d1 session=87c6d10 channel=ClientState{322503b mUid=10018 mPid=1080 mSelfReportedDisplayId=0} userId=0}
+      selfReportedDisplayId=0
+      uid=10018
+      pid=1080
+    ClientState{958009 mUid=10032 mPid=1090 mSelfReportedDisplayId=0}:
+      client=com.android.server.inputmethod.IInputMethodClientInvoker@ca0720e
+      fallbackInputConnection=com.android.internal.inputmethod.IRemoteInputConnection$Stub$Proxy@7e5042f
+      sessionRequested=false
+      sessionRequestedForAccessibility=false
+      curSession=null
+      selfReportedDisplayId=0
+      uid=10032
+      pid=1090
+  mUserDataRepository:
+    userId=0
+      unlocked=true
+      hasMainConnection=true
+      isVisibleBound=false
+      boundToMethod=true
+      curClient=ClientState{326c6e7 mUid=10051 mPid=2558 mSelfReportedDisplayId=0}
+      curEditorInfo:
+        inputType=0x0 imeOptions=0x0 privateImeOptions=null
+        actionLabel=null actionId=0
+        initialSelStart=-1 initialSelEnd=-1 initialToolType=0 initialCapsMode=0x0
+        hintText=null label=null
+        packageName=com.listentogether.app autofillId=0 fieldId=0 fieldName=null
+        hintLocales=null
+        supportedHandwritingGestureTypes=(none)
+        supportedHandwritingGesturePreviewTypes=(none)
+        isStylusHandwritingEnabled=false
+        writingToolsEnabled=true
+        contentMimeTypes=null
+      imeBindingState:
+        mFocusedWindow=android.os.BinderProxy@3f859f6
+        mFocusedWindowSoftInputMode=STATE_UNSPECIFIED|ADJUST_PAN|IS_FORWARD_NAVIGATION
+        mFocusedWindowClient=ClientState{326c6e7 mUid=10051 mPid=2558 mSelfReportedDisplayId=0}
+      enabledSession=SessionState{uid=10051 pid=2558 method=806a7d1 session=e9d5236 channel=ClientState{326c6e7 mUid=10051 mPid=2558 mSelfReportedDisplayId=0} userId=0}
+      inFullscreenMode=false
+      imeDrawsNavBar=false
+      switchingController:
+        mSwitchingAwareRotationList:
+        mSwitchingUnawareRotationList:
+          rank=0 item=ImeSubtypeListItem{mImeName=SogouIME-chuizi mSubtypeName=英语（美国） mSubtypeIndex=0 mIsSystemLocale=false mIsSystemLanguage=false}
+        mRotationList:
+          Static order:
+            i=0 item=ImeSubtypeListItem{mImeName=SogouIME-chuizi mSubtypeName=英语（美国） mSubtypeIndex=0 mIsSystemLocale=false mIsSystemLanguage=false}
+          Recency order:
+            i=0 item=ImeSubtypeListItem{mImeName=SogouIME-chuizi mSubtypeName=英语（美国） mSubtypeIndex=0 mIsSystemLocale=false mIsSystemLanguage=false}
+        mHardwareRotationList:
+          Static order:
+            i=0 item=ImeSubtypeListItem{mImeName=SogouIME-chuizi mSubtypeName=英语（美国） mSubtypeIndex=0 mIsSystemLocale=false mIsSystemLanguage=false}
+          Recency order:
+            i=0 item=ImeSubtypeListItem{mImeName=SogouIME-chuizi mSubtypeName=英语（美国） mSubtypeIndex=0 mIsSystemLocale=false mIsSystemLanguage=false}
+        User action since last switch: false
+      mLastEnabledInputMethodsStr=
+  mStartInputHistory:
+    StartInput #0:
+      time=2026-10-02 00:15:40.366 (timestamp=9420) reason=SESSION_CREATED_BY_IME restarting=false
+      imeToken=android.os.Binder@fca6199 [com.sohu.inputmethod.sogou.chuizi/com.sohu.inputmethod.sogou.SogouIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@e82e1d6 [app.lawnchair] targetUserId=0 targetDisplayId=0 clientBindSeq=1
+      softInputMode=STATE_UNSPECIFIED|ADJUST_NOTHING|IS_FORWARD_NAVIGATION
+      inputType=0x0 imeOptions=0x0 fieldId=0x0 fieldName=null actionId=0 actionLabel=null
+    StartInput #1:
+      time=2026-10-02 00:32:07.029 (timestamp=996082) reason=SESSION_CREATED_BY_IME restarting=false
+      imeToken=android.os.Binder@fca6199 [com.sohu.inputmethod.sogou.chuizi/com.sohu.inputmethod.sogou.SogouIME] imeUserId=0 imeDisplayId=0
+      targetWin=android.os.BinderProxy@3f859f6 [com.listentogether.app] targetUserId=0 targetDisplayId=0 clientBindSeq=2
+      softInputMode=STATE_UNSPECIFIED|ADJUST_PAN|IS_FORWARD_NAVIGATION
+      inputType=0x0 imeOptions=0x0 fieldId=0x0 fieldName=null actionId=0 actionLabel=null
+  mSoftInputShowHideHistory:
+  mImeTrackerService#History:
+    mLiveEntries: 0 elements
+    mEntries: 2 elements
+      #0 TYPE_HIDE - STATUS_CANCEL - app.lawnchair:814adaa5 (2ms):
+        startTime=2026-10-02 00:15:39.598 ORIGIN_SERVER
+        reason=HIDE_UNSPECIFIED_WINDOW PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+      #1 TYPE_HIDE - STATUS_CANCEL - com.listentogether.app:a6bd2e20 (2ms):
+        startTime=2026-10-02 00:32:07.025 ORIGIN_SERVER
+        reason=HIDE_UNSPECIFIED_WINDOW PHASE_CLIENT_ALREADY_HIDDEN
+        requestWindowName=not set
+  UserId=0
+    mBindingController:
+      mSelectedMethodId=com.sohu.inputmethod.sogou.chuizi/com.sohu.inputmethod.sogou.SogouIME
+      mCurrentSubtype=android.view.inputmethod.InputMethodSubtype@6b6dbdec
+      mCurSeq=2
+      mCurId=com.sohu.inputmethod.sogou.chuizi/com.sohu.inputmethod.sogou.SogouIME
+      mHasMainConnection=true
+      mVisibleBound=false
+      mCurToken=android.os.Binder@fca6199
+      mCurTokenDisplayId=0
+      mCurHostInputToken=null
+      mCurIntent=Intent { act=android.view.InputMethod cmp=com.sohu.inputmethod.sogou.chuizi/com.sohu.inputmethod.sogou.SogouIME (has extras) }
+      mCurMethod=com.android.server.inputmethod.IInputMethodInvoker@f234a3c
+      mImeWindowVis=0
+      mBackDisposition=0
+      mDisplayIdToShowIme=0
+      mDeviceIdToShowIme=0
+      mSupportsStylusHw=false
+      mSupportsConnectionlessStylusHw=false
+    mCurClient=ClientState{326c6e7 mUid=10051 mPid=2558 mSelfReportedDisplayId=0}
+    mFocusedWindowPerceptible={null=true, android.os.BinderProxy@3f859f6=true, android.os.BinderProxy@e82e1d6=true}
+    mImeBindingState:
+      mFocusedWindow=android.os.BinderProxy@3f859f6
+      mFocusedWindowSoftInputMode=STATE_UNSPECIFIED|ADJUST_PAN|IS_FORWARD_NAVIGATION
+      mFocusedWindowClient=ClientState{326c6e7 mUid=10051 mPid=2558 mSelfReportedDisplayId=0}
+    mBoundToMethod=true
+    mEnabledSession=SessionState{uid=10051 pid=2558 method=806a7d1 session=e9d5236 channel=ClientState{326c6e7 mUid=10051 mPid=2558 mSelfReportedDisplayId=0} userId=0}
+    mVisibilityStateComputer:
+      mRequestedShowExplicitly=false mShowForced=false
+      mImeHiddenByDisplayPolicy=false
+      mInputShown=false
+      mLastImeTargetWindow=android.os.BinderProxy@3f859f6
+    mInFullscreenMode=false
+    Input Methods:
+      InputMethod #0:
+        mId=com.sohu.inputmethod.sogou.chuizi/com.sohu.inputmethod.sogou.SogouIME mSettingsActivityName=null mLanguageSettingsActivityName=null mIsVrOnly=false mIsVirtualDeviceOnly=false mSupportsSwitchingToNextInputMethod=false mInlineSuggestionsEnabled=false mSupportsInlineSuggestionsWithTouchExploration=false mSuppressesSpellChecker=false mShowInInputMethodPicker=true mSupportsStylusHandwriting=false mSupportsConnectionlessStylusHandwriting=false mStylusHandwritingSettingsActivityAttr=null
+        mIsDefaultResId=0x0
+        Service:
+          priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=false
+          ServiceInfo:
+            name=com.sohu.inputmethod.sogou.SogouIME
+            packageName=com.sohu.inputmethod.sogou.chuizi
+            enabled=true exported=true directBootAware=true
+            permission=android.permission.BIND_INPUT_METHOD
+            flags=0x0
+            ApplicationInfo:
+              packageName=com.sohu.inputmethod.sogou.chuizi
+              labelRes=0x7f040000 nonLocalizedLabel=null icon=0x0 banner=0x0
+              processName=com.sohu.inputmethod.sogou.chuizi
+              taskAffinity=com.sohu.inputmethod.sogou.chuizi
+              uid=1000 flags=0x2888be4d privateFlags=0xa4101108 theme=0x0
+              requiresSmallestWidthDp=0 compatibleWidthLimitDp=0 largestWidthLimitDp=0
+              sourceDir=/system/priv-app/nemu-vinput-pack/nemu-vinput-pack.apk
+              resourceDirs=[]
+              overlayPaths=[/data/resource-cache/com.android.systemui-neutral-c3xN.frro, /data/resource-cache/com.android.systemui-accent-PjzQ.frro, /data/resource-cache/com.android.systemui-dynamic-wuKy.frro]
+              seinfo=platform:privapp:targetSdkVersion=28:partition=system
+              seinfoUser=:complete
+              dataDir=/data/user/0/com.sohu.inputmethod.sogou.chuizi
+              deviceProtectedDataDir=/data/user_de/0/com.sohu.inputmethod.sogou.chuizi
+              credentialProtectedDataDir=/data/user/0/com.sohu.inputmethod.sogou.chuizi
+              sharedLibraryFiles=[/system/framework/android.test.base.jar, /system/framework/android.hidl.manager-V1.0-java.jar, /system/framework/android.hidl.base-V1.0-java.jar]
+              enabled=true minSdkVersion=28 targetSdkVersion=28 versionCode=233 targetSandboxVersion=1
+              supportsRtl=false
+              fullBackupContent=true
+              crossProfile=false
+              HiddenApiEnforcementPolicy=0
+              usesNonSdkApi=false
+              allowsPlaybackCapture=false
+              nativeHeapZeroInitialized=0
+              enableOnBackInvokedCallback=false
+              allowCrossUidActivitySwitchFromBelow=true
+              mPageSizeAppCompatFlags=0
+              createTimestamp=994116
+        InputMethodSubtype array: count=1
+          InputMethodSubtype #0:
+            mSubtypeNameOverride= mLayoutLabelNonLocalized= mPkLanguageTag= mPkLayoutType= mSubtypeId=0 mSubtypeLocale=en_US mSubtypeLanguageTag= mSubtypeMode=keyboard mIsAuxiliary=false mOverridesImplicitlyEnabledSubtype=false mIsAsciiCapable=false mSubtypeHashCode=1802354156
+
+Input method client state for android.view.inputmethod.InputMethodManager@3d2faa8:
+  mFallbackInputConnection=RemoteInputConnectionImpl{connection=android.view.inputmethod.BaseInputConnection@f2419c1 mDeactivateRequested=false mServedView=null}
+  mActive=true mRestartOnNextWindowFocus=false mBindSequence=2 mCurImeId=com.sohu.inputmethod.sogou.chuizi/com.sohu.inputmethod.sogou.SogouIME
+  mFullscreenMode=false
+  mCurMethod=com.android.internal.inputmethod.IInputMethodSession$Stub$Proxy@e7df566
+  mCurRootView=android.view.ViewRootImpl@f4ac0a7
+  mServedView=com.android.internal.policy.DecorView{1b11954 V.E...... R....... 0,0-1080,1920 aid=0}[MainActivity]
+  mServedView pos x= 0, y= 0
+  mNextServedView=com.android.internal.policy.DecorView{1b11954 V.E...... R....... 0,0-1080,1920 aid=0}[MainActivity]
+  mServedConnecting=false
+  mCurrentEditorInfo:
+    inputType=0x0 imeOptions=0x0 privateImeOptions=null
+    actionLabel=null actionId=0
+    initialSelStart=-1 initialSelEnd=-1 initialToolType=0 initialCapsMode=0x0
+    hintText=null label=null
+    packageName=com.listentogether.app autofillId=0 fieldId=0 fieldName=null
+    hintLocales=null
+    supportedHandwritingGestureTypes=(none)
+    supportedHandwritingGesturePreviewTypes=(none)
+    isStylusHandwritingEnabled=false
+    writingToolsEnabled=true
+    contentMimeTypes=null
+  mServedInputConnection=null
+  mServedInputConnectionHandler=null
+  mCompletions=null
+  mCursorRect=Rect(0, 0 - 0, 0)
+  mCursorSelStart=0 mCursorSelEnd=0 mCursorCandStart=0 mCursorCandEnd=0
+
+Input method service state for com.sohu.inputmethod.sogou.SogouIME@91ceabf:
+  mViewsCreated=false
+  mDecorViewVisible=false mDecorViewWasVisible=false mWindowVisible=false mInShowWindow=false
+  Configuration={1.0 460mcc?mnc [zh_CN_#Hans] ldltr sw617dp w617dp h1097dp 280dpi lrg long port finger -keyb/v/v dpad/v winConfig={ mBounds=Rect(0, 0 - 1080, 1920) mAppBounds=Rect(0, 0 - 1080, 1920) mMaxBounds=Rect(0, 0 - 1080, 1920) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_0} s.15 fontWeightAdjustment=0}
+  mToken=android.os.BinderProxy@c5e89c7
+  mInputBinding=InputBinding{android.os.BinderProxy@ae4e5b6 / uid 10051 / pid 2558}
+  mInputConnection=RemoteInputConnection{idHash=#23772b7}
+  mStartedInputConnection=null
+  mInputStarted=true mInputViewStarted=false mCandidatesViewStarted=false
+  mInputEditorInfo:
+    inputType=0x0 imeOptions=0x0 privateImeOptions=null
+    actionLabel=null actionId=0
+    initialSelStart=-1 initialSelEnd=-1 initialToolType=0 initialCapsMode=0x0
+    hintText=null label=null
+    packageName=com.listentogether.app autofillId=0 fieldId=0 fieldName=null
+    hintLocales=null
+    supportedHandwritingGestureTypes=(none)
+    supportedHandwritingGesturePreviewTypes=(none)
+    isStylusHandwritingEnabled=false
+    writingToolsEnabled=true
+    contentMimeTypes=null
+  mShowInputRequested=false mLastShowInputRequested=false mShowInputFlags=0x0
+  mCandidatesVisibility=4 mFullscreenApplied=false mIsFullscreen=false mExtractViewHidden=false
+  mExtractedText: null
+  mExtractedToken=0
+  mIsInputViewShown=false mStatusIcon=0
+  Last computed insets:
+    contentTopInsets=0 visibleTopInsets=0 touchableInsets=2 touchableRegion=SkRegion()
+  mSettingsObserver=SettingsObserver{mShowImeWithHardKeyboard=2}
+  mNavigationBarController={mImeDrawsImeNavBar=false mNavigationBarFrame=null mShouldShowImeSwitcherWhenImeIsShown=false mCustomImeSwitcherVisible=false mAppearance=0x0 mDarkIntensity=0.0 mDrawLegacyNavigationBarBackground=false}

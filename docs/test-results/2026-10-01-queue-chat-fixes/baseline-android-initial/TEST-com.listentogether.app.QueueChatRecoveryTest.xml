@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.listentogether.app.QueueChatRecoveryTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-10-01T02:46:08" hostname="LAPTOP-8H39RU28" time="0.518">
+  <properties/>
+  <testcase name="correlatedRateLimitKeepsTextAndHonorsRetryDeadline" classname="com.listentogether.app.QueueChatRecoveryTest" time="0.339"/>
+  <testcase name="chatEventDoesNotNotifyPlaybackObserver" classname="com.listentogether.app.QueueChatRecoveryTest" time="0.016"/>
+  <testcase name="missingSnapshotChunkTimesOutAndRecovers" classname="com.listentogether.app.QueueChatRecoveryTest" time="0.012"/>
+  <testcase name="successfulAckWithoutBroadcastRecoversAndReconcilesSnapshot" classname="com.listentogether.app.QueueChatRecoveryTest" time="0.019"/>
+  <testcase name="liveChatBufferStaysWithin100" classname="com.listentogether.app.QueueChatRecoveryTest" time="0.058"/>
+  <testcase name="seqGapRequestsChatRecovery" classname="com.listentogether.app.QueueChatRecoveryTest" time="0.008"/>
+  <testcase name="chatConfirmationTimeoutRequestsOneRecoveryWithoutResending" classname="com.listentogether.app.QueueChatRecoveryTest" time="0.01"/>
+  <testcase name="rejectedSocketPreservesOriginalOperationForExplicitRetry" classname="com.listentogether.app.QueueChatRecoveryTest" time="0.013"/>
+  <testcase name="snapshotOrderingUsesSeqInsteadOfRandomSuffix" classname="com.listentogether.app.QueueChatRecoveryTest" time="0.012"/>
+  <testcase name="serverShortenedExpiryCannotBeExtendedByRetry" classname="com.listentogether.app.QueueChatRecoveryTest" time="0.016"/>
+  <testcase name="broadcastWithOriginalClientIdReconcilesEvenWhenAckIsLost" classname="com.listentogether.app.QueueChatRecoveryTest" time="0.01"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

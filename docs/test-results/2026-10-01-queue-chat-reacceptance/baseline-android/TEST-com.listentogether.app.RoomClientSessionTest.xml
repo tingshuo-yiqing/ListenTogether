@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.listentogether.app.RoomClientSessionTest" tests="28" skipped="0" failures="0" errors="0" timestamp="2026-10-01T01:23:30" hostname="LAPTOP-8H39RU28" time="0.366">
+  <properties/>
+  <testcase name="leaveSendsDeleteToOldServerBeforeNewJoin" classname="com.listentogether.app.RoomClientSessionTest" time="0.212"/>
+  <testcase name="unauthorizedMarksExpiredAndAllowsRejoin" classname="com.listentogether.app.RoomClientSessionTest" time="0.013"/>
+  <testcase name="duplicateJoinIgnoredWhileSessionActive" classname="com.listentogether.app.RoomClientSessionTest" time="0.004"/>
+  <testcase name="joinReachesReadyAfterClockReply" classname="com.listentogether.app.RoomClientSessionTest" time="0.004"/>
+  <testcase name="queueStateSnapshotAppliedAtomically" classname="com.listentogether.app.RoomClientSessionTest" time="0.005"/>
+  <testcase name="uncorrelatedChatErrorDoesNotGuessWhichMessageFailed" classname="com.listentogether.app.RoomClientSessionTest" time="0.01"/>
+  <testcase name="clockSyncKeepsLocalPauseMessage" classname="com.listentogether.app.RoomClientSessionTest" time="0.005"/>
+  <testcase name="reconnectMustRecalibrateBeforeReady" classname="com.listentogether.app.RoomClientSessionTest" time="0.006"/>
+  <testcase name="chatFailedAckRetainsTextAndRetryHonorsMonotonicDeadline" classname="com.listentogether.app.RoomClientSessionTest" time="0.006"/>
+  <testcase name="initialEmptyChatSnapshotEstablishesHistoryBaseline" classname="com.listentogether.app.RoomClientSessionTest" time="0.009"/>
+  <testcase name="capabilityProbe404MarksIncompatible" classname="com.listentogether.app.RoomClientSessionTest" time="0.003"/>
+  <testcase name="staleOldSocketCallbacksCannotAffectNewSession" classname="com.listentogether.app.RoomClientSessionTest" time="0.006"/>
+  <testcase name="chatSyncSendsLastSeqWhenKnown" classname="com.listentogether.app.RoomClientSessionTest" time="0.005"/>
+  <testcase name="chatValidationCountsEmojiAsCodePointsAndOfflineKeepsDraft" classname="com.listentogether.app.RoomClientSessionTest" time="0.008"/>
+  <testcase name="chatTimeoutAndRetryRetainOriginalTextIdAndIssuedTime" classname="com.listentogether.app.RoomClientSessionTest" time="0.005"/>
+  <testcase name="reconnectBackoffDoubles" classname="com.listentogether.app.RoomClientSessionTest" time="0.005"/>
+  <testcase name="ws426MarksIncompatibleNotReconnecting" classname="com.listentogether.app.RoomClientSessionTest" time="0.004"/>
+  <testcase name="leaveCancelsPendingReconnect" classname="com.listentogether.app.RoomClientSessionTest" time="0.005"/>
+  <testcase name="explicitNonDefaultPortPreserved" classname="com.listentogether.app.RoomClientSessionTest" time="0.003"/>
+  <testcase name="chatMessageAppendedWithDedupeAndSnapshotReplaces" classname="com.listentogether.app.RoomClientSessionTest" time="0.006"/>
+  <testcase name="retryOnlyWorksWhileReconnecting" classname="com.listentogether.app.RoomClientSessionTest" time="0.005"/>
+  <testcase name="olderSnapshotVersionIgnored" classname="com.listentogether.app.RoomClientSessionTest" time="0.004"/>
+  <testcase name="closeFrame1000ExpiredOtherwiseReconnecting" classname="com.listentogether.app.RoomClientSessionTest" time="0.007"/>
+  <testcase name="clockSilenceCancelsSocket" classname="com.listentogether.app.RoomClientSessionTest" time="0.002"/>
+  <testcase name="chatBroadcastBeforeAckReconcilesByServerIdentity" classname="com.listentogether.app.RoomClientSessionTest" time="0.004"/>
+  <testcase name="chatAckBeforeBroadcastKeepsConfirmedBubbleUntilRealMessage" classname="com.listentogether.app.RoomClientSessionTest" time="0.004"/>
+  <testcase name="queueAddSendsV2OperationAndAckResolves" classname="com.listentogether.app.RoomClientSessionTest" time="0.005"/>
+  <testcase name="queueLoadingEndsOnTimeoutErrorAndRejectedSocketSend" classname="com.listentogether.app.RoomClientSessionTest" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

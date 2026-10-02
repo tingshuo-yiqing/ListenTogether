@@ -1,15 +1,24 @@
 # 08 曲库与音频传输
 
+## 专辑与删除补验（2026-10-02）
+
+loadCatalog 读取 album：非空手填 trim 后优先；否则 ID3 common.album trim 后兜底；未知 null，与 artist 同一次 parseFile。公开 toSummary 第九字段 album，catalog/search/当前曲一致，revision 随值变化；真实 TALB 标签与应用响应两项测试通过。
+
+Chrome 真界面删除/取消/删空/回收恢复 8/8，桌面与窄屏空库截图已目视；修复无歌时仍提示“从左侧选择”，改为新增/恢复指引。后端删前缓存必须重启才重载，空库可健康启动；恢复音频/封面/歌词 SHA256 与 Range 206 一致。WSL 原生 Linux 共享三类文件最后引用回收与恢复 3/3。
+
+云端已有 SSH 隧道管理器，部署 6.3 已整理下架维护流程；本轮只操作合成夹具，未删真实曲或重启云端。server 74/74、脚本 51/51；[报告](../test-results/2026-10-02-desktop-tasks/README.md)。
+
 ## 职责与入口
-library/catalog.ts启动时读取catalog.json，校验曲目，解析真实MP3时长与ID3歌手/内嵌封面，构建只读Track列表；catalog 的独立封面优先于 ID3。
+library/catalog.ts启动时读取catalog.json，校验曲目，解析真实MP3时长与ID3歌手/专辑/内嵌封面，构建只读Track列表；catalog 的独立封面优先于 ID3。
+library/catalog-index.ts（2026-09-30 QC-A）在 Track 列表之上构建 CatalogIndex：tracksById 按 ID O(1) 查找、规范化(NFKC+小写+合并空白)稳定排序（歌名→歌手→id）、内容 revision（公开编目 sha256 前 16 位，含 coverVer/lyricsVer/album，同内容恒定）、search() 分页检索（q≤100 码点、offset 非负、limit 1–50，非法 SearchError 400）。千首内存夹具与检索单测见 server/test/catalog-index.test.ts。
 routes/audio.ts根据曲目ID找到文件，验证房间成员令牌后提供HTTP音频流。
 routes/cover.ts、routes/lyrics.ts分别下发封面字节与LRC文本，鉴权与错误语义与音频路由同一套模板。
 media为手动曲库；demo-media为独立合成测试曲库。开发脚本通过MEDIA_DIR切换，不覆盖个人音乐。
 
 ## 数据与现有边界
-清单条目为id/title/file，可选artist（手填歌手，优先于ID3）、cover（库内相对路径的JPG/PNG/WebP）与lyrics（库内相对路径的.lrc）；
-服务器内部Track另含durationMs/path/size/artist/cover/coverVer/lyricsPath。
-公开曲库只返回id/title/durationMs/artist/hasCover/coverVer/hasLyrics，绝不返回磁盘路径与二进制。
+清单条目为id/title/file，可选artist/album（非空手填歌手/专辑，优先于ID3）、cover（库内相对路径的JPG/PNG/WebP）与lyrics（库内相对路径的.lrc）；
+服务器内部Track另含durationMs/path/size/artist/album/cover/coverVer/lyricsPath/lyricsVer。
+公开曲库只返回id/title/durationMs/artist/hasCover/coverVer/hasLyrics/lyricsVer/album，绝不返回磁盘路径与二进制。
 realpath解析后检查路径仍在曲库根目录，扩展名MP3，文件存在且可获得正时长；
 歌词引用同样realpath+前缀校验，必须.lrc且≤256KB，坏引用启动即失败（延续"路径不来自HTTP"边界）。
 更新曲库需重启，当前房间随服务重启丢失；不承诺热更新。
@@ -135,3 +144,14 @@ build-cloud-catalog.mjs 不依赖本地平铺布局，无需改动）。新增 s
 - **内联样式**：24 处收掉 22 处为语义类；`#editor` 与 `#cover-img` 的 `display:none` **故意保留内联**，它们由 JS 的 `style.display` 切换，挪进类会与 JS 抢同一属性。
 - **版本告警误报修复**：页面原以严格相等比对硬编码的期望版本，服务端 09-29 升到 `20260929-hi-aac` 后，"服务端更新"被判成"旧版本"并常驻误导性横幅。改为比下界常量 `PAGE_SERVICE_VERSION`（日期串直接比大小），服务端不比页面旧即兼容。
 - 门禁：脚本离线 **51/51**；新增页面驱动 [2026-09-29 manager-ui](../test-results/2026-09-29-manager-ui/README.md)（视图互斥、切视图不动数据、节点复用与空态、多选联动、删除后缓存清理、1280px+390px、无未捕获异常），09-28 两份驱动回归通过。函数拆分（`select` 176 行 / `resourceRow` 114 行）本轮未做，等用户实际使用后单独一轮。
+
+## 封面按需读取与解析限并发（2026-09-30 QC-D）
+
+千首扩库前的资源边界落地（设计「千首曲库的资源边界」），catalog 不再把封面字节常驻内存。
+
+- **`Track.cover` 改引用形态**：`{ mime, file(独立图片绝对路径|null), embedded }`。启动时仍读一次封面只为算 `coverVer`（内容哈希语义不变），字节随即丢弃；内嵌封面启动解析只记录来源/类型/版本，不保留图片。`toSummary`/catalog 下发口径不变（hasCover 布尔位）。
+- **`library/cover-cache.ts`（新）**：`CoverCache` 全服 32MiB 字节 LRU（`COVER_CACHE_LIMIT_BYTES`，按字节计费，Map 序即 LRU 序、触碰刷新热度）；键 = `id + coverVer`（换封面 → 版本变化 → 自然换键）。读盘/内嵌 APIC 重解析经 `COVER_IO_CONCURRENCY = 4` 上限；同资源在途读取合并（inflight 表）；失败不进缓存（文件恢复后无需重启）。`stats()` 暴露字节/峰值/在途/解析并发计数供基准与测试。
+- **`library/pool.ts`（新）**：`Limiter`（并发上限 + active/peak/queued 计数）与 `mapPool`；`loadCatalog` 音频解析（music-metadata + 封面/歌词读取）默认 `PARSE_CONCURRENCY = 4`，`{ stats }` 参数上报解析峰值并发——千首启动不再发起千路并发 IO。
+- **路由 O(1) 化**：audio/lyrics/cover 三路由由 `tracks.find` 线性扫改 `rooms.byId.get`（播放路径 QC-B1 已切 Map）。
+- 门禁：server **56/56**（新增 cover-cache.test.ts：同资源在途合并 + 内嵌 APIC 按需重解析；cover.test.ts 重写为引用形态夹具，补 LRU 淘汰顺序/字节峰值/缺文件 404；catalog.test.ts 补解析峰值并发 = 4 断言；rooms.test.ts /health 断言同步）。
+- 基准：`scripts/qcd-bench.mjs`，2000 首合成夹具启动 1.64s、峰值 RSS 89MB、搜索 p95 0.048ms、缓存峰值 32.5MB → 清退后稳定 31.5MB（与曲库规模无关）；明细见 [QC-D 证据](../test-results/2026-09-30-queue-chat-QC-D/README.md)。

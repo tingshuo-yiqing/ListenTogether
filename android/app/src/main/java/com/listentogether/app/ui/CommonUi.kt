@@ -1,11 +1,12 @@
 package com.listentogether.app.ui
 
-import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color as AndroidColor
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -16,9 +17,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ExitToApp
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PhotoLibrary
-import androidx.compose.material.icons.outlined.QrCode2
+import androidx.compose.material.icons.outlined.Headphones
 import androidx.compose.material.icons.outlined.QrCodeScanner
-import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -33,59 +34,50 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
-import com.listentogether.app.InviteCode
 import com.listentogether.app.network.UiState
 import com.listentogether.app.ui.theme.PillShape
+import com.listentogether.app.ui.theme.RowShape
 
-/**
- * 顶栏：始终显示应用名。房间页提供「展示邀请二维码 / 分享口令 / 退出」，首页「加入房间」分支
- * 提供「扫二维码」——两处刻意复用右上角第一个位置：入房前是"我去扫别人的码"，入房后是"让别人扫我的码"，
- * 同一位置承载同一件事的两面，不给顶栏堆图标。
- */
+/** 顶栏提供主题选择和退出；邀请操作统一由成员面板提供。 */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun TopBar(
     ui: UiState,
-    baseUrl: String,
-    onShowQr: () -> Unit,
     onLeaveRequest: () -> Unit,
+    themeMode: ThemeMode,
+    onThemeChange: (ThemeMode) -> Unit,
     onScanInvite: (() -> Unit)? = null
 ) {
-    val context = LocalContext.current
-    // 口令唯一来源：分享入口使用 encode 产物，避免硬编码漂移；
-    // 口令只含房间码与服务器地址（公开信息，默认端口在口令里省略），绝不包含成员令牌。
-    val inviteText = ui.credentials?.let { InviteCode.encode(it.code, baseUrl) }.orEmpty()
     TopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
         title = {
-            Text("一起听歌", style = MaterialTheme.typography.titleLarge)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Surface(shape = RowShape, color = MaterialTheme.colorScheme.primary) {
+                    Box(Modifier.size(34.dp), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Outlined.Headphones, contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(20.dp))
+                    }
+                }
+                Text("一起听歌", style = MaterialTheme.typography.titleLarge)
+            }
         },
         actions = {
+            ThemeSelector(themeMode, onThemeChange)
             if (ui.credentials != null) {
-                IconButton(onClick = onShowQr) {
-                    Icon(Icons.Outlined.QrCode2, contentDescription = "显示邀请二维码", tint = MaterialTheme.colorScheme.primary)
-                }
-                IconButton(onClick = {
-                    val send = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, inviteText)
-                    }
-                    context.startActivity(Intent.createChooser(send, "分享邀请"))
-                }) {
-                    Icon(Icons.Outlined.Share, contentDescription = "分享邀请口令", tint = MaterialTheme.colorScheme.primary)
-                }
-                IconButton(onClick = onLeaveRequest) {
-                    Icon(Icons.AutoMirrored.Outlined.ExitToApp, contentDescription = "退出房间", tint = MaterialTheme.colorScheme.primary)
+                IconButton(onClick = onLeaveRequest, modifier = Modifier.size(48.dp)) {
+                    Icon(Icons.AutoMirrored.Outlined.ExitToApp, contentDescription = "退出房间",
+                        tint = MaterialTheme.colorScheme.onSurface)
                 }
             } else if (onScanInvite != null) {
-                IconButton(onClick = onScanInvite) {
-                    Icon(Icons.Outlined.QrCodeScanner, contentDescription = "扫描邀请二维码", tint = MaterialTheme.colorScheme.primary)
+                IconButton(onClick = onScanInvite, modifier = Modifier.size(48.dp)) {
+                    Icon(Icons.Outlined.QrCodeScanner, contentDescription = "扫描邀请二维码",
+                        tint = MaterialTheme.colorScheme.onSurface)
                 }
             }
         }

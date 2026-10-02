@@ -1,0 +1,2472 @@
+{
+  "startedAt": "2026-09-30T15:02:46.116Z",
+  "pageUrl": "file:///D:/ListenTogether/docs/ui-prototype/index.html",
+  "sources": {
+    "index.html": "a866872ef3525d942c24d849c949311b341b9618b4af9b5a91ea3d1a64c8e3ea",
+    "app.js": "91dacf315311446dd0eddabb799e492b695eab0d519adf64ff8301656b4f41fd",
+    "styles.css": "31cc299adc3f1abd0daf96842591b9992d97d2b4d3c2e9ef07e467259088bd86"
+  },
+  "checks": [
+    {
+      "name": "首页：昵称与邀请码切换保留，扫码确认后入房",
+      "passed": true
+    },
+    {
+      "name": "首页创建：进入空队列，不残留当前曲或媒体控制",
+      "passed": true
+    },
+    {
+      "name": "队列：房主更多菜单重排和移除",
+      "passed": true
+    },
+    {
+      "name": "成员配额：只计算待播，当前曲不占五首配额",
+      "passed": true
+    },
+    {
+      "name": "点歌：歌手检索、加入、已点禁用、加载更多保留旧结果",
+      "passed": true
+    },
+    {
+      "name": "聊天：离页未读进入清零，新消息不抢历史滚动",
+      "passed": true
+    },
+    {
+      "name": "空队列：首曲入队保持暂停，播放要明确点击",
+      "passed": true
+    },
+    {
+      "name": "聊天：草稿跨页保留，失败原文与原消息身份重试",
+      "passed": true
+    },
+    {
+      "name": "成员：只暂停本机，隐藏下一首与别人的管理入口",
+      "passed": true
+    },
+    {
+      "name": "播放器：歌词切换、进度预览、回开头、下一首保留播放意图",
+      "passed": true
+    },
+    {
+      "name": "连接异常：重连禁用副作用操作，不兼容只给返回出路",
+      "passed": true
+    },
+    {
+      "name": "页面没有未捕捉 JavaScript 异常",
+      "passed": true
+    },
+    {
+      "name": "每个预设无整页水平溢出",
+      "passed": true
+    },
+    {
+      "name": "375px 手机播放器主播放/回开头/下一首完整可见",
+      "passed": true
+    },
+    {
+      "name": "2 倍字号播放器主控制完整可见",
+      "passed": true
+    },
+    {
+      "name": "横屏播放器主控制完整可见",
+      "passed": true
+    },
+    {
+      "name": "普通/2 倍字号/横屏播放器封面保持方形",
+      "passed": true,
+      "coverShapes": [
+        {
+          "name": "mobile-player",
+          "width": 240,
+          "height": 240
+        },
+        {
+          "name": "large-player",
+          "width": 94.578125,
+          "height": 94.578125
+        },
+        {
+          "name": "landscape-player",
+          "width": 142,
+          "height": 142
+        }
+      ]
+    },
+    {
+      "name": "812×375 横屏迷你播放控制完整可见",
+      "passed": true
+    },
+    {
+      "name": "大字号模式真实放大至 2 倍字阶",
+      "passed": true,
+      "normalPx": 16,
+      "largePx": 32
+    },
+    {
+      "name": "应用可见触控目标 ≥48×48px（总览 inert 快照不计）",
+      "passed": true,
+      "undersized": []
+    },
+    {
+      "name": "检查期间原型源码保持同一版本",
+      "passed": true
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "desktop",
+      "screenshot": "desktop.png",
+      "title": "一起听歌 · UI 设计原型",
+      "stage": "一起听 · 队列",
+      "theme": "light",
+      "textSize": "normal",
+      "viewport": {
+        "width": 1440,
+        "height": 1080
+      },
+      "documentWidth": 1425,
+      "horizontalOverflow": false,
+      "tabFontPx": 16,
+      "appBounds": {
+        "left": 529.5,
+        "top": 227,
+        "right": 905.5,
+        "bottom": 957
+      },
+      "appText": "一起听歌\n听\n夏\n宁\n3 人一起听\n已连接 · 你是房主\n队列\n点歌\n聊天\n2\n正在播放\n成全\n林宥嘉\n我点的 · 5:09\n打开播放器\n接下来 4\n去点歌\n01\n单车\n陈奕迅\n我点的\n02\n晚风\n伍佰 & China Blue\n随机 · 小夏点的\n03\n红豆\n王菲\n阿宁点的\n04\n富士山下\n陈奕迅\n我点的\n成全\n林宥嘉",
+      "controls": [
+        {
+          "text": "",
+          "label": "显示邀请二维码",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "分享房间邀请",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "房间选项",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "听夏宁3 人一起听已连接 · 你是房主",
+          "label": "查看 3 位成员，已连接",
+          "tag": "BUTTON",
+          "width": 336,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "队列",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 107,
+          "height": 53,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "点歌",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 107,
+          "height": 53,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "聊天2",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 107,
+          "height": 53,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "成全林宥嘉我点的 · 5:09打开播放器",
+          "label": "展开 成全 播放器",
+          "tag": "BUTTON",
+          "width": 326,
+          "height": 132,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "去点歌",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 74,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "管理 单车",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "管理 晚风",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "管理 红豆",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "管理 富士山下",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "成全林宥嘉",
+          "label": "展开 成全 播放器",
+          "tag": "BUTTON",
+          "width": 228,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "暂停播放",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "下一首",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        }
+      ],
+      "targetBounds": [
+        {
+          "label": "暂停播放",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        },
+        {
+          "label": "下一首",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        }
+      ],
+      "artBounds": null
+    },
+    {
+      "name": "mobile",
+      "screenshot": "mobile.png",
+      "title": "一起听歌 · UI 设计原型",
+      "stage": "一起听 · 队列",
+      "theme": "light",
+      "textSize": "normal",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "documentWidth": 375,
+      "horizontalOverflow": false,
+      "tabFontPx": 16,
+      "appBounds": {
+        "left": 0,
+        "top": 146,
+        "right": 375,
+        "bottom": 790
+      },
+      "appText": "一起听歌\n听\n夏\n宁\n3 人一起听\n已连接 · 你是房主\n队列\n点歌\n聊天\n2\n正在播放\n成全\n林宥嘉\n我点的 · 5:09\n打开播放器\n接下来 4\n去点歌\n01\n单车\n陈奕迅\n我点的\n02\n晚风\n伍佰 & China Blue\n随机 · 小夏点的\n03\n红豆\n王菲\n阿宁点的\n04\n富士山下\n陈奕迅\n我点的\n成全\n林宥嘉",
+      "controls": [
+        {
+          "text": "",
+          "label": "显示邀请二维码",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "分享房间邀请",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "房间选项",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "听夏宁3 人一起听已连接 · 你是房主",
+          "label": "查看 3 位成员，已连接",
+          "tag": "BUTTON",
+          "width": 335,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "队列",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 106,
+          "height": 53,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "点歌",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 106,
+          "height": 53,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "聊天2",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 106,
+          "height": 53,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "成全林宥嘉我点的 · 5:09打开播放器",
+          "label": "展开 成全 播放器",
+          "tag": "BUTTON",
+          "width": 335,
+          "height": 132,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "去点歌",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 74,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "管理 单车",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "管理 晚风",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "管理 红豆",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "管理 富士山下",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": false
+        },
+        {
+          "text": "成全林宥嘉",
+          "label": "展开 成全 播放器",
+          "tag": "BUTTON",
+          "width": 227,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "暂停播放",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "下一首",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        }
+      ],
+      "targetBounds": [
+        {
+          "label": "暂停播放",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        },
+        {
+          "label": "下一首",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        }
+      ],
+      "artBounds": null
+    },
+    {
+      "name": "landscape",
+      "screenshot": "landscape.png",
+      "title": "一起听歌 · UI 设计原型",
+      "stage": "一起听 · 队列",
+      "theme": "light",
+      "textSize": "normal",
+      "viewport": {
+        "width": 812,
+        "height": 375
+      },
+      "documentWidth": 812,
+      "horizontalOverflow": false,
+      "tabFontPx": 14,
+      "appBounds": {
+        "left": 0,
+        "top": 118,
+        "right": 812,
+        "bottom": 365
+      },
+      "appText": "一起听歌\n听\n夏\n宁\n3 人一起听已连接 · 你是房主\n队列\n点歌\n聊天\n2\n正在播放\n成全\n林宥嘉\n我点的 · 5:09\n打开播放器\n接下来 4\n去点歌\n01\n单车\n陈奕迅\n我点的\n02\n晚风\n伍佰 & China Blue\n随机 · 小夏点的\n03\n红豆\n王菲\n阿宁点的\n04\n富士山下\n陈奕迅\n我点的\n成全\n林宥嘉",
+      "controls": [
+        {
+          "text": "",
+          "label": "显示邀请二维码",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "分享房间邀请",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "房间选项",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "听夏宁3 人一起听已连接 · 你是房主",
+          "label": "查看 3 位成员，已连接",
+          "tag": "BUTTON",
+          "width": 772,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "队列",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 249,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "点歌",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 249,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "聊天2",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 249,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "成全林宥嘉我点的 · 5:09打开播放器",
+          "label": "展开 成全 播放器",
+          "tag": "BUTTON",
+          "width": 772,
+          "height": 106,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "去点歌",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 74,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": false
+        },
+        {
+          "text": "",
+          "label": "管理 单车",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": false
+        },
+        {
+          "text": "",
+          "label": "管理 晚风",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": false
+        },
+        {
+          "text": "",
+          "label": "管理 红豆",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": false
+        },
+        {
+          "text": "",
+          "label": "管理 富士山下",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": false
+        },
+        {
+          "text": "成全林宥嘉",
+          "label": "展开 成全 播放器",
+          "tag": "BUTTON",
+          "width": 664,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "暂停播放",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "下一首",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        }
+      ],
+      "targetBounds": [
+        {
+          "label": "暂停播放",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        },
+        {
+          "label": "下一首",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        }
+      ],
+      "artBounds": null
+    },
+    {
+      "name": "dark",
+      "screenshot": "dark.png",
+      "title": "一起听歌 · UI 设计原型",
+      "stage": "一起听 · 队列",
+      "theme": "dark",
+      "textSize": "normal",
+      "viewport": {
+        "width": 1440,
+        "height": 1080
+      },
+      "documentWidth": 1425,
+      "horizontalOverflow": false,
+      "tabFontPx": 16,
+      "appBounds": {
+        "left": 529.5,
+        "top": 227,
+        "right": 905.5,
+        "bottom": 957
+      },
+      "appText": "一起听歌\n听\n夏\n宁\n3 人一起听\n已连接 · 你是房主\n队列\n点歌\n聊天\n2\n正在播放\n成全\n林宥嘉\n我点的 · 5:09\n打开播放器\n接下来 4\n去点歌\n01\n单车\n陈奕迅\n我点的\n02\n晚风\n伍佰 & China Blue\n随机 · 小夏点的\n03\n红豆\n王菲\n阿宁点的\n04\n富士山下\n陈奕迅\n我点的\n成全\n林宥嘉",
+      "controls": [
+        {
+          "text": "",
+          "label": "显示邀请二维码",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "分享房间邀请",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "房间选项",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "听夏宁3 人一起听已连接 · 你是房主",
+          "label": "查看 3 位成员，已连接",
+          "tag": "BUTTON",
+          "width": 336,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "队列",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 107,
+          "height": 53,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "点歌",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 107,
+          "height": 53,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "聊天2",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 107,
+          "height": 53,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "成全林宥嘉我点的 · 5:09打开播放器",
+          "label": "展开 成全 播放器",
+          "tag": "BUTTON",
+          "width": 326,
+          "height": 132,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "去点歌",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 74,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "管理 单车",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "管理 晚风",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "管理 红豆",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "管理 富士山下",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "成全林宥嘉",
+          "label": "展开 成全 播放器",
+          "tag": "BUTTON",
+          "width": 228,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "暂停播放",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "下一首",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        }
+      ],
+      "targetBounds": [
+        {
+          "label": "暂停播放",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        },
+        {
+          "label": "下一首",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        }
+      ],
+      "artBounds": null
+    },
+    {
+      "name": "large",
+      "screenshot": "large.png",
+      "title": "一起听歌 · UI 设计原型",
+      "stage": "一起听 · 队列",
+      "theme": "light",
+      "textSize": "large",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "documentWidth": 375,
+      "horizontalOverflow": false,
+      "tabFontPx": 32,
+      "appBounds": {
+        "left": 0,
+        "top": 146,
+        "right": 375,
+        "bottom": 790
+      },
+      "appText": "一起听歌\n听\n夏\n宁\n3 人一起听\n已连接 · 你是房主\n队列\n点歌\n聊天\n2\n正在播放\n成全\n林宥嘉\n我点的 · 5:09\n打开播放器\n接下来 4\n去点歌\n01\n单车\n陈奕迅\n我点的\n02\n晚风\n伍佰 & China Blue\n随机 · 小夏点的\n03\n红豆\n王菲\n阿宁点的\n04\n富士山下\n陈奕迅\n我点的\n成全\n林宥嘉",
+      "controls": [
+        {
+          "text": "",
+          "label": "显示邀请二维码",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "分享房间邀请",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "房间选项",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "听夏宁3 人一起听已连接 · 你是房主",
+          "label": "查看 3 位成员，已连接",
+          "tag": "BUTTON",
+          "width": 335,
+          "height": 80,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "队列",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 114,
+          "height": 74,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "点歌",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 114,
+          "height": 74,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "聊天2",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 114,
+          "height": 74,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "成全林宥嘉我点的 · 5:09打开播放器",
+          "label": "展开 成全 播放器",
+          "tag": "BUTTON",
+          "width": 335,
+          "height": 207,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "去点歌",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 110,
+          "height": 56,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "管理 单车",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "管理 晚风",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": false
+        },
+        {
+          "text": "",
+          "label": "管理 红豆",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": false
+        },
+        {
+          "text": "",
+          "label": "管理 富士山下",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": false
+        },
+        {
+          "text": "成全林宥嘉",
+          "label": "展开 成全 播放器",
+          "tag": "BUTTON",
+          "width": 227,
+          "height": 90,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "暂停播放",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "下一首",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        }
+      ],
+      "targetBounds": [
+        {
+          "label": "暂停播放",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        },
+        {
+          "label": "下一首",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        }
+      ],
+      "artBounds": null
+    },
+    {
+      "name": "overview",
+      "screenshot": "overview.png",
+      "title": "一起听歌 · UI 设计原型",
+      "stage": "一起听 · 队列",
+      "theme": "light",
+      "textSize": "normal",
+      "viewport": {
+        "width": 1440,
+        "height": 1080
+      },
+      "documentWidth": 1440,
+      "horizontalOverflow": false,
+      "tabFontPx": 16,
+      "appBounds": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0
+      },
+      "appText": "一起听歌听夏宁3 人一起听已连接 · 你是房主队列点歌聊天2正在播放成全林宥嘉我点的 · 5:09打开播放器 接下来 4去点歌 01单车陈奕迅我点的02晚风伍佰 & China Blue随机 · 小夏点的03红豆王菲阿宁点的04富士山下陈奕迅我点的成全林宥嘉",
+      "controls": [],
+      "targetBounds": [
+        {
+          "label": "暂停播放",
+          "width": 0,
+          "height": 0,
+          "fullyVisible": true
+        },
+        {
+          "label": "下一首",
+          "width": 0,
+          "height": 0,
+          "fullyVisible": true
+        }
+      ],
+      "artBounds": null
+    },
+    {
+      "name": "mobile-home",
+      "screenshot": "mobile-home.png",
+      "title": "一起听歌 · UI 设计原型",
+      "stage": "创建 / 加入",
+      "theme": "light",
+      "textSize": "normal",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "documentWidth": 375,
+      "horizontalOverflow": false,
+      "tabFontPx": 16,
+      "appBounds": {
+        "left": 0,
+        "top": 146,
+        "right": 375,
+        "bottom": 790
+      },
+      "appText": "一起听歌\nSTART A ROOM\n创建房间\n创建房间\n加入房间\n怎么称呼你\n高级设置\n创建房间",
+      "controls": [
+        {
+          "text": "创建房间",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 138,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "加入房间",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 138,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": null,
+          "tag": "INPUT",
+          "width": 287,
+          "height": 54,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": null,
+          "tag": "INPUT",
+          "width": 287,
+          "height": 54,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "创建房间",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 287,
+          "height": 52,
+          "disabled": false,
+          "visibleInApp": true
+        }
+      ],
+      "targetBounds": [],
+      "artBounds": null
+    },
+    {
+      "name": "mobile-queue",
+      "screenshot": "mobile-queue.png",
+      "title": "一起听歌 · UI 设计原型",
+      "stage": "一起听 · 队列",
+      "theme": "light",
+      "textSize": "normal",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "documentWidth": 375,
+      "horizontalOverflow": false,
+      "tabFontPx": 16,
+      "appBounds": {
+        "left": 0,
+        "top": 146,
+        "right": 375,
+        "bottom": 790
+      },
+      "appText": "一起听歌\n听\n夏\n宁\n3 人一起听\n已连接 · 你是房主\n队列\n点歌\n聊天\n2\n正在播放\n成全\n林宥嘉\n我点的 · 5:09\n打开播放器\n接下来 4\n去点歌\n01\n单车\n陈奕迅\n我点的\n02\n晚风\n伍佰 & China Blue\n随机 · 小夏点的\n03\n红豆\n王菲\n阿宁点的\n04\n富士山下\n陈奕迅\n我点的\n成全\n林宥嘉",
+      "controls": [
+        {
+          "text": "",
+          "label": "显示邀请二维码",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "分享房间邀请",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "房间选项",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "听夏宁3 人一起听已连接 · 你是房主",
+          "label": "查看 3 位成员，已连接",
+          "tag": "BUTTON",
+          "width": 335,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "队列",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 106,
+          "height": 53,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "点歌",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 106,
+          "height": 53,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "聊天2",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 106,
+          "height": 53,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "成全林宥嘉我点的 · 5:09打开播放器",
+          "label": "展开 成全 播放器",
+          "tag": "BUTTON",
+          "width": 335,
+          "height": 132,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "去点歌",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 74,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "管理 单车",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "管理 晚风",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "管理 红豆",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "管理 富士山下",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": false
+        },
+        {
+          "text": "成全林宥嘉",
+          "label": "展开 成全 播放器",
+          "tag": "BUTTON",
+          "width": 227,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "暂停播放",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "下一首",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        }
+      ],
+      "targetBounds": [
+        {
+          "label": "暂停播放",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        },
+        {
+          "label": "下一首",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        }
+      ],
+      "artBounds": null
+    },
+    {
+      "name": "mobile-search",
+      "screenshot": "mobile-search.png",
+      "title": "一起听歌 · UI 设计原型",
+      "stage": "点一首歌",
+      "theme": "light",
+      "textSize": "normal",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "documentWidth": 375,
+      "horizontalOverflow": false,
+      "tabFontPx": 16,
+      "appBounds": {
+        "left": 0,
+        "top": 146,
+        "right": 375,
+        "bottom": 790
+      },
+      "appText": "一起听歌\n听\n夏\n宁\n3 人一起听\n已连接 · 你是房主\n队列\n点歌\n聊天\n2\n搜索歌名或歌手\n随机加 1 首\n随机加 5 首\n浏览曲库\n9 首样本\n成全\n林宥嘉\n5:09\n已点\n单车\n陈奕迅\n3:31\n已点\n晚风\n伍佰 & China Blue\n3:45\n已点\n红豆\n王菲\n4:17\n已点\n富士山下\n陈奕迅\n4:19\n已点\n加载更多\n成全\n林宥嘉",
+      "controls": [
+        {
+          "text": "",
+          "label": "显示邀请二维码",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "分享房间邀请",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "房间选项",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "听夏宁3 人一起听已连接 · 你是房主",
+          "label": "查看 3 位成员，已连接",
+          "tag": "BUTTON",
+          "width": 335,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "队列",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 106,
+          "height": 53,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "点歌",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 106,
+          "height": 53,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "聊天2",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 106,
+          "height": 53,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": null,
+          "tag": "INPUT",
+          "width": 233,
+          "height": 52,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "清空搜索",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "随机加 1 首",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 164,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "随机加 5 首",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 164,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "已点",
+          "label": "已点 成全",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 52,
+          "disabled": true,
+          "visibleInApp": true
+        },
+        {
+          "text": "已点",
+          "label": "已点 单车",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 52,
+          "disabled": true,
+          "visibleInApp": true
+        },
+        {
+          "text": "已点",
+          "label": "已点 晚风",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 52,
+          "disabled": true,
+          "visibleInApp": true
+        },
+        {
+          "text": "已点",
+          "label": "已点 红豆",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 52,
+          "disabled": true,
+          "visibleInApp": false
+        },
+        {
+          "text": "已点",
+          "label": "已点 富士山下",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 52,
+          "disabled": true,
+          "visibleInApp": false
+        },
+        {
+          "text": "加载更多",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 335,
+          "height": 54,
+          "disabled": false,
+          "visibleInApp": false
+        },
+        {
+          "text": "成全林宥嘉",
+          "label": "展开 成全 播放器",
+          "tag": "BUTTON",
+          "width": 227,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "暂停播放",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "下一首",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        }
+      ],
+      "targetBounds": [
+        {
+          "label": "暂停播放",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        },
+        {
+          "label": "下一首",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        }
+      ],
+      "artBounds": null
+    },
+    {
+      "name": "mobile-chat",
+      "screenshot": "mobile-chat.png",
+      "title": "一起听歌 · UI 设计原型",
+      "stage": "边听边聊",
+      "theme": "light",
+      "textSize": "normal",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "documentWidth": 375,
+      "horizontalOverflow": false,
+      "tabFontPx": 16,
+      "appBounds": {
+        "left": 0,
+        "top": 146,
+        "right": 375,
+        "bottom": 790
+      },
+      "appText": "一起听歌\n听\n夏\n宁\n3 人一起听\n已连接 · 你是房主\n队列\n点歌\n聊天\n今天 · 21:06\n夏\n小夏\n这首歌好适合晚上听。\n21:06\n宁\n阿宁\n那我点一首《红豆》，接着听。\n21:07\n好呀，今晚慢慢听。\n21:08\n聊天消息\n成全\n林宥嘉",
+      "controls": [
+        {
+          "text": "",
+          "label": "显示邀请二维码",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "分享房间邀请",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "房间选项",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "听夏宁3 人一起听已连接 · 你是房主",
+          "label": "查看 3 位成员，已连接",
+          "tag": "BUTTON",
+          "width": 335,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "队列",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 106,
+          "height": 53,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "点歌",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 106,
+          "height": 53,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "聊天",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 106,
+          "height": 53,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": null,
+          "tag": "TEXTAREA",
+          "width": 291,
+          "height": 52,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "发送消息",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": true,
+          "visibleInApp": true
+        },
+        {
+          "text": "成全林宥嘉",
+          "label": "展开 成全 播放器",
+          "tag": "BUTTON",
+          "width": 227,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "暂停播放",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "下一首",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        }
+      ],
+      "targetBounds": [
+        {
+          "label": "暂停播放",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        },
+        {
+          "label": "下一首",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        }
+      ],
+      "artBounds": null
+    },
+    {
+      "name": "mobile-player",
+      "screenshot": "mobile-player.png",
+      "title": "一起听歌 · UI 设计原型",
+      "stage": "沉浸播放器",
+      "theme": "light",
+      "textSize": "normal",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "documentWidth": 375,
+      "horizontalOverflow": false,
+      "tabFontPx": 16,
+      "appBounds": {
+        "left": 0,
+        "top": 146,
+        "right": 375,
+        "bottom": 790
+      },
+      "appText": "一起听歌\n听\n夏\n宁\n3 人一起听\n已连接 · 你是房主\n队列\n点歌\n聊天\n正在播放\n成全\n林宥嘉\n我点的 · 5:09\n打开播放器\n接下来 4\n去点歌\n01\n单车\n陈奕迅\n我点的\n02\n晚风\n伍佰 & China Blue\n随机 · 小夏点的\n03\n红豆\n王菲\n阿宁点的\n04\n富士山下\n陈奕迅\n我点的\n成全\n林宥嘉\n正在一起听\n听\n夏\n宁\n3 人一起听这首歌\n点击封面查看歌词\n成全\n\n林宥嘉\n\n播放进度\n2:18\n5:09\n\n房主控制播放，大家一起听。",
+      "controls": [
+        {
+          "text": "",
+          "label": "显示邀请二维码",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "分享房间邀请",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "房间选项",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "听夏宁3 人一起听已连接 · 你是房主",
+          "label": "查看 3 位成员，已连接",
+          "tag": "BUTTON",
+          "width": 335,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "队列",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 106,
+          "height": 53,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "点歌",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 106,
+          "height": 53,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "聊天",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 106,
+          "height": 53,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "成全林宥嘉我点的 · 5:09打开播放器",
+          "label": "展开 成全 播放器",
+          "tag": "BUTTON",
+          "width": 335,
+          "height": 132,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "去点歌",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 74,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "管理 单车",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "管理 晚风",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "管理 红豆",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "管理 富士山下",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": false
+        },
+        {
+          "text": "成全林宥嘉",
+          "label": "展开 成全 播放器",
+          "tag": "BUTTON",
+          "width": 227,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "暂停播放",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "下一首",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "关闭",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "切换到歌词",
+          "tag": "BUTTON",
+          "width": 240,
+          "height": 240,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": null,
+          "tag": "INPUT",
+          "width": 315,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "回到歌曲开头",
+          "tag": "BUTTON",
+          "width": 52,
+          "height": 52,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "暂停播放",
+          "tag": "BUTTON",
+          "width": 72,
+          "height": 72,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "下一首",
+          "tag": "BUTTON",
+          "width": 52,
+          "height": 52,
+          "disabled": false,
+          "visibleInApp": true
+        }
+      ],
+      "targetBounds": [
+        {
+          "label": "暂停播放",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        },
+        {
+          "label": "下一首",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        },
+        {
+          "label": "回到歌曲开头",
+          "width": 52,
+          "height": 52,
+          "fullyVisible": true
+        },
+        {
+          "label": "暂停播放",
+          "width": 72,
+          "height": 72,
+          "fullyVisible": true
+        },
+        {
+          "label": "下一首",
+          "width": 52,
+          "height": 52,
+          "fullyVisible": true
+        }
+      ],
+      "artBounds": {
+        "width": 240,
+        "height": 240
+      }
+    },
+    {
+      "name": "large-player",
+      "screenshot": "large-player.png",
+      "title": "一起听歌 · UI 设计原型",
+      "stage": "沉浸播放器",
+      "theme": "light",
+      "textSize": "large",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "documentWidth": 375,
+      "horizontalOverflow": false,
+      "tabFontPx": 32,
+      "appBounds": {
+        "left": 0,
+        "top": 146,
+        "right": 375,
+        "bottom": 790
+      },
+      "appText": "一起听歌\n听\n夏\n宁\n3 人一起听\n已连接 · 你是房主\n队列\n点歌\n聊天\n正在播放\n成全\n林宥嘉\n我点的 · 5:09\n打开播放器\n接下来 4\n去点歌\n01\n单车\n陈奕迅\n我点的\n02\n晚风\n伍佰 & China Blue\n随机 · 小夏点的\n03\n红豆\n王菲\n阿宁点的\n04\n富士山下\n陈奕迅\n我点的\n成全\n林宥嘉\n正在一起听\n听\n夏\n宁\n3 人一起听这首歌\n点击封面查看歌词\n成全\n\n林宥嘉\n\n播放进度\n2:18\n5:09\n\n房主控制播放，大家一起听。",
+      "controls": [
+        {
+          "text": "",
+          "label": "显示邀请二维码",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "分享房间邀请",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "房间选项",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "听夏宁3 人一起听已连接 · 你是房主",
+          "label": "查看 3 位成员，已连接",
+          "tag": "BUTTON",
+          "width": 335,
+          "height": 80,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "队列",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 114,
+          "height": 74,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "点歌",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 114,
+          "height": 74,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "聊天",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 114,
+          "height": 74,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "成全林宥嘉我点的 · 5:09打开播放器",
+          "label": "展开 成全 播放器",
+          "tag": "BUTTON",
+          "width": 335,
+          "height": 207,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "去点歌",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 110,
+          "height": 56,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "管理 单车",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "管理 晚风",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": false
+        },
+        {
+          "text": "",
+          "label": "管理 红豆",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": false
+        },
+        {
+          "text": "",
+          "label": "管理 富士山下",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": false
+        },
+        {
+          "text": "成全林宥嘉",
+          "label": "展开 成全 播放器",
+          "tag": "BUTTON",
+          "width": 227,
+          "height": 90,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "暂停播放",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "下一首",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "关闭",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "切换到歌词",
+          "tag": "BUTTON",
+          "width": 240,
+          "height": 95,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": null,
+          "tag": "INPUT",
+          "width": 315,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "回到歌曲开头",
+          "tag": "BUTTON",
+          "width": 52,
+          "height": 52,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "暂停播放",
+          "tag": "BUTTON",
+          "width": 72,
+          "height": 72,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "下一首",
+          "tag": "BUTTON",
+          "width": 52,
+          "height": 52,
+          "disabled": false,
+          "visibleInApp": true
+        }
+      ],
+      "targetBounds": [
+        {
+          "label": "暂停播放",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        },
+        {
+          "label": "下一首",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        },
+        {
+          "label": "回到歌曲开头",
+          "width": 52,
+          "height": 52,
+          "fullyVisible": true
+        },
+        {
+          "label": "暂停播放",
+          "width": 72,
+          "height": 72,
+          "fullyVisible": true
+        },
+        {
+          "label": "下一首",
+          "width": 52,
+          "height": 52,
+          "fullyVisible": true
+        }
+      ],
+      "artBounds": {
+        "width": 94.578125,
+        "height": 94.578125
+      }
+    },
+    {
+      "name": "landscape-player",
+      "screenshot": "landscape-player.png",
+      "title": "一起听歌 · UI 设计原型",
+      "stage": "沉浸播放器",
+      "theme": "light",
+      "textSize": "normal",
+      "viewport": {
+        "width": 812,
+        "height": 375
+      },
+      "documentWidth": 812,
+      "horizontalOverflow": false,
+      "tabFontPx": 14,
+      "appBounds": {
+        "left": 0,
+        "top": 118,
+        "right": 812,
+        "bottom": 365
+      },
+      "appText": "一起听歌\n听\n夏\n宁\n3 人一起听已连接 · 你是房主\n队列\n点歌\n聊天\n正在播放\n成全\n林宥嘉\n我点的 · 5:09\n打开播放器\n接下来 4\n去点歌\n01\n单车\n陈奕迅\n我点的\n02\n晚风\n伍佰 & China Blue\n随机 · 小夏点的\n03\n红豆\n王菲\n阿宁点的\n04\n富士山下\n陈奕迅\n我点的\n成全\n林宥嘉\n正在一起听\n听\n夏\n宁\n3 人一起听这首歌\n点击封面查看歌词\n成全\n\n林宥嘉\n\n播放进度\n2:18\n5:09\n\n房主控制播放，大家一起听。",
+      "controls": [
+        {
+          "text": "",
+          "label": "显示邀请二维码",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "分享房间邀请",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "房间选项",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "听夏宁3 人一起听已连接 · 你是房主",
+          "label": "查看 3 位成员，已连接",
+          "tag": "BUTTON",
+          "width": 772,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "队列",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 249,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "点歌",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 249,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "聊天",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 249,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "成全林宥嘉我点的 · 5:09打开播放器",
+          "label": "展开 成全 播放器",
+          "tag": "BUTTON",
+          "width": 772,
+          "height": 106,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "去点歌",
+          "label": null,
+          "tag": "BUTTON",
+          "width": 74,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": false
+        },
+        {
+          "text": "",
+          "label": "管理 单车",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": false
+        },
+        {
+          "text": "",
+          "label": "管理 晚风",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": false
+        },
+        {
+          "text": "",
+          "label": "管理 红豆",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": false
+        },
+        {
+          "text": "",
+          "label": "管理 富士山下",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": false
+        },
+        {
+          "text": "成全林宥嘉",
+          "label": "展开 成全 播放器",
+          "tag": "BUTTON",
+          "width": 664,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "暂停播放",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "下一首",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "关闭",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "切换到歌词",
+          "tag": "BUTTON",
+          "width": 170,
+          "height": 142,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": null,
+          "tag": "INPUT",
+          "width": 342,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "回到歌曲开头",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "暂停播放",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        },
+        {
+          "text": "",
+          "label": "下一首",
+          "tag": "BUTTON",
+          "width": 48,
+          "height": 48,
+          "disabled": false,
+          "visibleInApp": true
+        }
+      ],
+      "targetBounds": [
+        {
+          "label": "暂停播放",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        },
+        {
+          "label": "下一首",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        },
+        {
+          "label": "回到歌曲开头",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        },
+        {
+          "label": "暂停播放",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        },
+        {
+          "label": "下一首",
+          "width": 48,
+          "height": 48,
+          "fullyVisible": true
+        }
+      ],
+      "artBounds": {
+        "width": 142,
+        "height": 142
+      }
+    }
+  ],
+  "runtimeErrors": [],
+  "browser": "Chrome/154.0.8037.58",
+  "sourcesAfter": {
+    "index.html": "a866872ef3525d942c24d849c949311b341b9618b4af9b5a91ea3d1a64c8e3ea",
+    "app.js": "91dacf315311446dd0eddabb799e492b695eab0d519adf64ff8301656b4f41fd",
+    "styles.css": "31cc299adc3f1abd0daf96842591b9992d97d2b4d3c2e9ef07e467259088bd86"
+  },
+  "completedAt": "2026-09-30T15:03:06.442Z"
+}

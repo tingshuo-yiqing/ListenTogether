@@ -1,10 +1,28 @@
 # 03 Android 播放服务
 
+## 媒体元数据（2026-10-02 本地通过）
+
+PlaybackService 构造 MediaItem 时使用 `playback/TrackMetadata.kt` 的 `Track.mediaMetadata()`：title、artist（空时“一起听歌”）、albumTitle；实际 Media3 builder 三项 JVM 测试通过，换到无专辑曲时 albumTitle=null，不沿用前曲。Models.kt 解析公开 album，缺失/空串/错类型兼容旧服务端。歌手原本已有实现，本轮提取共用构造并补回归。
+
+本轮安卓 180 项/24 套件、Lint 0；固定 APK 041b4295… 未装机，不以 JVM metadata 值代替系统通知显示。播放策略、entryId、本机暂停与 SyncMath/纠偏参数未改。证据：[无真机任务](../test-results/2026-10-02-desktop-tasks/README.md)。
+
+2026-10-01 最新修复与设备边界见 [修复报告](../test-results/2026-10-01-queue-chat-fixes/README.md)及 [verification](../verification.md)：server 63/63、安卓 173、脚本 51/51、Lint 0；ACC 代码/自动化通过，完整设备矩阵与发布仍待验。当前 APK ABCB8582… 已覆盖安装 PHQ110；历史报告保持原失败与对应版本。
+
+最新播放修复：track=null 先 stop/clearMediaItems、复位倍速与上报进度，再检查本机暂停；loadedEntryId 与 loadedTrackId 共同判断装载身份，同曲重新入队能重新加载。聊天/队列更新不调用 applyState，播放/连接/校时仍通知观察者。b5d83aaf… 实机在蓝牙中断本机暂停后自然耗尽，MediaSession NONE/0/null/空队列取得证据；后续能力补丁未改此服务源码。SyncMath/纠偏参数不变；下面原生 UI 交付段为修复前历史。
+
 ## 职责与当前入口
 PlaybackService.kt 持有 ExoPlayer、MediaSession、HTTP音频数据源；播放可独立于页面继续。
 ForwardingSimpleBasePlayer 将通知/耳机媒体控制转为 RoomClient 意图，applyState 直接操作底层 Player，避免同步回发成控制指令。
 PlaybackPolicy 判断共享播放与本地暂停；音频属性使用媒体用途并由 ExoPlayer 管理焦点。
-通知/蓝牙的上一首、下一首经 `sync/TrackQueue.skip`（环形回绕纯函数）转为房主 select 意图；服务端仍是播放唯一来源，客户端只在用户点按时发切歌命令。
+（v2，QC-B2）通知/蓝牙的下一首 = 房主 `skip-next`（服务端消费队头），上一首 = 回到当前曲开头（seek 0 保留播放/暂停意图）；服务端仍是播放唯一来源。`sync/TrackQueue.kt` 已删除，播放路径不再依赖全库歌单。
+
+## 原生 UI 控制接线（2026-10-01）
+
+本轮重做 Compose 迷你播放器 / 展开页，并继续通过现有 `RoomClient.setPlaying`、`command("seek")`、`skipNext` 发出用户意图；不新增第二播放器。`PlaybackService.kt`、MediaSession 路由、校时 / 漂移参数与本机暂停规则均未因 UI 修改而改写。真实封面与歌词继续通过既有鉴权、缓存与 `lyricsVer` 链路读取。
+
+展开播放器移除「回到开头」，保留底部集中 seek / 播放 / 下一首；成员只暂停 / 恢复本机，不显示可点击的共享 seek / 下一首。媒体通知与耳机的既有上一首仍为 seek 0、下一首仍为房主 skip-next；页面按钮精简不代表通知栏行为已改或本轮已验收通知栏。清空当前曲时 UI 隐藏迷你播放器并关闭展开页，但本机暂停下旧媒体清理顺序与聊天 / 待播触发 applyState 等存量 v2 缺陷仍见 [独立验收](../test-results/2026-09-30-queue-chat-acceptance/README.md)，不能由 UI 隐藏推断 Service 已清理旧通知或音频。
+
+本轮原生截图、APK 与门禁见 [Android 验收](../test-results/2026-10-01-android-ui/README.md)；双真机同步、真实听感 / 通知栏及 R8 帧表现必须各有专项证据，沿用历史通过结论时须保持对应 APK 与环境边界。
 
 ## 数据流
 收到有效房间快照 → 匹配 Track → 设置鉴权请求头 → 计算目标位置 → 必要时换 MediaItem/prepare/seek → 更新 playWhenReady。
@@ -34,7 +52,7 @@ onPlayerError 沿异常链取 HTTP 状态码交给 [PlaybackFailure] 分类：40
 ## 通知栏切歌命令（2026-09-24 修复 后台上一首/下一首失效）
 - 症状：媒体通知没有「下一首」按钮，「上一首」表现为回到当前曲目开头。
 - 根因：`ForwardingSimpleBasePlayer.getState()` 透传底层单条目 ExoPlayer 的可用命令——没有 COMMAND_SEEK_TO_NEXT，COMMAND_SEEK_TO_PREVIOUS 由 ExoPlayer 实现为回到条目开头（rewind），转发器把它当普通 seek 处理。
-- 修复：`controlled` 覆写 `getState()` 用 `State.buildUpon()` 追加 COMMAND_SEEK_TO_NEXT/PREVIOUS；`handleSeek(mediaItemIndex, positionMs, seekCommand)` 对 NEXT/PREVIOUS 调 `TrackQueue.skip(tracks, currentId, ±1)`（环形回绕，未知当前曲目时下一首取第一首、上一首取最后一首），仅房主实际发 `command("select")`；其余 seek 仍走房主 command seek。成员身份由服务端拒绝，客户端不另设限。
+- 修复：`controlled` 覆写 `getState()` 用 `State.buildUpon()` 追加 COMMAND_SEEK_TO_NEXT/PREVIOUS；`handleSeek(mediaItemIndex, positionMs, seekCommand)` 对 NEXT 调 `client.skipNext()`、PREVIOUS 调 `command("seek", 0)`（回到开头），仅房主生效；其余 seek 仍走房主 command seek。成员身份由服务端拒绝，客户端不另设限。
 - 依赖陷阱：`kotlin.math.floorMod` 不存在（编译期即失败），负数安全回绕用 `java.lang.Math.floorMod`；Kotlin `%` 对负数保留负号。TrackQueueTest 5 项覆盖回绕/空歌单/未知当前曲目/单首自环。
 
 ## 下一阶段
@@ -65,6 +83,9 @@ Activity 退出只释放 Controller；后台播放依靠媒体前台服务。
 2026-09-22：音频焦点抢占（其他媒体、真实来电）真机验证通过；补 localPause 边沿诊断并复验。
 2026-09-24：修复 A-01 会话代次守卫——applyState/onPlayerError/500ms循环/焦点回调四处加代次检查，旧实例不再影响新会话。
 2026-09-24：修复后台通知栏上一首/下一首——getState() 补 NEXT/PREVIOUS 命令、handleSeek 路由到 TrackQueue.skip（房主 select）；真机验收见 test-results/2026-09-24-feedback-round。
+2026-09-30（QC-B2）：v2——当前曲元数据来自 state.track（空为 null → pause + clearMediaItems + 复位倍速，通知栏不留旧曲标题与可用切歌钮，房间连接与队列保留）；切歌路由改 skip-next / 回到开头；select 与 TrackQueue 退出生产播放路径。
 
 ## 2026-09-26 遗留修复：倍速实际复位
 原 load/大漂移 seek 分支只把 `catchupSpeed` 缓存置 1.0，未写回 ExoPlayer，导致后续暂停复位也可能被缓存短路。删除重复缓存，`PlaybackPolicy.correctionSpeed` 直接以 `player.playbackParameters.speed` 决策；换曲、共享暂停、断线/本机暂停、空曲目与大漂移 seek 均写回原速。阈值、权限与同步时基不变。新增 5 项策略回归覆盖双向追赶、复位、缓冲和滞回；实际听感/设备倍速仍待真机，见 [本轮记录](../test-results/2026-09-26-legacy-fixes/README.md)。
+
+2026-10-01：Compose 播放器控制继续走现有业务意图，展开页删除回开头而媒体通知保留现实现；Service / 同步源码未改，存量 v2 缺陷与设备验证边界显式保留。

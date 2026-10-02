@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.listentogether.app.PlaybackPolicyTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-10-01T16:41:22" hostname="LAPTOP-8H39RU28" time="0.002">
+  <properties/>
+  <testcase name="smallDriftUsesBoundedSpeedInBothDirections" classname="com.listentogether.app.PlaybackPolicyTest" time="0.002"/>
+  <testcase name="bufferingDefersCorrectionUnlessExplicitlyReset" classname="com.listentogether.app.PlaybackPolicyTest" time="0.0"/>
+  <testcase name="loadAndPauseResetActualPlayerSpeedEvenDuringBuffering" classname="com.listentogether.app.PlaybackPolicyTest" time="0.0"/>
+  <testcase name="catchupFinishesAtBoundaryAndPreservesHysteresis" classname="com.listentogether.app.PlaybackPolicyTest" time="0.0"/>
+  <testcase name="interruptionSurvivesFurtherPlayingSnapshots" classname="com.listentogether.app.PlaybackPolicyTest" time="0.0"/>
+  <testcase name="hardSeekResetsBothFastAndSlowCorrection" classname="com.listentogether.app.PlaybackPolicyTest" time="0.0"/>
+  <testcase name="explicitResumeFollowsPlayingRoom" classname="com.listentogether.app.PlaybackPolicyTest" time="0.0"/>
+  <testcase name="localResumeCannotOverridePausedRoom" classname="com.listentogether.app.PlaybackPolicyTest" time="0.0"/>
+  <testcase name="disconnectPausesEvenWhenRoomIsPlaying" classname="com.listentogether.app.PlaybackPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

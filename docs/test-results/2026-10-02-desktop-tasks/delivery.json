@@ -1,0 +1,56 @@
+{
+  "createdAt": "2026-10-02T01:24:17.9253520+08:00",
+  "apk": {
+    "path": "deploy-artifacts/ListenTogether-desktop-041b4295.apk",
+    "sha256": "041b42955fb8bf6b740960e5032bb3c0c9e8c0e8932304d8ac70e5693aa3c753",
+    "bytes": 21787637,
+    "installedByThisTask": false,
+    "parallelTaskEmulatorEvidence": "docs/test-results/2026-10-02-chat-keyboard/README.md"
+  },
+  "android": {
+    "tests": 180,
+    "suites": 24,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "lintIssues": 0
+  },
+  "serverTests": 74,
+  "scriptsTests": 51,
+  "browserChecks": 8,
+  "linuxChecks": 3,
+  "systemdChecks": 5,
+  "cloudModified": false,
+  "realMediaModified": false,
+  "gitCommitted": false,
+  "package": {
+    "path": "deploy-artifacts/listen-together-server-0.1.0-20261002-013255.tar.gz",
+    "bytes": 142792,
+    "sha256": "22a58d0379e3b6eb05ca99dd86e2cdea03a1f4795d2df04051ca6d4e1474f94b",
+    "checksumFile": "deploy-artifacts/SHA256SUMS-20261002-013255.txt",
+    "serverOnly": true,
+    "uploaded": false
+  },
+  "environment": {
+    "windowsNode": "v24.21.0",
+    "python": "3.11.7",
+    "linuxNode": "v24.21.0",
+    "systemd": "255.4",
+    "wsl": "Ubuntu",
+    "browser": "Chrome headless CDP"
+  },
+  "sourceSnapshotAt": "2026-10-01T17:45:43.187940+00:00",
+  "gitHead": "495d3352766024ddeaa655761bf4e7f88bbe7f43",
+  "sourceFiles": 159,
+  "validation": {
+    "docLinks": true,
+    "gitDiffCheck": true,
+    "powershellParseErrors": 0,
+    "packageChecksums": true,
+    "extractedSchemaGeneration": true,
+    "extractedTypeScriptBuild": true,
+    "dependencies": "reused workspace node_modules; no network npm ci",
+    "realCatalogReadonlyTracks": 45,
+    "fixedAndCurrentApkMatch": true
+  }
+}

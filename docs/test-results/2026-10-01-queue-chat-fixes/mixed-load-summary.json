@@ -1,0 +1,36 @@
+{
+  "event": "summary",
+  "durationS": 30,
+  "members": 15,
+  "clockRttMs": {
+    "p50": 0.9,
+    "p95": 11.9,
+    "p99": 50.1,
+    "samples": 411
+  },
+  "hostCmdAckMs": {
+    "p50": 1.4,
+    "p95": 2.6,
+    "samples": 5
+  },
+  "queueAckMs": {
+    "p50": 4.4,
+    "p95": 34.9,
+    "samples": 124
+  },
+  "chatAckMs": {
+    "p50": 2.2,
+    "p95": 24.2,
+    "samples": 140
+  },
+  "rateLimited429": 0,
+  "ackTimeouts": 0,
+  "reconnects": 0,
+  "unexpectedErrors": [],
+  "seqGaps": 0,
+  "seqRegress": 0,
+  "chatSeqMax": 140,
+  "eventLoopSamples": 3,
+  "eventLoopP99MsMax": 60.26,
+  "eventLoopMaxMsMax": 160.956
+}

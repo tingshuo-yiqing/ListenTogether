@@ -4,10 +4,12 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import WebSocket from 'ws';
 import { buildApp } from '../src/app.js';
+import { protocolSchema } from '../src/realtime/protocol-schema.generated.js';
+import { validClientMessage } from '../src/realtime/protocol.js';
 import { validate } from './mini-schema.js';
 import type { Track } from '../src/library/catalog.js';
 
-const track = (id = 'one', durationMs = 10000): Track => ({ id, title: id, durationMs, path: '', size: 10, artist: null, cover: null, coverVer: null, lyricsPath: null, lyricsVer: null });
+const track = (id = 'one', durationMs = 10000): Track => ({ id, title: id, durationMs, path: '', size: 10, artist: null, cover: null, coverVer: null, lyricsPath: null, lyricsVer: null, album: null });
 
 /** 从 docs/protocol.md 的「## JSON Schema」小节提取第一个 ```json 代码块；文档即契约，测试不另存一份 schema。 */
 async function loadProtocolSchema() {
@@ -27,40 +29,62 @@ async function until(predicate: () => boolean) {
   while (!predicate()) { if (Date.now() > end) throw new Error('WebSocket timeout'); await new Promise(resolve => setTimeout(resolve, 10)); }
 }
 
-test('protocol.md 的 schema 声明了五类消息，且能校验 buildApp 产出的真实消息', async t => {
+test('protocol.md 的 v2 schema 声明了 17 类消息，且能校验 buildApp 产出的真实消息', async t => {
   const schema = await loadProtocolSchema();
+  assert.deepEqual(protocolSchema, schema);
   // 先钉住 schema 本身：删分支、改 $ref 名都会让"文档与实现不漂移"的保证失效，这里直接拦住。
-  assert.deepEqual(schema.oneOf.map((branch: { $ref: string }) => branch.$ref).sort(),
-    ['#/$defs/clock', '#/$defs/command', '#/$defs/error', '#/$defs/state', '#/$defs/sync'].sort());
-  for (const name of ['state', 'clock', 'error', 'sync', 'command']) {
-    assert.equal(schema.$defs[name].properties.type.const, name, `${name} 分支的 type 常量须与定义名一致`);
+  assert.deepEqual(schema.oneOf.map((branch: { $ref: string }) => branch.$ref).sort(), [
+    '#/$defs/ack', '#/$defs/clock', '#/$defs/command', '#/$defs/error', '#/$defs/queueAdd',
+    '#/$defs/queueAddRandom', '#/$defs/queueMove', '#/$defs/queueRemove', '#/$defs/queueState',
+    '#/$defs/queueSync', '#/$defs/skipNext', '#/$defs/state', '#/$defs/sync',
+    '#/$defs/chatSend', '#/$defs/chatSync', '#/$defs/chatMessage', '#/$defs/chatSnapshot',
+  ].sort());
+  const typeConst: Record<string, string> = { queueSync: 'queue.sync', queueAdd: 'queue.add', queueAddRandom: 'queue.addRandom', queueRemove: 'queue.remove', queueMove: 'queue.move', skipNext: 'skip-next', queueState: 'queue.state', chatSend: 'chat.send', chatSync: 'chat.sync', chatMessage: 'chat.message', chatSnapshot: 'chat.snapshot' };
+  for (const name of ['state', 'clock', 'error', 'sync', 'command', 'queueAdd', 'queueAddRandom', 'queueRemove', 'queueMove', 'skipNext', 'queueState', 'ack', 'chatSend', 'chatSync', 'chatMessage', 'chatSnapshot']) {
+    assert.equal(schema.$defs[name].properties.type.const, typeConst[name] ?? name, `${name} 分支的 type 常量须与定义名一致`);
   }
 
   const { app, rooms } = await buildApp([track()], { timers: false });
   const sockets: WebSocket[] = [];
   t.after(async () => { sockets.forEach(ws => ws.terminate()); await app.close(); });
   const address = await app.listen({ port: 0, host: '127.0.0.1' });
-  const host = (await app.inject({ method: 'POST', url: '/api/rooms', payload: { nickname: 'protocol' } })).json();
+  const host = (await app.inject({ method: 'POST', url: '/api/rooms', payload: { nickname: 'protocol' }, headers: { 'x-listentogether-protocol': '2' } })).json();
   const received: Array<Record<string, unknown>> = [];
-  const ws = new WebSocket(address.replace('http', 'ws') + '/ws/' + host.code, { headers: { authorization: 'Bearer ' + host.token } });
+  const ws = new WebSocket(address.replace('http', 'ws') + '/ws/' + host.code, { headers: { authorization: 'Bearer ' + host.token, 'x-listentogether-protocol': '2' } });
   sockets.push(ws);
   ws.on('message', data => received.push(JSON.parse(data.toString())));
   await new Promise<void>((resolve, reject) => { ws.once('open', resolve); ws.once('error', reject); });
 
-  // 客户端 → 服务端：sync 与 command（含可选字段的最小/完整两种形态）也必须在契约内。
-  for (const outbound of [{ type: 'sync', clientTimeMs: 1234 }, { type: 'command', action: 'pause' }, { type: 'command', action: 'seek', positionMs: 1234 }]) {
+  // 客户端 → 服务端：sync/command/queue.sync/queue.add（最小与完整形态）都必须在契约内。
+  const issuedAtMs = Date.now();
+  for (const outbound of [
+    { type: 'sync', clientTimeMs: 1234 },
+    { type: 'command', requestId: '7b0a30c8-1c1d-4d1e-9d33-6c0a2f1b3f20', issuedAtMs, action: 'pause' },
+    { type: 'command', requestId: '7b0a30c8-1c1d-4d1e-9d33-6c0a2f1b3f21', issuedAtMs, action: 'seek', positionMs: 1234 },
+    { type: 'queue.sync' },
+    { type: 'queue.add', requestId: '7b0a30c8-1c1d-4d1e-9d33-6c0a2f1b3f01', issuedAtMs, trackId: 'one' },
+    { type: 'queue.addRandom', requestId: '7b0a30c8-1c1d-4d1e-9d33-6c0a2f1b3f02', issuedAtMs, count: 5 },
+    { type: 'queue.remove', requestId: '7b0a30c8-1c1d-4d1e-9d33-6c0a2f1b3f03', issuedAtMs, entryId: 'e1' },
+    { type: 'queue.move', requestId: '7b0a30c8-1c1d-4d1e-9d33-6c0a2f1b3f04', issuedAtMs, entryId: 'e1', beforeEntryId: null, expectedQueueVersion: 0 },
+    { type: 'skip-next', requestId: '7b0a30c8-1c1d-4d1e-9d33-6c0a2f1b3f05', issuedAtMs },
+    { type: 'chat.send', clientMessageId: '7b0a30c8-1c1d-4d1e-9d33-6c0a2f1b3f06', issuedAtMs, text: '大家好' },
+    { type: 'chat.sync', lastSeq: 41 },
+  ]) {
+    assert.equal(validClientMessage(outbound), true);
     assert.deepEqual(validate(schema, outbound), [], `${JSON.stringify(outbound)} 不在 schema 约定内`);
   }
   ws.send(JSON.stringify({ type: 'sync', clientTimeMs: 1234 }));
-  await until(() => received.some(m => m.type === 'clock') && received.some(m => m.type === 'state'));
-  ws.send(JSON.stringify({ type: 'command', action: 'pause' }));
+  await until(() => received.some(m => m.type === 'clock') && received.some(m => m.type === 'state') && received.some(m => m.type === 'queue.state'));
+  ws.send(JSON.stringify({ type: 'queue.add', requestId: '7b0a30c8-1c1d-4d1e-9d33-6c0a2f1b3f10', issuedAtMs, trackId: 'one' }));
+  await until(() => received.some(m => m.type === 'ack' && m.ok === true));
+  ws.send(JSON.stringify({ type: 'command', requestId: '7b0a30c8-1c1d-4d1e-9d33-6c0a2f1b3f20', issuedAtMs, action: 'pause' }));
   await until(() => received.filter(m => m.type === 'state').length >= 2);
   ws.send('{');
   await until(() => received.some(m => m.type === 'error'));
-  ws.send(JSON.stringify({ type: 'command', action: 'seek', positionMs: 1234 }));
+  ws.send(JSON.stringify({ type: 'command', requestId: '7b0a30c8-1c1d-4d1e-9d33-6c0a2f1b3f21', issuedAtMs, action: 'seek', positionMs: 1234 }));
   await until(() => received.filter(m => m.type === 'state').length >= 3);
 
-  // 快照直接取样：覆盖 trackId 非空、hostId 非空、成员 online 为 true/false 的形态。
+  // 快照直接取样：覆盖 track 非空、hostId 非空、成员 online 为 true/false 的形态。
   const room = rooms.get(host.code);
   const guest = rooms.add(room, 'guest');
   const withGuest = rooms.snapshot(room);
@@ -70,15 +94,17 @@ test('protocol.md 的 schema 声明了五类消息，且能校验 buildApp 产�
   for (const message of received) assert.deepEqual(validate(schema, message), [], `真实消息未通过 schema：${JSON.stringify(message)}`);
   for (const snapshot of [withGuest, afterLeave]) assert.deepEqual(validate(schema, snapshot), [], `真实快照未通过 schema：${JSON.stringify(snapshot)}`);
   for (const snapshot of [withGuest, afterLeave]) {
-    for (const member of snapshot.members) assert.deepEqual(validate(schema.$defs.member, member), [], `成员未通过 schema：${JSON.stringify(member)}`);
+    for (const member of snapshot.members) assert.deepEqual(validate({ $ref: '#/$defs/member', $defs: schema.$defs }, member), [], `成员未通过 schema：${JSON.stringify(member)}`);
   }
   assert.ok(withGuest.members.some((member: { online: boolean }) => member.online), '样例应覆盖 online=true');
+  assert.deepEqual(validate(schema.$defs.trackSummary, withGuest.track), [], '当前曲公开元数据未通过 schema');
+  assert.ok(!JSON.stringify(withGuest).includes('path'), 'state 不得携带磁盘路径');
 });
 
 // 正向用例只有在"校验器真的会拦"的前提下才有意义：这里用 4 类构造性漂移验证它有牙。
-test('schema 有牙：字段漂移、缺字段、类型错误与未知 action 都会被拦下', async () => {
+test('schema 有牙：字段漂移、缺字段、类型错误、select 移除与未知 action 都会被拦下', async () => {
   const schema = await loadProtocolSchema();
-  const state = { type: 'state', code: 'AB12CD34', hostId: 'host', members: [{ id: 'm1', name: 'nick', online: true }], trackId: null, playing: false, positionMs: 0, timestampMs: 1, serverNowMs: 2, version: 0 };
+  const state = { type: 'state', protocol: 2, code: 'AB12CD34', hostId: 'host', members: [{ id: 'm1', name: 'nick', online: true }], track: null, entryId: null, playing: false, positionMs: 0, timestampMs: 1, serverNowMs: 2, version: 0 };
   assert.deepEqual(validate(schema, state), []);
 
   const missingVersion = { ...state } as Record<string, unknown>;
@@ -90,7 +116,12 @@ test('schema 有牙：字段漂移、缺字段、类型错误与未知 action �
   assert.ok(validate(schema, { ...state, code: 'ab12cd34' }).length > 0, '邀请码必须 8 位大写十六进制');
   assert.ok(validate(schema, { ...state, positionMs: -1 }).length > 0, '进度不得为负');
   assert.ok(validate(schema, { ...state, members: [{ id: 'm1', name: 'nick' }] }).length > 0, '成员缺字段必须报错');
+  assert.ok(validate(schema, { ...state, track: { id: 't' } }).length > 0, '当前曲元数据缺字段必须报错');
   assert.ok(validate(schema, { type: 'command', action: 'rewind' }).length > 0, '未知 action 必须报错');
+  assert.ok(validate(schema, { type: 'command', action: 'select' }).length > 0, 'v2 已移除 select');
   assert.ok(validate(schema, { type: 'error', status: 99, message: 'x' }).length > 0, 'error.status 越界必须报错');
-  assert.deepEqual(validate(schema, { type: 'error', status: 429, message: '操作过于频繁' }), []);
+  assert.ok(validate(schema, { type: 'queue.addRandom', requestId: 'r', issuedAtMs: 1, count: 3 }).length > 0, '随机加歌数量只允许 1 或 5');
+  assert.ok(validate(schema, { type: 'queue.move', requestId: 'r', issuedAtMs: 1, entryId: 'e', beforeEntryId: null }).length > 0, 'queue.move 缺 expectedQueueVersion 必须报错');
+  assert.deepEqual(validate(schema, { type: 'error', status: 429, message: '操作过于频繁', code: 'RATE_LIMITED', retryAfterMs: 1200 }), []);
+  assert.deepEqual(validate(schema, { type: 'ack', requestId: 'r', ok: false, error: { status: 409, message: '已在队列', code: 'TRACK_ALREADY_QUEUED' }, expiresAtMs: 1 }), []);
 });

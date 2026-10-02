@@ -1,0 +1,39 @@
+{
+  "files": 1161,
+  "bytes": 112469150,
+  "findings": [],
+  "largest": [
+    {
+      "path": "demo-media/demo-hour.mp3",
+      "bytes": 16800409
+    },
+    {
+      "path": "demo-media/demo-load.mp3",
+      "bytes": 15841532
+    },
+    {
+      "path": "demo-media/demo-long.mp3",
+      "bytes": 9600330
+    },
+    {
+      "path": "docs/test-results/2026-09-28-metadata-device-check/01-screen.png",
+      "bytes": 3380719
+    },
+    {
+      "path": "docs/test-results/2026-09-24-long-multiplayer/evidence/diag-final-20260924.jsonl",
+      "bytes": 1715361
+    },
+    {
+      "path": "docs/test-results/2026-09-28-m2-two-device/diag-a-phone.jsonl",
+      "bytes": 1059858
+    },
+    {
+      "path": "docs/test-results/2026-09-28-m2-two-device/diag-b-mumu.jsonl",
+      "bytes": 1048222
+    },
+    {
+      "path": "docs/test-results/2026-09-28-metadata-device-check/14-te-bie-de-ren-scroll.png",
+      "bytes": 747930
+    }
+  ]
+}

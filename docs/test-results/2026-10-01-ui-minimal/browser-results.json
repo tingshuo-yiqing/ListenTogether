@@ -1,0 +1,309 @@
+{
+  "scope": "精简版离线原型，不代替 Android 或服务端验收",
+  "checks": [
+    {
+      "name": "单一房间退出入口、图标导航与迷你播放器入口",
+      "passed": true
+    },
+    {
+      "name": "成员面板集中二维码、复制邀请与分享",
+      "passed": true
+    },
+    {
+      "name": "行尾菜单只移除、成员仅撤回自己歌曲",
+      "passed": true
+    },
+    {
+      "name": "点歌加号成功变勾号、随机每次仅一首",
+      "passed": true
+    },
+    {
+      "name": "空房间首曲入队暂停、待播清空同步清除播放器",
+      "passed": true
+    },
+    {
+      "name": "展开播放器同时显示封面、歌手和歌词，无切换或回到开头",
+      "passed": true
+    },
+    {
+      "name": "进度时间仅在指针操作和键盘聚焦时显示",
+      "passed": true
+    },
+    {
+      "name": "成员仅本机暂停、无下一首和跳进度权限",
+      "passed": true
+    },
+    {
+      "name": "长按鼠标拖动改变顺序并清理幽灵",
+      "passed": true
+    },
+    {
+      "name": "长按前移动保留滚动、短按不排序",
+      "passed": true
+    },
+    {
+      "name": "Escape、角色变化和重连场景取消拖动",
+      "passed": true
+    },
+    {
+      "name": "无关 pointerId 不提交拖动、pointercancel 还原",
+      "passed": true
+    },
+    {
+      "name": "Alt 加方向键排序，菜单仍只保留移除",
+      "passed": true
+    },
+    {
+      "name": "真实触摸长按排序与底部边缘自动滚动",
+      "passed": true
+    },
+    {
+      "name": "触摸取消还原队列、成员触摸不开始排序",
+      "passed": true
+    },
+    {
+      "name": "聊天无逐条时间，失败保留文本并沿用原 ID 重试",
+      "passed": true
+    },
+    {
+      "name": "聊天草稿跨页保留、实时消息上限 100 条",
+      "passed": true
+    },
+    {
+      "name": "退出图标必须确认、取消留房、确认清除播放",
+      "passed": true
+    },
+    {
+      "name": "mobile 队列与播放器布局、触控区域和内嵌封面",
+      "passed": true
+    },
+    {
+      "name": "small 队列与播放器布局、触控区域和内嵌封面",
+      "passed": true
+    },
+    {
+      "name": "dark 队列与播放器布局、触控区域和内嵌封面",
+      "passed": true
+    },
+    {
+      "name": "桌面多屏总览完整可见，预览缩略图不响应操作",
+      "passed": true
+    },
+    {
+      "name": "单 HTML 复制到空目录后离线打开，无外部资源请求",
+      "passed": true
+    },
+    {
+      "name": "控制台无未捕获异常、交付源码在验收期间稳定",
+      "passed": true
+    }
+  ],
+  "screenshots": [
+    "desktop-members.png",
+    "desktop-search.png",
+    "desktop-player.png",
+    "mobile-drag.png",
+    "mobile-chat-failed.png",
+    "mobile-queue.png",
+    "mobile-player.png",
+    "small-queue.png",
+    "small-player.png",
+    "dark-queue.png",
+    "dark-player.png",
+    "desktop-overview.png"
+  ],
+  "layouts": [
+    {
+      "name": "mobile-queue",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "overflow": false,
+      "controls": [
+        {
+          "label": "暂停播放",
+          "width": 48,
+          "height": 48,
+          "visible": true
+        },
+        {
+          "label": "下一首",
+          "width": 48,
+          "height": 48,
+          "visible": true
+        }
+      ],
+      "small": [],
+      "art": null,
+      "images": true
+    },
+    {
+      "name": "mobile-player",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "overflow": false,
+      "controls": [
+        {
+          "label": "player-seek",
+          "width": 315,
+          "height": 48,
+          "visible": true
+        },
+        {
+          "label": "暂停播放",
+          "width": 68,
+          "height": 68,
+          "visible": true
+        },
+        {
+          "label": "下一首",
+          "width": 48,
+          "height": 50,
+          "visible": true
+        }
+      ],
+      "small": [],
+      "art": {
+        "width": 247.5,
+        "height": 247.5
+      },
+      "images": true
+    },
+    {
+      "name": "small-queue",
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "overflow": false,
+      "controls": [
+        {
+          "label": "暂停播放",
+          "width": 48,
+          "height": 48,
+          "visible": true
+        },
+        {
+          "label": "下一首",
+          "width": 48,
+          "height": 48,
+          "visible": true
+        }
+      ],
+      "small": [],
+      "art": null,
+      "images": true
+    },
+    {
+      "name": "small-player",
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "overflow": false,
+      "controls": [
+        {
+          "label": "player-seek",
+          "width": 260,
+          "height": 48,
+          "visible": true
+        },
+        {
+          "label": "暂停播放",
+          "width": 68,
+          "height": 67.99996948242188,
+          "visible": true
+        },
+        {
+          "label": "下一首",
+          "width": 48,
+          "height": 49.999969482421875,
+          "visible": true
+        }
+      ],
+      "small": [],
+      "art": {
+        "width": 150,
+        "height": 150
+      },
+      "images": true
+    },
+    {
+      "name": "dark-queue",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "overflow": false,
+      "controls": [
+        {
+          "label": "暂停播放",
+          "width": 48,
+          "height": 48,
+          "visible": true
+        },
+        {
+          "label": "下一首",
+          "width": 48,
+          "height": 48,
+          "visible": true
+        }
+      ],
+      "small": [],
+      "art": null,
+      "images": true
+    },
+    {
+      "name": "dark-player",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "overflow": false,
+      "controls": [
+        {
+          "label": "player-seek",
+          "width": 315,
+          "height": 48,
+          "visible": true
+        },
+        {
+          "label": "暂停播放",
+          "width": 68,
+          "height": 68,
+          "visible": true
+        },
+        {
+          "label": "下一首",
+          "width": 48,
+          "height": 50,
+          "visible": true
+        }
+      ],
+      "small": [],
+      "art": {
+        "width": 247.5,
+        "height": 247.5
+      },
+      "images": true
+    }
+  ],
+  "startedAt": "2026-09-30T16:40:49.847Z",
+  "sourceHashBefore": "bb0fcb708f2317412ca8f535b687fff1aad3eafcac1613b8c34417066888bc2a",
+  "offlineRequests": [
+    "file:///D:/ListenTogether/.workbuddy/ui-minimal-isolated/listen-together-minimal.html",
+    "data:image embedded",
+    "data:image embedded",
+    "data:image embedded",
+    "data:image embedded",
+    "data:image embedded"
+  ],
+  "runtimeExceptions": [],
+  "sourceHashAfter": "bb0fcb708f2317412ca8f535b687fff1aad3eafcac1613b8c34417066888bc2a",
+  "finishedAt": "2026-09-30T16:41:10.731Z",
+  "passed": 24,
+  "total": 24
+}

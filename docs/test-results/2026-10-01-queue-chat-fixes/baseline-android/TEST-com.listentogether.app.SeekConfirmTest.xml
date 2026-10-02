@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.listentogether.app.SeekConfirmTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-01T04:00:07" hostname="LAPTOP-8H39RU28" time="0.001">
+  <properties/>
+  <testcase name="olderOrSameSnapshotNeverConfirms" classname="com.listentogether.app.SeekConfirmTest" time="0.001"/>
+  <testcase name="newPositionWithinWindowConfirms" classname="com.listentogether.app.SeekConfirmTest" time="0.0"/>
+  <testcase name="negativeElapsedCannotConfirmArbitraryPosition" classname="com.listentogether.app.SeekConfirmTest" time="0.0"/>
+  <testcase name="distantPositionNeedsPlaybackToEnterWindow" classname="com.listentogether.app.SeekConfirmTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

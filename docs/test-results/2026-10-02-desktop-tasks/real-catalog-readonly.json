@@ -1,0 +1,8 @@
+{
+  "scope": "real media read only",
+  "tracks": 45,
+  "withAlbum": 45,
+  "withArtist": 45,
+  "withLyrics": 45,
+  "withCover": 45
+}

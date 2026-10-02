@@ -1,0 +1,14 @@
+    androidx.media3.session.id. com.listentogether.app/androidx.media3.session.id. (userId=0)
+      ownerPid=18789, ownerUid=10364, userId=0
+      package=com.listentogether.app
+      launchIntent=PendingIntent{12e6071: PendingIntentRecord{15d0a31 com.listentogether.app startActivity (allowlist: 4d6454f:+30s0ms/0/NOTIFICATION_SERVICE/NotificationManagerService)}}
+      mediaButtonReceiver=null
+      active=true
+      flags=7
+      rating type=0
+      controllers: 2
+      state=PlaybackState {state=NONE(0), position=0, buffered position=0, speed=0.0, updated=431394729, actions=7339701, custom actions=[], active item id=0, error=null}
+      audioAttrs=AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_MUSIC flags=0x800 tags= bundle=null
+      volumeType=LOCAL, controlType=ABSOLUTE, max=0, current=0, volumeControlId=null
+      metadata: size=1, description=null, null, null
+      queueTitle=null, size=0

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.listentogether.app.SyncMathTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-01T17:11:59" hostname="LAPTOP-8H39RU28" time="0.001">
+  <properties/>
+  <testcase name="pausedDoesNotAdvance" classname="com.listentogether.app.SyncMathTest" time="0.0"/>
+  <testcase name="futureBaselineDoesNotGoBackwards" classname="com.listentogether.app.SyncMathTest" time="0.0"/>
+  <testcase name="toleratesSmallDrift" classname="com.listentogether.app.SyncMathTest" time="0.0"/>
+  <testcase name="catchupSpeedCapsForLargeDrift" classname="com.listentogether.app.SyncMathTest" time="0.0"/>
+  <testcase name="catchupSpeedNormalWithinDoneBand" classname="com.listentogether.app.SyncMathTest" time="0.0"/>
+  <testcase name="accountsForClockDifferenceAndHalfRoundTrip" classname="com.listentogether.app.SyncMathTest" time="0.0"/>
+  <testcase name="clampsAtSongEnd" classname="com.listentogether.app.SyncMathTest" time="0.0"/>
+  <testcase name="catchupSpeedUsesFloorForSmallDrift" classname="com.listentogether.app.SyncMathTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

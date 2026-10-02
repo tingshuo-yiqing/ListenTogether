@@ -1,0 +1,30 @@
+{
+  "base": "http://127.0.0.1:51878",
+  "passed": 21,
+  "checks": [
+    "health",
+    "v2 capabilities",
+    "old HTTP client 426",
+    "old WS client 426",
+    "real WS and unique animal avatars",
+    "45 tracks and public album metadata",
+    "search pagination and album projection",
+    "stale revision 409",
+    "unauthorized catalog 401",
+    "audio Range 206/1024 bytes",
+    "audio without member 401",
+    "cover and lyrics readable",
+    "WS clock domain response",
+    "first request promotes paused current track",
+    "member add broadcasts pending queue",
+    "replayed request keeps one queue entry",
+    "member shared playback command rejected",
+    "chat ack and both clients receive same message",
+    "chat retry deduplicates seq",
+    "host play and skip follow authoritative state",
+    "exhausted queue clears current track"
+  ],
+  "failure": null,
+  "temporaryMembersExited": true,
+  "scope": "real HTTP/WS; no device or audible-sync claim"
+}

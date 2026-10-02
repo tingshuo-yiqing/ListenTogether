@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.listentogether.app.InviteCodeTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-01T16:41:22" hostname="LAPTOP-8H39RU28" time="0.048">
+  <properties/>
+  <testcase name="encodeOmitsServerLineWhenAbsent" classname="com.listentogether.app.InviteCodeTest" time="0.003"/>
+  <testcase name="decodeRejectsLongerAlphanumericCodesInsteadOfJoiningPrefix" classname="com.listentogether.app.InviteCodeTest" time="0.001"/>
+  <testcase name="decodeAllowsPunctuationAfterCode" classname="com.listentogether.app.InviteCodeTest" time="0.002"/>
+  <testcase name="inviteQrRoundTripPreservesChineseText" classname="com.listentogether.app.InviteCodeTest" time="0.041"/>
+  <testcase name="decodeFailsWhenCodeShorterThanEight" classname="com.listentogether.app.InviteCodeTest" time="0.0"/>
+  <testcase name="encodeOmitsConventionPortFromServerLine" classname="com.listentogether.app.InviteCodeTest" time="0.001"/>
+  <testcase name="roundTripStripsConventionPort" classname="com.listentogether.app.InviteCodeTest" time="0.0"/>
+  <testcase name="decodeToleratesQuotesAndChatterLines" classname="com.listentogether.app.InviteCodeTest" time="0.0"/>
+  <testcase name="decodeFailsWithoutAnchor" classname="com.listentogether.app.InviteCodeTest" time="0.0"/>
+  <testcase name="encodeKeepsNonDefaultPort" classname="com.listentogether.app.InviteCodeTest" time="0.0"/>
+  <testcase name="decodeAcceptsFullWidthColonAndMixedCase" classname="com.listentogether.app.InviteCodeTest" time="0.0"/>
+  <testcase name="decodeWithoutServerKeepsNullServer" classname="com.listentogether.app.InviteCodeTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

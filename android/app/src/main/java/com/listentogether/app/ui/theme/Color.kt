@@ -2,36 +2,36 @@ package com.listentogether.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-/**
- * Google 风格色板：以 Google Blue #0B57D0 为种子的 Material 3 方案。
- * Android 12+ 优先使用系统动态取色（Monet），本文件是低版本与关闭动态取色时的固定方案。
- */
-val BluePrimaryLight = Color(0xFF0B57D0)
-val OnBluePrimaryLight = Color(0xFFFFFFFF)
-val BlueContainerLight = Color(0xFFD3E3FD)
-val OnBlueContainerLight = Color(0xFF041E49)
+/** 暖白、松绿与柔杏色板：只在主题层定义颜色，页面通过 Material 语义角色取值。 */
+internal val PineLight = Color(0xFF285A47)
+internal val OnPineLight = Color(0xFFFFFEFA)
+internal val PineContainerLight = Color(0xFFD2DFCC)
+internal val InkLight = Color(0xFF263C35)
+internal val MutedLight = Color(0xFF5E685D)
+internal val PaperLight = Color(0xFFF7F5F0)
+internal val SurfaceLight = Color(0xFFFFFEFA)
+internal val SurfaceSoftLight = Color(0xFFEEEFE7)
+internal val SurfaceRaisedLight = Color(0xFFFFFFFF)
+internal val OutlineLight = Color(0xFF7C8B78)
+internal val OutlineVariantLight = Color(0xFFDCDED3)
+internal val AccentLight = Color(0xFF805B37)
+internal val AccentContainerLight = Color(0xFFF4E5D6)
+internal val ErrorLight = Color(0xFFA63D32)
+internal val ErrorContainerLight = Color(0xFFFBE9E3)
 
-val SecondaryLight = Color(0xFF565E71)
-val OnSecondaryLight = Color(0xFFFFFFFF)
-val SecondaryContainerLight = Color(0xFFDBE2F9)
-val OnSecondaryContainerLight = Color(0xFF131C2B)
-
-val BackgroundLight = Color(0xFFF9F9FF)
-val SurfaceVariantLight = Color(0xFFE1E2EC)
-val OnSurfaceVariantLight = Color(0xFF44474F)
-val OutlineLight = Color(0xFF74777F)
-
-val BluePrimaryDark = Color(0xFFAAC7FF)
-val OnBluePrimaryDark = Color(0xFF002E69)
-val BlueContainerDark = Color(0xFF0842A0)
-val OnBlueContainerDark = Color(0xFFD3E3FD)
-
-val SecondaryDark = Color(0xFFBFC6DC)
-val OnSecondaryDark = Color(0xFF293042)
-val SecondaryContainerDark = Color(0xFF3E4759)
-val OnSecondaryContainerDark = Color(0xFFDBE2F9)
-
-val BackgroundDark = Color(0xFF111318)
-val SurfaceVariantDark = Color(0xFF44474F)
-val OnSurfaceVariantDark = Color(0xFFC4C6D0)
-val OutlineDark = Color(0xFF8E9099)
+internal val PineDark = Color(0xFFB5D8BD)
+internal val OnPineDark = Color(0xFF20352A)
+internal val PineContainerDark = Color(0xFF2B3F34)
+internal val InkDark = Color(0xFFF2F1E8)
+internal val MutedDark = Color(0xFFBEC8B9)
+internal val PaperDark = Color(0xFF17241F)
+internal val SurfaceDark = Color(0xFF20322A)
+internal val SurfaceSoftDark = Color(0xFF2B3F34)
+internal val SurfaceRaisedDark = Color(0xFF2A3D33)
+internal val OutlineDark = Color(0xFF78907C)
+internal val OutlineVariantDark = Color(0xFF3A5043)
+internal val AccentDark = Color(0xFFE7C6A5)
+internal val OnAccentDark = Color(0xFF35291E)
+internal val AccentContainerDark = Color(0xFF4E4031)
+internal val ErrorDark = Color(0xFFFFB4A7)
+internal val ErrorContainerDark = Color(0xFF4F302A)

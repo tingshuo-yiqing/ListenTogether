@@ -1,0 +1,1177 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>一起听歌 · 精简交互原型</title>
+  <style>
+/* 一起听 UI 原型：温暖纸白与松叶绿，统一 48px 触控目标。 */
+:root {
+  color-scheme: light;
+  --paper: #f7f5f0;
+  --surface: #fffefa;
+  --surface-soft: #eeefe7;
+  --surface-raised: #ffffff;
+  --ink: #263c35;
+  --muted: #5e685d;
+  --primary: #285a47;
+  --primary-hover: #214c3b;
+  --on-primary: #fffefa;
+  --accent: #e7c6a5;
+  --accent-soft: #f4e5d6;
+  --border: #dcded3;
+  --border-strong: #7c8b78;
+  --error: #a63d32;
+  --error-surface: #fbe9e3;
+  --warning: #815416;
+  --warning-surface: #f9edcf;
+  --scrim: rgb(19 35 29 / 42%);
+  --sage: #d2dfcc;
+  --sand: #edcfb2;
+  --rose: #efcec6;
+  --blue: #cbdeda;
+  --player-bg: #285a47;
+  --player-ink: #fffefa;
+  --player-muted: #dae5dc;
+  --focus: #26694f;
+  --shadow: 0 28px 68px rgb(38 60 53 / 14%), 0 4px 12px rgb(38 60 53 / 5%);
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --text-scale: 1;
+  --font-body: calc(14px * var(--text-scale));
+  --font-small: calc(12px * var(--text-scale));
+  --font-title: calc(20px * var(--text-scale));
+  --motion-fast: 120ms;
+  --motion-enter: 240ms;
+  --ease: cubic-bezier(.2, .75, .25, 1);
+}
+body[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #17241f;
+  --surface: #20322a;
+  --surface-soft: #2b3f34;
+  --surface-raised: #2a3d33;
+  --ink: #f2f1e8;
+  --muted: #bec8b9;
+  --primary: #b5d8bd;
+  --primary-hover: #c8e5ce;
+  --on-primary: #20352a;
+  --accent: #e7c6a5;
+  --accent-soft: #4e4031;
+  --border: #3a5043;
+  --border-strong: #78907c;
+  --error: #ffb4a7;
+  --error-surface: #4f302a;
+  --warning: #edcc89;
+  --warning-surface: #453e2a;
+  --scrim: rgb(5 12 8 / 66%);
+  --sage: #98bd97;
+  --sand: #cba580;
+  --rose: #d5a397;
+  --blue: #9bbcb4;
+  --player-bg: #b5d8bd;
+  --player-ink: #20352a;
+  --player-muted: #344d3d;
+  --focus: #c3e4c7;
+  --shadow: 0 28px 68px rgb(0 0 0 / 28%), 0 4px 12px rgb(0 0 0 / 14%);
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { min-width: 320px; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+button, input, textarea, select { font: inherit; }
+button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+button { border: 0; cursor: pointer; color: inherit; transition: background-color var(--motion-fast), color var(--motion-fast), box-shadow var(--motion-fast), opacity var(--motion-fast); }
+button:disabled { cursor: default; opacity: .55; }
+button:active:not(:disabled) { filter: brightness(.94); }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+a { color: inherit; text-decoration: none; }
+p, h1, h2, h3, h4 { margin-top: 0; }
+svg { display: block; width: 24px; height: 24px; flex-shrink: 0; }
+img { display: block; max-width: 100%; object-fit: cover; }
+.hidden, [hidden] { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.studio-header { display: flex; justify-content: space-between; align-items: center; min-height: 88px; padding: 16px 36px; border-bottom: 1px solid var(--border); gap: 20px; }
+.studio-brand { display: inline-flex; align-items: center; gap: 12px; font-size: 17px; font-weight: 650; letter-spacing: -.4px; min-height: 48px; }
+.brand-mark { display: inline-grid; place-items: center; width: 42px; height: 42px; color: var(--on-primary); background: var(--primary); border-radius: 14px; flex-shrink: 0; }
+.brand-mark svg { width: 22px; height: 22px; }
+.brand-divider { color: var(--border-strong); margin: 0 10px; font-weight: 400; }
+.studio-subtitle { font-size: 13px; font-weight: 450; letter-spacing: 0; color: var(--muted); }
+.studio-actions { display: flex; align-items: center; gap: 8px; }
+.version-label { font-size: 10px; letter-spacing: 1.5px; color: var(--muted); margin-right: 16px; }
+.toolbar-button { display: inline-flex; align-items: center; justify-content: center; min-width: 48px; min-height: 48px; padding: 12px; border: 1px solid var(--border); background: transparent; border-radius: 12px; font-weight: 600; }
+.toolbar-button:hover { background: var(--surface-soft); border-color: var(--border-strong); }
+.toolbar-button svg { width: 19px; height: 19px; }
+.overview-toggle { padding-inline: 18px; font-size: 12px; }
+.studio-layout { display: grid; grid-template-columns: 250px minmax(0, 1fr) 240px; gap: 32px; max-width: 1480px; margin: auto; padding: 44px 36px 32px; }
+.design-sidebar { padding: 10px 0 0; min-width: 0; }
+.eyebrow { margin: 0 0 18px; color: var(--muted); font-size: 9px; font-weight: 600; letter-spacing: 1.45px; line-height: 1.6; }
+.sidebar-title { font-size: 32px; font-weight: 550; line-height: 1.45; letter-spacing: -1px; margin-bottom: 18px; }
+.sidebar-copy { color: var(--muted); font-size: 12px; line-height: 1.9; margin-bottom: 42px; }
+.screen-nav { display: flex; flex-direction: column; gap: 6px; }
+.screen-nav button { display: grid; grid-template-columns: 28px minmax(0, 1fr) 18px; align-items: center; text-align: left; min-height: 56px; padding: 12px 16px; background: transparent; border-radius: 14px; gap: 9px; font-size: 12px; }
+.screen-nav button:hover { background: var(--surface-soft); }
+.screen-nav button.active { background: var(--primary); color: var(--on-primary); font-weight: 600; }
+.screen-nav button > span:last-child { opacity: 0; }
+.screen-nav button.active > span:last-child { opacity: 1; }
+.screen-nav button svg { width: 16px; height: 16px; }
+.nav-number { font-size: 10px; font-variant-numeric: tabular-nums; opacity: .65; }
+.sidebar-footer { margin-top: 40px; padding: 24px 16px 0; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); }
+.sidebar-footer .status-dot { margin-right: 8px; }
+.sidebar-footer p { margin: 8px 0 0 17px; font-size: 10px; }
+.status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); vertical-align: middle; flex-shrink: 0; }
+.preview-stage { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+.stage-heading { width: 390px; max-width: 100%; display: flex; align-items: center; gap: 14px; min-height: 32px; margin: 0 0 22px; font-size: 12px; font-weight: 550; }
+.stage-index { color: var(--muted); font-size: 10px; font-weight: 400; font-variant-numeric: tabular-nums; letter-spacing: .8px; }
+.stage-device { margin-left: auto; color: var(--muted); font-size: 10px; font-weight: 400; }
+.stage-caption { max-width: 390px; margin: 24px 0 0; color: var(--muted); text-align: center; font-size: 11px; line-height: 1.8; }
+.phone { width: 390px; height: 800px; max-width: 100%; display: flex; flex-direction: column; overflow: hidden; position: relative; border: 7px solid var(--surface-raised); border-radius: 42px; background: var(--surface); box-shadow: var(--shadow), 0 0 0 1px var(--border); isolation: isolate; }
+.phone-status { display: flex; align-items: center; justify-content: space-between; min-height: 34px; padding: 9px 24px 5px; color: var(--ink); font-size: 12px; font-weight: 600; flex-shrink: 0; }
+.device-indicators { display: inline-flex; align-items: center; gap: 5px; }
+.device-indicators svg { width: 15px; height: 15px; }
+.device-indicators > span:last-child svg { width: 22px; }
+.phone-bottom { flex-shrink: 0; display: flex; justify-content: center; align-items: center; min-height: 22px; padding: 7px 0 8px; background: var(--surface); }
+.phone-bottom span { width: 108px; height: 4px; border-radius: 4px; background: var(--ink); }
+.app { --font-body: calc(16px * var(--text-scale)); --font-small: calc(12px * var(--text-scale)); --font-title: calc(20px * var(--text-scale)); position: relative; display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; font-size: var(--font-body); background: var(--surface); }
+.app-header { display: flex; align-items: center; gap: 10px; padding: 8px 18px; min-height: 60px; flex-shrink: 0; }
+.app-title { min-width: 0; margin: 0; font-size: var(--font-title); font-weight: 650; line-height: 1.35; letter-spacing: -.5px; overflow-wrap: anywhere; }
+.app-title small { display: block; margin-top: 3px; color: var(--muted); font-size: var(--font-small); font-weight: 450; letter-spacing: 0; }
+.app-header > .brand-mark { width: 34px; height: 34px; border-radius: 11px; }
+.app-header > .brand-mark svg { width: 19px; height: 19px; }
+.app-actions { display: flex; gap: 2px; margin-left: auto; align-items: center; flex-shrink: 0; }
+.icon-button { display: inline-flex; align-items: center; justify-content: center; width: 48px; min-height: 48px; flex-shrink: 0; border-radius: 50%; background: transparent; color: var(--ink); padding: 12px; }
+.icon-button:hover { background: var(--surface-soft); }
+.icon-button svg { width: 22px; height: 22px; }
+.members-button { display: flex; align-items: center; margin: 2px 20px 8px; gap: 10px; background: transparent; min-height: 48px; padding: 4px 0; text-align: left; border-radius: 12px; flex-shrink: 0; }
+.members-button:hover { background: var(--surface-soft); }
+.members-button > svg, .members-button > [data-icon]:last-child { margin-left: auto; width: 18px; height: 18px; color: var(--muted); }
+.members-button > [data-icon]:last-child svg { width: 18px; height: 18px; }
+.avatar-stack { display: inline-flex; align-items: center; padding-left: 4px; flex-shrink: 0; }
+.avatar-stack .avatar { margin-left: -4px; border: 2px solid var(--surface); }
+.avatar { width: 32px; height: 32px; border-radius: 50%; display: inline-grid; place-items: center; flex-shrink: 0; background: var(--sage); font-size: 12px; font-weight: 600; color: #263c35; }
+.avatar.sage { background: var(--sage); }
+.avatar.sand { background: var(--sand); }
+.avatar.rose { background: var(--rose); }
+.avatar.blue { background: var(--blue); }
+body[data-theme="dark"] .avatar { color: #20352a; }
+.member-meta { font-size: var(--font-small); color: var(--muted); min-width: 0; line-height: 1.5; }
+.member-meta strong { color: var(--ink); font-weight: 550; }
+.member-meta .status-dot { margin-right: 5px; }
+.tabs { display: flex; padding: 0 16px; gap: 12px; min-height: 54px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.tabs button { flex: 1; padding: 12px 2px 14px; min-height: 52px; background: transparent; font-size: var(--font-body); color: var(--muted); font-weight: 500; position: relative; display: flex; align-items: center; justify-content: center; gap: 5px; }
+.tabs button.active { color: var(--primary); font-weight: 650; }
+.tabs button.active::after { content: ""; position: absolute; bottom: -1px; width: 26px; left: calc(50% - 13px); height: 3px; background: var(--primary); border-radius: 3px 3px 0 0; }
+.tabs button:hover { color: var(--primary); }
+.badge { display: inline-flex; justify-content: center; align-items: center; min-width: 19px; min-height: 19px; padding: 1px 5px; border-radius: 10px; background: var(--accent-soft); color: var(--ink); font-size: 10px; line-height: 1.4; font-weight: 600; }
+.view { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+.view-inner { padding: 20px; }
+.section-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 12px; }
+.section-heading h2, .section-heading h3 { margin: 0; font-size: var(--font-body); font-weight: 650; }
+.section-heading > span, .section-heading small { color: var(--muted); font-size: var(--font-small); }
+.text-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 48px; padding: 10px 8px; color: var(--primary); background: transparent; border-radius: 10px; font-size: var(--font-small); font-weight: 550; }
+.text-button:hover { background: var(--surface-soft); }
+.text-button svg { width: 16px; height: 16px; }
+.current-card { display: grid; grid-template-columns: 80px minmax(0, 1fr); gap: 16px; padding: 16px; background: var(--surface-soft); border-radius: 22px; margin: 0 0 26px; align-items: center; }
+.current-art { width: 80px; height: 80px; border-radius: 15px; overflow: hidden; flex-shrink: 0; background: var(--accent); }
+.current-art img, .current-art svg { width: 100%; height: 100%; object-fit: cover; }
+.current-meta { min-width: 0; }
+.current-meta .track-title { font-size: calc(17px * var(--text-scale)); margin-bottom: 3px; }
+.track-title { display: block; color: var(--ink); font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+.track-artist { display: block; color: var(--muted); font-size: var(--font-small); line-height: 1.5; overflow-wrap: anywhere; }
+.source-label { display: flex; align-items: center; gap: 7px; margin-top: 10px; font-size: calc(11px * var(--text-scale)); color: var(--muted); flex-wrap: wrap; }
+.playing-bars { display: inline-flex; align-items: center; justify-content: center; height: 14px; width: 16px; gap: 2px; flex-shrink: 0; }
+.playing-bars i, .playing-bars span { display: block; width: 2px; height: 11px; background: var(--primary); border-radius: 2px; animation: music-wave 1s var(--ease) infinite alternate; }
+.playing-bars i:nth-child(2), .playing-bars span:nth-child(2) { height: 6px; animation-delay: -.5s; }
+.playing-bars i:nth-child(3), .playing-bars span:nth-child(3) { height: 14px; animation-delay: -.3s; }
+@keyframes music-wave { from { transform: scaleY(.5); } to { transform: scaleY(1); } }
+.track-list { display: flex; flex-direction: column; gap: 2px; }
+.track-row { display: grid; grid-template-columns: 18px 48px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 76px; padding: 10px 0; }
+.row-index { text-align: center; color: var(--muted); font-size: var(--font-small); font-variant-numeric: tabular-nums; }
+.track-art { width: 48px; height: 48px; border-radius: 11px; overflow: hidden; background: var(--surface-soft); flex-shrink: 0; }
+.track-art img, .track-art svg { width: 100%; height: 100%; object-fit: cover; }
+.track-copy { min-width: 0; }
+.track-copy .track-title { font-size: var(--font-body); margin-bottom: 3px; }
+.track-meta { margin-top: 3px; font-size: calc(11px * var(--text-scale)); color: var(--muted); overflow-wrap: anywhere; }
+.track-meta > span + span::before { content: "·"; margin-inline: 5px; }
+.row-actions { display: flex; align-items: center; gap: 2px; }
+.row-actions .icon-button { width: 48px; }
+.row-actions svg { width: 20px; height: 20px; }
+.add-button { display: grid; place-items: center; min-width: 48px; min-height: 48px; border-radius: 50%; background: transparent; color: var(--primary); }
+.add-button:hover { background: var(--surface-soft); }
+.add-button svg { width: 22px; height: 22px; }
+.add-button.added { color: var(--muted); opacity: .75; }
+.mini-player { flex-shrink: 0; position: relative; display: flex; align-items: center; margin: 4px 12px 0; padding: 10px 10px 12px; gap: 8px; min-height: 76px; overflow: hidden; border-radius: 18px; background: var(--player-bg); color: var(--player-ink); }
+.mini-open { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 0; min-height: 48px; text-align: left; background: transparent; color: inherit; border-radius: 8px; }
+.mini-open:hover { background: rgb(255 255 255 / 7%); }
+.mini-art { width: 44px; height: 44px; flex-shrink: 0; border-radius: 10px; overflow: hidden; background: var(--accent); }
+.mini-art img, .mini-art svg { width: 100%; height: 100%; object-fit: cover; }
+.mini-copy { min-width: 0; }
+.mini-copy .track-title { color: inherit; font-size: var(--font-body); line-height: 1.35; }
+.mini-copy .track-artist { color: var(--player-muted); font-size: calc(11px * var(--text-scale)); margin-top: 2px; }
+.mini-controls { display: flex; align-items: center; gap: 0; flex-shrink: 0; }
+.mini-controls .icon-button { color: inherit; width: 48px; padding: 12px; }
+.mini-controls .icon-button:hover { background: rgb(255 255 255 / 12%); }
+.mini-controls .icon-button svg { width: 22px; height: 22px; }
+.mini-progress { position: absolute; height: 2px; background: rgb(255 255 255 / 20%); bottom: 0; left: 16px; right: 16px; }
+.mini-progress::after, .mini-progress > span { content: ""; display: block; width: var(--progress, 32%); height: 100%; background: var(--accent); border-radius: 2px; }
+.home-view { display: flex; flex-direction: column; padding: 18px 24px 24px; gap: 0; }
+.home-heading { padding: 16px 0 26px; }
+.home-heading > .brand-mark { width: 48px; height: 48px; margin-bottom: 22px; border-radius: 16px; }
+.home-heading h1 { margin: 0 0 12px; font-size: calc(31px * var(--text-scale)); font-weight: 550; line-height: 1.42; letter-spacing: -1.2px; }
+.home-heading p { margin: 0; color: var(--muted); font-size: var(--font-body); line-height: 1.8; }
+.home-illustration { margin: 12px auto 0; max-width: 240px; }
+.join-card { padding: 20px; background: var(--surface-soft); border-radius: 24px; }
+.mode-switch { display: flex; background: var(--surface); border-radius: 12px; margin-bottom: 22px; padding: 4px; gap: 4px; }
+.mode-switch button { flex: 1; min-height: 48px; padding: 10px 8px; border-radius: 9px; background: transparent; color: var(--muted); font-size: var(--font-body); }
+.mode-switch button.active { background: var(--primary); color: var(--on-primary); font-weight: 550; }
+.field { display: block; margin: 0 0 18px; }
+.field label, .field > span:first-child { display: block; color: var(--ink); font-weight: 550; font-size: var(--font-small); margin-bottom: 8px; }
+.field input { width: 100%; padding: 14px 14px; min-height: 52px; border: 1px solid var(--border-strong); border-radius: 12px; background: var(--surface); color: var(--ink); font-size: var(--font-body); }
+input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
+input[aria-invalid="true"] { border-color: var(--error); }
+.helper { display: block; color: var(--muted); font-size: var(--font-small); line-height: 1.7; margin-top: 7px; }
+.advanced { margin: 0 0 18px; color: var(--muted); font-size: var(--font-small); }
+.advanced summary { cursor: pointer; min-height: 48px; padding-block: 12px; color: var(--primary); font-size: var(--font-small); }
+.advanced .field { margin: 10px 0 0; }
+.primary-button, .secondary-button { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 52px; padding: 14px 16px; border-radius: 14px; font-size: var(--font-body); font-weight: 550; line-height: 1.5; text-align: center; }
+.primary-button { background: var(--primary); color: var(--on-primary); }
+.primary-button:hover { background: var(--primary-hover); }
+.secondary-button { border: 1px solid var(--border-strong); background: var(--surface); color: var(--primary); }
+.secondary-button:hover { background: var(--surface-soft); }
+.primary-button svg, .secondary-button svg { width: 20px; height: 20px; }
+.field-error { color: var(--error); font-size: var(--font-small); margin: 8px 0; line-height: 1.6; }
+.home-footnote { margin: 20px 0 0; text-align: center; font-size: var(--font-small); color: var(--muted); line-height: 1.8; }
+.search-wrap { display: flex; align-items: center; gap: 8px; min-height: 52px; border-radius: 14px; background: var(--surface-soft); padding: 0 4px 0 14px; margin-bottom: 14px; }
+.search-wrap > svg, .search-wrap > [data-icon] svg { width: 20px; height: 20px; color: var(--muted); }
+.search-field { min-width: 0; width: 100%; flex: 1; border: 0; background: transparent; min-height: 52px; padding: 12px 0; font-size: var(--font-body); color: var(--ink); }
+.search-field:focus-visible { outline-offset: -2px; border-radius: 8px; }
+.search-clear { display: grid; place-items: center; width: 48px; min-height: 48px; color: var(--muted); border-radius: 50%; background: transparent; flex-shrink: 0; }
+.search-clear svg { width: 18px; height: 18px; }
+.random-actions { display: flex; align-items: stretch; gap: 8px; margin-bottom: 24px; }
+.random-actions button { flex: 1; display: flex; justify-content: center; align-items: center; gap: 7px; background: var(--surface); color: var(--primary); border: 1px solid var(--border-strong); border-radius: 12px; padding: 11px 10px; min-height: 48px; font-size: var(--font-small); }
+.random-actions button:hover { background: var(--surface-soft); }
+.random-actions svg { width: 18px; height: 18px; }
+.catalog-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 12px; }
+.catalog-heading h2 { margin: 0; font-size: var(--font-body); font-weight: 650; }
+.catalog-heading > span { color: var(--muted); font-size: var(--font-small); }
+.catalog-heading small { display: block; font-size: var(--font-small); margin-top: 5px; color: var(--muted); }
+.catalog-list .track-row, .search-view .track-row { grid-template-columns: 48px minmax(0, 1fr) 48px; gap: 12px; }
+.search-empty { padding: 52px 20px; text-align: center; color: var(--muted); }
+.search-empty svg { margin: 0 auto 16px; width: 32px; height: 32px; }
+.search-empty p { font-size: var(--font-body); margin: 0 0 5px; color: var(--ink); }
+.search-empty small { font-size: var(--font-small); }
+.chat-view { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+.chat-history { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 18px 12px; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+.chat-date { color: var(--muted); text-align: center; font-size: calc(11px * var(--text-scale)); margin: 4px 0 24px; }
+.chat-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 20px; }
+.chat-avatar { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; margin-top: 1px; }
+.chat-content { min-width: 0; max-width: calc(100% - 40px); }
+.chat-name { display: block; color: var(--muted); font-size: calc(11px * var(--text-scale)); line-height: 1.5; margin: 0 0 5px 3px; }
+.chat-bubble { padding: 12px 14px; border-radius: 0 16px 16px 16px; background: var(--surface-soft); color: var(--ink); font-size: var(--font-body); line-height: 1.65; overflow-wrap: anywhere; white-space: pre-wrap; }
+.chat-time { display: block; font-size: calc(10px * var(--text-scale)); color: var(--muted); margin-top: 5px; padding-inline: 3px; }
+.chat-row.mine { flex-direction: row-reverse; }
+.chat-row.mine .chat-name, .chat-row.mine .chat-time { text-align: right; }
+.chat-row.mine .chat-bubble { border-radius: 16px 0 16px 16px; background: var(--primary); color: var(--on-primary); }
+.chat-state { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px; margin-top: 3px; color: var(--muted); font-size: calc(11px * var(--text-scale)); }
+.chat-state.failed { color: var(--error); }
+.chat-state svg { width: 14px; height: 14px; }
+.chat-retry { min-height: 48px; padding: 9px 8px; background: transparent; color: var(--error); font-size: var(--font-small); border-radius: 8px; text-decoration: underline; text-underline-offset: 4px; }
+.chat-compose { display: flex; align-items: flex-end; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }
+.chat-compose textarea { width: 100%; flex: 1; min-width: 0; min-height: 48px; max-height: 144px; padding: 12px 14px; border: 1px solid var(--border-strong); resize: none; border-radius: 16px; background: var(--surface); color: var(--ink); font-size: var(--font-body); line-height: 1.6; }
+.send-button { display: grid; place-items: center; width: 48px; min-height: 48px; border-radius: 50%; background: var(--primary); color: var(--on-primary); flex-shrink: 0; }
+.send-button:hover { background: var(--primary-hover); }
+.send-button svg { width: 20px; height: 20px; }
+.compose-hint { font-size: var(--font-small); color: var(--muted); padding: 0 16px 10px; margin: 0; }
+.notice { display: flex; align-items: flex-start; gap: 8px; background: var(--surface-soft); color: var(--ink); padding: 12px 16px; font-size: var(--font-small); line-height: 1.7; flex-shrink: 0; }
+.notice svg { width: 18px; height: 18px; margin-top: 2px; }
+.notice.error { background: var(--error-surface); color: var(--error); }
+.notice.warning { background: var(--warning-surface); color: var(--warning); }
+.notice p { margin: 0; }
+.notice button { min-height: 48px; background: transparent; color: inherit; text-decoration: underline; }
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px; text-align: center; min-height: 300px; }
+.empty-art { display: grid; place-items: center; width: 88px; height: 88px; border-radius: 30px; background: var(--accent-soft); color: var(--primary); margin-bottom: 22px; }
+.empty-art svg { width: 38px; height: 38px; }
+.empty-state h2 { font-size: calc(19px * var(--text-scale)); font-weight: 550; line-height: 1.5; margin: 0 0 10px; }
+.empty-state p { margin: 0 0 24px; font-size: var(--font-body); line-height: 1.8; color: var(--muted); }
+.empty-state .primary-button { max-width: 220px; }
+.overlay { display: flex; flex-direction: column; justify-content: flex-end; position: absolute; inset: 0; z-index: 20; overflow: hidden; }
+.sheet-backdrop { position: absolute; inset: 0; background: var(--scrim); cursor: default; animation: scrim-in var(--motion-enter) var(--ease); }
+.sheet { position: relative; z-index: 1; display: flex; flex-direction: column; max-height: 88%; min-height: 120px; background: var(--surface); border-radius: 28px 28px 0 0; box-shadow: 0 -6px 32px rgb(0 0 0 / 9%); animation: sheet-in var(--motion-enter) var(--ease); overflow: hidden; }
+.sheet-handle { width: 32px; height: 4px; border-radius: 4px; background: var(--border-strong); align-self: center; margin: 12px 0 0; flex-shrink: 0; }
+.sheet-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 20px; flex-shrink: 0; }
+.sheet-header h2 { font-size: calc(18px * var(--text-scale)); font-weight: 650; line-height: 1.5; margin: 0; }
+.sheet-header .icon-button { margin-right: -12px; }
+.sheet-body { padding: 8px 24px 24px; overflow-y: auto; min-height: 0; scrollbar-width: thin; }
+.sheet-body p { font-size: var(--font-body); color: var(--muted); line-height: 1.8; }
+.sheet-actions { display: flex; flex-direction: column; gap: 10px; padding: 0 24px 24px; flex-shrink: 0; }
+.sheet-member { display: flex; align-items: center; gap: 12px; padding: 12px 0; min-height: 68px; }
+.sheet-member .avatar { width: 40px; height: 40px; font-size: 14px; }
+.sheet-member > div:not(.avatar) { flex: 1; min-width: 0; }
+.sheet-member strong { font-size: var(--font-body); font-weight: 550; }
+.sheet-member small { display: block; font-size: var(--font-small); color: var(--muted); margin-top: 2px; }
+.sheet-member .member-role { flex-shrink: 0; font-size: var(--font-small); color: var(--primary); }
+.menu-item { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 14px 0; background: transparent; text-align: left; color: var(--ink); font-size: var(--font-body); }
+.menu-item svg { width: 20px; height: 20px; color: var(--muted); }
+.menu-item.danger, .menu-item.danger svg { color: var(--error); }
+.menu-item:disabled { opacity: .5; }
+.invite-code { padding: 20px 12px; margin: 14px 0; background: var(--surface-soft); border-radius: 16px; font-size: calc(26px * var(--text-scale)); font-weight: 600; letter-spacing: 3px; text-align: center; overflow-wrap: anywhere; }
+.invite-qr { display: block; width: 160px; height: 160px; margin: 18px auto; padding: 8px; background: #fffefa; border-radius: 12px; }
+.invite-qr svg { width: 100%; height: 100%; }
+.action-track { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.action-track .track-art { width: 56px; height: 56px; }
+.track-actions-hint { margin: 10px 0 0; }
+.player-sheet { height: 100%; max-height: 100%; border-radius: 0; background: var(--paper); overflow-y: auto; display: block; scrollbar-width: thin; }
+.player-sheet .sheet-header { padding: 2px 18px 8px; }
+.player-sheet .sheet-header h2 { font-size: var(--font-small); font-weight: 500; text-align: center; }
+.player-art { width: 268px; aspect-ratio: 1; margin: 20px auto 26px; border-radius: 24px; overflow: hidden; background: var(--accent); box-shadow: 0 15px 28px rgb(38 60 53 / 12%); }
+.player-art img, .player-art svg { width: 100%; height: 100%; object-fit: cover; }
+.player-track { padding: 0 30px; text-align: center; }
+.player-track .track-title { font-size: calc(25px * var(--text-scale)); font-weight: 600; letter-spacing: -.6px; }
+.player-track .track-artist { margin-top: 7px; font-size: var(--font-body); }
+.player-track .source-label { justify-content: center; margin-top: 12px; }
+.player-time { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px; margin: 24px 30px 12px; font-size: calc(11px * var(--text-scale)); color: var(--muted); font-variant-numeric: tabular-nums; }
+.player-time .progress-track { width: 100%; height: 4px; border-radius: 4px; background: var(--border); margin-bottom: 5px; position: relative; }
+.player-time .progress-track span { display: block; width: var(--progress, 32%); background: var(--primary); height: 4px; border-radius: 4px; }
+.player-time .progress-track span::after { content: ""; display: block; float: right; width: 9px; height: 9px; background: var(--primary); border: 2px solid var(--paper); box-shadow: 0 0 0 1px var(--primary); border-radius: 50%; margin: -3px -3px 0 0; }
+.player-controls { display: flex; justify-content: center; align-items: center; gap: 32px; margin: 16px 20px 24px; }
+.player-controls .icon-button { width: 52px; min-height: 52px; }
+.player-controls .icon-button svg { width: 26px; height: 26px; }
+.main-play { display: grid; place-items: center; width: 72px; min-height: 72px; background: var(--primary); color: var(--on-primary); border-radius: 50%; box-shadow: 0 5px 14px rgb(38 60 53 / 12%); }
+.main-play:hover { background: var(--primary-hover); }
+.main-play svg { width: 28px; height: 28px; }
+.lyrics { text-align: center; padding: 8px 24px 14px; }
+.lyric { margin: 0 0 14px; font-size: var(--font-body); line-height: 1.7; color: var(--muted); }
+.lyric.active { color: var(--primary); font-weight: 600; }
+.player-members { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; padding: 12px 24px 28px; color: var(--muted); font-size: var(--font-small); }
+.toast { position: absolute; z-index: 40; left: 20px; right: 20px; bottom: 96px; background: var(--ink); color: var(--surface); border-radius: 14px; padding: 13px 16px; font-size: var(--font-small); line-height: 1.6; text-align: center; box-shadow: 0 4px 16px rgb(0 0 0 / 12%); animation: toast-in var(--motion-enter) var(--ease); pointer-events: none; }
+.design-notes { padding-top: 10px; }
+.notes-section { padding-bottom: 26px; margin-bottom: 26px; border-bottom: 1px solid var(--border); }
+.notes-section .eyebrow { margin-bottom: 12px; }
+.notes-section h2 { margin: 0 0 10px; font-size: 18px; font-weight: 500; letter-spacing: -.3px; }
+.notes-section p:not(.eyebrow) { color: var(--muted); font-size: 11px; line-height: 1.85; margin-bottom: 0; }
+.swatch-grid { display: flex; gap: 10px; }
+.swatch { flex: 1; min-width: 0; }
+.swatch > span { display: block; height: 50px; border-radius: 10px; border: 1px solid rgb(38 60 53 / 9%); margin-bottom: 8px; }
+.swatch b { display: block; font-size: 10px; font-weight: 500; }
+.swatch small { display: block; color: var(--muted); font-size: 9px; margin-top: 3px; }
+#screen-notes ul { list-style: none; padding: 0; margin: 0; }
+#screen-notes li { position: relative; padding-left: 12px; margin: 0 0 10px; font-size: 11px; color: var(--muted); line-height: 1.8; }
+#screen-notes li::before { content: ""; position: absolute; left: 0; top: 8px; width: 3px; height: 3px; border-radius: 50%; background: var(--primary); }
+.scenario-label { display: block; color: var(--muted); font-size: 10px; margin-bottom: 5px; }
+.scenario-section select { width: 100%; min-height: 48px; border: 1px solid var(--border-strong); border-radius: 10px; padding: 10px; color: var(--ink); background: var(--surface); font-size: 11px; margin-bottom: 14px; }
+.scenario-section .text-button { display: flex; width: 100%; justify-content: flex-start; text-align: left; padding-inline: 0; font-size: 11px; }
+.notes-footnote { font-size: 10px; color: var(--muted); line-height: 1.8; }
+/* 与交互页面的实际结构对齐；原型外层文字不随手机的系统字号演示缩放。 */
+.app-title { display: flex; align-items: center; gap: 9px; }
+.app-title .brand-mark { width: 30px; height: 30px; border-radius: 10px; }
+.app-title .brand-mark svg { width: 18px; height: 18px; }
+.app-title h2 { margin: 0; font-size: calc(18px * var(--text-scale)); font-weight: 650; line-height: 1.4; letter-spacing: -.5px; }
+.member-meta > strong, .member-meta > span { display: block; }
+.role-label { font-size: calc(11px * var(--text-scale)); }
+.tabs button[aria-selected="true"] { color: var(--primary); font-weight: 650; }
+.tabs button[aria-selected="true"]::after { content: ""; position: absolute; bottom: -1px; width: 26px; left: calc(50% - 13px); height: 3px; background: var(--primary); border-radius: 3px 3px 0 0; }
+.section-heading .eyebrow { margin: 0; font-size: calc(11px * var(--text-scale)); letter-spacing: .6px; }
+.playing-bars.paused i { animation: none; height: 4px; }
+.current-card { width: 100%; text-align: left; background: var(--accent-soft); }
+.current-card:hover { background: var(--accent-soft); }
+.current-link { display: flex; align-items: center; gap: 5px; font-size: calc(11px * var(--text-scale)); color: var(--primary); margin-top: 12px; }
+.current-link svg { width: 14px; height: 14px; }
+.queue-heading { margin-bottom: 2px; }
+.count { margin-left: 5px; color: var(--muted); font-weight: 400; font-size: var(--font-small); }
+.track-duration { display: block; width: 48px; text-align: right; color: var(--muted); font-size: var(--font-small); font-variant-numeric: tabular-nums; }
+.search-wrap { display: block; padding: 18px 20px 0; margin-bottom: 0; background: transparent; border-radius: 0; }
+.search-label { display: block; margin: 0 0 9px; font-size: var(--font-small); color: var(--muted); }
+.search-field { display: flex; align-items: center; gap: 9px; min-height: 52px; padding: 0 3px 0 13px; background: var(--surface-soft); border-radius: 14px; }
+.search-field > svg { width: 20px; height: 20px; color: var(--muted); }
+.search-field input { flex: 1; width: 100%; min-width: 0; padding: 14px 0; min-height: 52px; border: 0; background: transparent; color: var(--ink); font-size: var(--font-body); }
+.search-field input:focus-visible { outline-offset: -2px; border-radius: 6px; }
+.search-field input::-webkit-search-cancel-button { appearance: none; }
+.search-field .icon-button { width: 48px; color: var(--muted); }
+.search-wrap .random-actions { margin: 12px 0 0; }
+.catalog-heading > span:first-child { color: var(--ink); font-size: var(--font-body); font-weight: 550; }
+.track-row:has(> .add-button) { grid-template-columns: 48px minmax(0, 1fr) 48px; gap: 12px; }
+.add-button { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 3px; min-height: 52px; border-radius: 12px; }
+.add-button span { font-size: calc(10px * var(--text-scale)); line-height: 1.35; }
+.add-button:disabled { opacity: 1; }
+.load-more { margin: 18px 0 8px; }
+.mini-copy > strong, .mini-copy > span { display: block; overflow-wrap: anywhere; }
+.mini-copy > strong { color: inherit; font-size: var(--font-body); font-weight: 550; line-height: 1.4; }
+.mini-copy > span { margin-top: 2px; color: var(--player-muted); font-size: calc(11px * var(--text-scale)); }
+.home-heading { padding: 14px 0 22px; }
+.home-heading .eyebrow { margin-bottom: 8px; font-size: calc(10px * var(--text-scale)); }
+.home-heading h3 { margin: 0; font-size: calc(30px * var(--text-scale)); font-weight: 550; line-height: 1.45; letter-spacing: -.8px; }
+.advanced summary { display: flex; align-items: center; justify-content: space-between; }
+.advanced summary::-webkit-details-marker { display: none; }
+.advanced summary svg { width: 16px; height: 16px; }
+.invite-confirm { margin-bottom: 20px; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
+.invite-confirm .eyebrow { font-size: var(--font-small); margin-bottom: 8px; }
+.invite-confirm strong { font-size: calc(24px * var(--text-scale)); letter-spacing: 2px; overflow-wrap: anywhere; }
+.invite-confirm p:not(.eyebrow) { font-size: var(--font-small); color: var(--muted); margin: 12px 0 6px; }
+.invite-address { display: block; font-size: var(--font-small); color: var(--muted); overflow-wrap: anywhere; }
+.chat-time { display: flex; align-items: center; gap: 6px; min-height: 20px; }
+.chat-time svg { width: 12px; height: 12px; }
+.chat-row.mine .chat-time { justify-content: flex-end; }
+.chat-time .chat-state { margin: 0; display: inline-flex; align-items: center; gap: 3px; color: var(--error); }
+.chat-bubble.failed { outline: 1px solid var(--error); outline-offset: 3px; }
+.empty-state h3 { font-size: calc(20px * var(--text-scale)); font-weight: 550; line-height: 1.5; margin: 0 0 10px; }
+.sheet-header h3 { margin: 0; font-size: calc(18px * var(--text-scale)); font-weight: 650; line-height: 1.5; }
+.sheet-body > .secondary-button { margin-bottom: 10px; }
+.sheet-description { margin-bottom: 20px; }
+.sheet-body > .sheet-actions { padding: 0; }
+.danger-button { color: var(--error); border-color: var(--error); }
+.members-list { margin-bottom: 20px; }
+.member-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; min-height: 68px; }
+.member-row > .avatar { width: 40px; height: 40px; font-size: 14px; }
+.member-row > span:nth-child(2) { min-width: 0; flex: 1; }
+.member-row strong { display: block; font-size: var(--font-body); font-weight: 550; overflow-wrap: anywhere; }
+.member-row small { display: block; color: var(--muted); font-size: var(--font-small); margin-top: 3px; }
+.member-row > .status-dot { margin-right: 4px; }
+.invite-sheet { text-align: center; }
+.invite-sheet .invite-code { display: block; padding: 0; background: transparent; margin: 0 0 12px; font-size: calc(24px * var(--text-scale)); letter-spacing: 3px; }
+.invite-sheet p { margin: 12px 0 20px; font-size: var(--font-small); }
+.qr-placeholder { width: 160px; height: 160px; background: var(--surface-soft); border-radius: 20px; display: grid; place-items: center; margin: 8px auto 16px; color: var(--primary); }
+.qr-placeholder svg { width: 110px; height: 110px; stroke-width: .7px; }
+.player-sheet .sheet-header h3 { font-size: var(--font-small); font-weight: 500; }
+.player-sheet .sheet-body { padding: 0 0 24px; overflow: visible; }
+.player-sheet .sheet-handle { display: none; }
+.player-sheet .sheet-header { padding: 4px 20px 0; }
+.player-sheet .sheet-header .icon-button { margin-right: -8px; }
+.player-sheet .player-members { padding: 8px 24px 4px; }
+.art-toggle { display: block; width: calc(100% - 60px); aspect-ratio: 1; margin: 12px auto 0; padding: 0; background: transparent; border-radius: 24px; color: var(--ink); }
+.art-toggle .player-art { width: 100%; height: 100%; margin: 0; }
+.art-toggle .lyrics { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; padding: 16px 8px; }
+.art-toggle .lyric { display: block; font-size: calc(17px * var(--text-scale)); line-height: 1.8; margin-bottom: 12px; }
+.art-toggle .lyric.active { font-size: calc(19px * var(--text-scale)); }
+.lyrics-note { display: block; margin-top: 10px; font-size: calc(10px * var(--text-scale)); color: var(--muted); }
+.art-hint { text-align: center; color: var(--muted); margin: 10px 24px 20px; font-size: calc(10px * var(--text-scale)); }
+.player-track h3 { margin: 0; font-size: calc(25px * var(--text-scale)); font-weight: 600; line-height: 1.5; letter-spacing: -.6px; overflow-wrap: anywhere; }
+.player-track p { font-size: var(--font-body); color: var(--muted); margin: 4px 0 0; line-height: 1.5; }
+.player-sheet input[type="range"] { appearance: none; display: block; width: calc(100% - 60px); min-height: 48px; margin: 12px 30px 0; background: transparent; accent-color: var(--primary); cursor: pointer; }
+.player-sheet input[type="range"]::-webkit-slider-runnable-track { height: 3px; background: var(--border-strong); border-radius: 3px; }
+.player-sheet input[type="range"]::-webkit-slider-thumb { appearance: none; width: 12px; height: 12px; background: var(--primary); border-radius: 50%; margin-top: -4.5px; }
+.player-sheet input[type="range"]::-moz-range-track { height: 3px; background: var(--border-strong); border-radius: 3px; }
+.player-sheet input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; background: var(--primary); border: 0; border-radius: 50%; }
+.player-sheet input[type="range"]:disabled { cursor: default; opacity: .6; }
+.player-time { margin-top: -5px; margin-bottom: 10px; }
+.control-spacer { width: 52px; height: 52px; }
+.player-permission { padding: 0 24px; text-align: center; font-size: var(--font-small) !important; color: var(--muted); line-height: 1.7; margin: 0; }
+.note-item { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px !important; }
+.note-item span { color: var(--primary); font-size: 9px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.overview { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 36px 24px; width: 100%; align-items: start; }
+.overview-item { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+.overview-label { margin: 0 0 16px; display: flex; gap: 10px; font-size: 12px; color: var(--ink); }
+.overview-label span { color: var(--muted); font-size: 10px; }
+.overview .phone { width: 300px; height: 650px; border-radius: 32px; border-width: 6px; box-shadow: 0 10px 30px rgb(38 60 53 / 9%), 0 0 0 1px var(--border); }
+.overview .app { --text-scale: .85; }
+.overview .phone-status { min-height: 28px; padding-top: 5px; }
+.overview .view-inner { padding: 16px; }
+.overview .app-header { padding-inline: 12px; }
+.overview .members-button { margin-inline: 16px; }
+.overview .tabs { padding-inline: 12px; gap: 5px; }
+.overview .current-card { grid-template-columns: 60px minmax(0, 1fr); padding: 12px; gap: 12px; margin-bottom: 18px; }
+.overview .current-art { width: 60px; height: 60px; }
+.overview .track-row { grid-template-columns: 14px 40px minmax(0, 1fr) 40px; gap: 7px; min-height: 66px; }
+.overview .track-art { width: 40px; height: 40px; }
+.overview .catalog-list .track-row, .overview .search-view .track-row { grid-template-columns: 40px minmax(0, 1fr) 40px; }
+.overview .row-actions .icon-button, .overview .add-button { width: 40px; min-width: 40px; }
+.overview .mini-player { margin-inline: 8px; padding-inline: 8px; }
+.overview .mini-art { width: 36px; height: 36px; }
+.overview .mini-controls .icon-button { width: 40px; padding-inline: 8px; }
+.overview .player-art { width: 210px; margin: 14px auto 20px; }
+.overview .player-controls { gap: 24px; }
+.overview .home-view { padding-inline: 20px; }
+.overview .join-card { padding: 16px; }
+.overview .phone .overlay { pointer-events: none; }
+/* 总览保留原手机 390 × 800 排版，再整体缩小为静态设计稿。 */
+body.overview-mode .studio-layout { grid-template-columns: 230px minmax(0, 1fr); }
+body.overview-mode .design-notes { display: none; }
+body.overview-mode .stage-heading { width: 100%; }
+.overview { grid-template-columns: repeat(auto-fit, minmax(281px, 1fr)); }
+.overview-phone-wrap { width: 281px; height: 576px; position: relative; }
+.overview .phone { width: 390px; height: 800px; max-width: none; border-width: 7px; border-radius: 42px; transform: scale(.72); transform-origin: top left; }
+.overview .app { --text-scale: 1; --font-body: 16px; --font-small: 12px; --font-title: 20px; }
+.overview .phone-status { min-height: 34px; padding: 9px 24px 5px; }
+.overview .phone-status > span:last-child { display: inline-flex; align-items: center; gap: 5px; }
+.overview .phone-status > span:last-child svg { width: 15px; height: 15px; }
+.overview .phone-status > span:last-child svg:last-child { width: 22px; }
+.overview .view-inner { padding: 20px; }
+.overview .app-header { padding-inline: 18px; }
+.overview .members-button { margin-inline: 20px; }
+.overview .tabs { padding-inline: 16px; gap: 12px; }
+.overview .current-card { grid-template-columns: 80px minmax(0, 1fr); padding: 16px; gap: 16px; margin-bottom: 26px; }
+.overview .current-art { width: 80px; height: 80px; }
+.overview .track-row { grid-template-columns: 18px 48px minmax(0, 1fr) auto; gap: 10px; min-height: 76px; }
+.overview .track-art { width: 48px; height: 48px; }
+.overview .track-row:has(> .add-button) { grid-template-columns: 48px minmax(0, 1fr) 48px; gap: 12px; }
+.overview .row-actions .icon-button, .overview .add-button { width: 48px; min-width: 48px; }
+.overview .mini-player { margin-inline: 12px; padding-inline: 10px; }
+.overview .mini-art { width: 44px; height: 44px; }
+.overview .mini-controls .icon-button { width: 48px; padding-inline: 12px; }
+.overview .player-art { width: 268px; margin: 20px auto 26px; }
+.overview .player-controls { gap: 32px; }
+.overview .home-view { padding-inline: 24px; }
+.overview .join-card { padding: 20px; }
+.overview-player { width: 100%; height: 100%; max-height: none; min-height: 0; border-radius: 0; box-shadow: none; }
+@keyframes scrim-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sheet-in { from { transform: translateY(20px); opacity: .7; } to { transform: translateY(0); opacity: 1; } }
+@keyframes toast-in { from { transform: translateY(5px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@media (max-width: 1270px) {
+  .studio-layout { grid-template-columns: 230px minmax(0, 1fr); gap: 28px; padding-inline: 28px; max-width: 1050px; }
+  .design-notes { display: none; }
+  .studio-header { padding-inline: 28px; }
+  .overview { grid-template-columns: repeat(2, minmax(240px, 1fr)); }
+}
+@media (max-width: 900px) {
+  .studio-header { padding: 14px 20px; min-height: 76px; }
+  .studio-layout { display: flex; flex-direction: column; padding: 20px 24px 32px; gap: 28px; }
+  .design-sidebar { display: grid; grid-template-columns: 1fr auto; gap: 0 20px; padding: 0; }
+  .design-sidebar > .eyebrow { display: none; }
+  .sidebar-title { font-size: 22px; margin-bottom: 0; grid-column: 1; line-height: 1.5; }
+  .sidebar-title br { display: none; }
+  .sidebar-copy { grid-column: 1; margin: 6px 0 18px; font-size: 11px; }
+  .sidebar-copy br { display: none; }
+  .sidebar-footer { margin: 0; border: 0; padding: 0; grid-column: 2; grid-row: 1 / 3; align-self: center; font-size: 10px; }
+  .sidebar-footer p { display: none; }
+  .screen-nav { grid-column: 1 / -1; flex-direction: row; gap: 6px; flex-wrap: wrap; }
+  .screen-nav button { flex: 1; min-width: 110px; display: flex; justify-content: center; min-height: 48px; padding: 10px 12px; gap: 7px; font-size: 11px; }
+  .screen-nav button > span:last-child { display: none; }
+  .nav-number { font-size: 9px; }
+  .stage-heading { margin-bottom: 18px; }
+  .overview { max-width: 740px; }
+}
+@media (max-width: 600px) {
+  body { background: var(--surface); }
+  .studio-header { min-height: 60px; padding: 6px 12px; gap: 6px; }
+  .studio-brand { font-size: 12px; gap: 7px; min-width: 0; }
+  .studio-brand > .brand-mark { width: 30px; height: 30px; border-radius: 10px; }
+  .studio-brand > .brand-mark svg { width: 17px; height: 17px; }
+  .studio-subtitle, .brand-divider, .version-label { display: none; }
+  .studio-actions { gap: 2px; }
+  .toolbar-button { padding: 10px; min-width: 44px; min-height: 48px; border: 0; }
+  .overview-toggle { display: none; }
+  .studio-layout { padding: 0; display: block; }
+  .design-sidebar { display: block; border-bottom: 1px solid var(--border); }
+  .sidebar-title, .sidebar-copy, .sidebar-footer { display: none; }
+  .screen-nav { flex-wrap: nowrap; overflow-x: auto; padding: 4px 8px; gap: 3px; scrollbar-width: none; }
+  .screen-nav::-webkit-scrollbar { display: none; }
+  .screen-nav button { flex: 1; min-width: 68px; min-height: 48px; padding: 8px 5px; font-size: 10px; border-radius: 10px; white-space: nowrap; }
+  .screen-nav .nav-number { display: none; }
+  .screen-nav button[data-screen="home"] { font-size: 0; }
+  .screen-nav button[data-screen="home"] > span:nth-child(2)::after { content: "进房"; font-size: 10px; }
+  .screen-nav button[data-screen="queue"] > span:nth-child(2), .screen-nav button[data-screen="search"] > span:nth-child(2), .screen-nav button[data-screen="chat"] > span:nth-child(2), .screen-nav button[data-screen="player"] > span:nth-child(2) { font-size: 0; }
+  .screen-nav button[data-screen="queue"] > span:nth-child(2)::after { content: "队列"; font-size: 10px; }
+  .screen-nav button[data-screen="search"] > span:nth-child(2)::after { content: "点歌"; font-size: 10px; }
+  .screen-nav button[data-screen="chat"] > span:nth-child(2)::after { content: "聊天"; font-size: 10px; }
+  .screen-nav button[data-screen="player"] > span:nth-child(2)::after { content: "播放页"; font-size: 10px; }
+  .stage-heading, .stage-caption { display: none; }
+  .preview-stage { display: block; }
+  .phone { width: 100%; height: calc(100dvh - 118px); min-height: 430px; border: 0; border-radius: 0; box-shadow: none; }
+  .phone-status { min-height: 28px; padding: 5px 22px; }
+  .phone-bottom { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+  .phone-bottom span { width: 96px; }
+  .app-header { padding-inline: 16px; }
+  .members-button { margin-inline: 20px; }
+  .phone .player-art { width: min(268px, 68vw); }
+}
+@media (max-width: 360px) {
+  .studio-brand { font-size: 11px; }
+  .studio-brand > .brand-mark { display: none; }
+  .app-header { padding-inline: 12px; }
+  .view-inner { padding-inline: 16px; }
+  .members-button { margin-inline: 16px; }
+  .current-card { grid-template-columns: 68px minmax(0, 1fr); gap: 12px; padding: 14px; }
+  .current-art { width: 68px; height: 68px; }
+  .track-row { gap: 8px; }
+  .home-view { padding-inline: 20px; }
+  .player-controls { gap: 24px; }
+}
+@media (max-width: 600px) {
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  .playing-bars i, .playing-bars span { animation: none !important; }
+}
+/* 播放操作保持在可视区，封面与歌词只占用剩余空间。 */
+.player-sheet { display: flex; flex-direction: column; min-height: 0; }
+.player-sheet > .sheet-header { flex-shrink: 0; }
+.player-sheet > .sheet-body { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; padding: 0; }
+.player-visual { display: flex; flex-direction: column; align-items: center; flex: 1; min-height: 0; overflow-y: auto; padding: 0 28px; scrollbar-width: thin; }
+.player-visual .player-members { flex-shrink: 0; padding: 6px 0 4px; min-height: 40px; }
+.player-visual .art-toggle { display: flex; align-items: center; justify-content: center; flex: 1 1 240px; width: min(240px, 100%); min-height: 88px; max-height: 240px; aspect-ratio: auto; padding: 0; margin: 8px auto 0; overflow: hidden; }
+.player-visual .player-art { height: 100%; width: auto; max-width: 100%; aspect-ratio: 1; margin: 0; object-fit: cover; border-radius: 22px; flex-shrink: 0; }
+.player-visual .lyrics { overflow-y: auto; min-height: 0; padding: 8px 4px; }
+.player-visual .lyric { font-size: calc(16px * var(--text-scale)); margin-bottom: 10px; }
+.player-visual .lyric.active { font-size: calc(18px * var(--text-scale)); }
+.player-visual .art-hint { flex-shrink: 0; margin: 8px 0 10px; font-size: calc(10px * var(--text-scale)); }
+.player-footer { flex-shrink: 0; min-width: 0; max-height: 90%; overflow-y: auto; padding: 6px 0 18px; }
+.player-footer .player-track h3 { font-size: calc(24px * var(--text-scale)); line-height: 1.4; }
+.player-footer .player-track p { font-size: calc(14px * var(--text-scale)); }
+.player-footer .player-controls { margin: 8px 20px 14px; }
+.player-footer input[type="range"] { margin-top: 8px; }
+.player-footer .player-permission { font-size: calc(11px * var(--text-scale)) !important; }
+.overview-player .player-visual .player-art { width: auto; height: 100%; margin: 0; }
+.overview-player .player-visual > .player-art { height: 240px; width: 240px; aspect-ratio: 1; margin: 8px auto 0; max-width: 100%; object-fit: cover; flex-shrink: 0; }
+.overview-player .player-footer { max-height: 90%; }
+@media (max-width: 900px) { .overview { grid-template-columns: repeat(auto-fit, minmax(281px, 1fr)); } }
+@media print {
+  .studio-header, .design-sidebar, .design-notes, .stage-heading, .stage-caption { display: none; }
+  .studio-layout { display: block; padding: 0; }
+  .phone { box-shadow: none; break-inside: avoid; }
+  .overview { grid-template-columns: repeat(2, 1fr); gap: 24px; }
+  .overview-item { break-inside: avoid; }
+}
+
+/* 最终几何检查：关闭控件不压缩，大字号封面保留方形。 */
+.player-sheet > .sheet-header .icon-button { width: 48px; min-width: 48px; height: 48px; min-height: 48px; flex: 0 0 48px; }
+
+/* 精简方案：同一信息只保留一个位置。 */
+.app-header .brand-mark { width:32px; height:32px; border-radius:11px; }
+.app-header .brand-mark svg { width:19px; height:19px; }
+.app-header { min-height:68px; }
+.app-actions .icon-button { color:var(--muted); }
+.app-actions .icon-button:hover { color:var(--error); }
+.members-button { margin-top:0; margin-bottom:10px; }
+.member-meta strong { font-size:var(--font-small); font-weight:500; color:var(--muted); }
+.tabs { gap:18px; padding-bottom:8px; border-bottom:0; }
+.tabs button { min-height:48px; border-radius:15px; }
+.tabs button svg { width:23px; height:23px; }
+.tabs button.active { background:var(--surface-soft); }
+.tabs button.active::after,.tabs button[aria-selected="true"]::after { display:none; }
+.unread-dot { position:absolute; width:6px; height:6px; border-radius:50%; background:var(--error); top:9px; left:calc(50% + 12px); }
+.queue-view { padding-top:20px; }
+.queue-heading { margin-bottom:8px; }
+.queue-heading h3 { font-size:var(--font-small); color:var(--muted); font-weight:500; letter-spacing:.4px; }
+.queue-heading .count { font-size:inherit; padding-left:5px; }
+.queue-list .track-row { min-height:82px; grid-template-columns:18px 48px minmax(0,1fr) 48px; }
+.row-index { font-size:10px; opacity:.7; }
+.track-list .track-row { border-bottom:0; }
+.track-row .track-title { font-size:var(--font-body); font-weight:600; }
+.track-row .track-artist { font-size:var(--font-small); margin-top:4px; }
+.search-wrap { padding-top:20px; }
+.search-tools { display:flex; align-items:center; gap:6px; }
+.search-tools .search-field { flex:1; min-width:0; }
+.search-tools>.icon-button { flex:0 0 48px; color:var(--primary); }
+.search-tools input { min-width:0; }
+.search-view { padding-top:8px; }
+.add-button { width:48px; height:48px; min-height:48px; border-radius:50%; }
+.add-button.added { opacity:.5; }
+.mini-player { border-radius:20px; padding:10px 12px; margin:6px 12px 0; min-height:76px; box-shadow:0 8px 20px rgb(38 60 53 / 8%); }
+.mini-copy > strong,.mini-copy > span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.notice strong { font-size:var(--font-small); flex:1; }
+.empty-state>.icon-button { background:var(--primary); color:var(--on-primary); margin:12px auto 0; border-radius:50%; }
+.player-sheet>.sheet-header { min-height:52px; justify-content:flex-end; padding:4px 24px; }
+.player-sheet>.sheet-body { display:flex; flex-direction:column; min-height:0; overflow:hidden; }
+.player-scene { display:flex; flex-direction:column; align-items:center; flex:1; min-height:0; overflow:auto; padding:8px 24px 0; scrollbar-width:thin; }
+.player-scene>.player-art { display:block; width:min(252px,100%); height:auto; aspect-ratio:1; margin:4px auto 24px; flex-shrink:0; border-radius:24px; box-shadow:0 16px 36px rgb(38 60 53 / 15%); }
+.player-scene .player-track { flex-shrink:0; padding:0; max-width:100%; }
+.player-track h3 { font-size:calc(25px * var(--text-scale)); font-weight:600; }
+.player-track p { font-size:var(--font-small); margin-top:5px; }
+.lyrics-window { width:100%; flex:1 0 115px; min-height:115px; max-height:230px; overflow:auto; margin:24px 0 8px; text-align:center; scrollbar-width:none; mask-image:linear-gradient(transparent,black 12%,black 84%,transparent); }
+.lyrics-window::-webkit-scrollbar { display:none; }
+.lyrics-window .lyrics { padding:8px 0 16px; }
+.lyrics-window .lyric { display:block; font-size:calc(13px * var(--text-scale)); font-weight:400; margin:0 0 16px; color:var(--muted); opacity:.65; line-height:1.6; }
+.lyrics-window .lyric.active { color:var(--primary); font-size:calc(15px * var(--text-scale)); font-weight:600; opacity:1; }
+.player-footer { position:relative; flex-shrink:0; max-height:none; overflow:visible; padding:0 6px 20px; background:var(--paper); }
+.player-footer input[type="range"] { width:calc(100% - 48px); margin:0 24px; min-height:48px; }
+.player-footer input[type="range"]::-webkit-slider-runnable-track { height:3px; background:linear-gradient(to right,var(--primary) var(--seek),var(--border) var(--seek)); }
+.player-footer input[type="range"]::-moz-range-progress { height:3px; background:var(--primary); }
+.player-footer input[type="range"]::-webkit-slider-thumb { opacity:0; transition:opacity .12s; }
+.player-footer input[type="range"]::-moz-range-thumb { opacity:0; }
+.player-footer:focus-within input[type="range"]::-webkit-slider-thumb,.player-footer.seeking input[type="range"]::-webkit-slider-thumb { opacity:1; }
+.seek-readout { display:flex; justify-content:space-between; padding:0 24px; height:0; overflow:hidden; opacity:0; color:var(--muted); font-size:11px; font-variant-numeric:tabular-nums; transition:opacity .12s; transform:translateY(-8px); }
+.player-footer.seeking .seek-readout,.player-footer:has(input:focus-visible) .seek-readout { opacity:1; height:16px; margin-bottom:-16px; overflow:visible; }
+.player-footer .player-controls { display:grid; grid-template-columns:48px 68px 48px; justify-content:center; align-items:center; gap:32px; margin:6px 0 0; }
+.player-controls .main-play { width:68px; height:68px; min-height:68px; border-radius:50%; }
+.player-controls .icon-button { width:48px; min-height:48px; }
+.control-spacer { width:48px; height:48px; }
+.keyboard-only:not(:focus-visible) { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; padding:0; margin:0; }
+.invite-actions { display:flex; gap:10px; }
+.invite-actions button { flex:1; }
+.invite-qr { width:190px; height:190px; margin:8px auto; border-radius:16px; }
+.drag-placeholder { opacity:.22; background:var(--surface-soft); border-radius:14px; }
+.drag-ghost { position:fixed; z-index:1000; background:var(--surface-raised); padding:10px 8px; margin:0; pointer-events:none; border-radius:14px; box-shadow:0 14px 35px rgb(20 35 27 / 22%); opacity:.97; }
+.queue-list [data-sortable] { -webkit-touch-callout:none; user-select:none; -webkit-user-select:none; }
+body.sorting,body.sorting * { cursor:grabbing!important; user-select:none; }
+.overview .player-scene>.player-art { width:252px; height:auto; margin:4px auto 24px; }
+.overview .queue-list .track-row { min-height:82px; grid-template-columns:18px 48px minmax(0,1fr) 48px; }
+@media(max-width:600px) {
+  .studio-header,.design-sidebar { display:none; }
+  .phone { height:100dvh; min-height:400px; }
+  .phone-status { padding-top:max(8px,env(safe-area-inset-top)); min-height:32px; }
+  .player-scene>.player-art { width:min(252px,66vw); }
+}
+@media(max-height:730px) {
+  .player-scene>.player-art { width:190px; margin-bottom:16px; }
+  .player-scene .lyrics-window { margin-top:16px; }
+  .player-footer { padding-bottom:10px; }
+}
+
+
+/* 精简后仍保留完整触控区域；封面、歌手与歌词的对比度不靠降低透明度。 */
+.queue-list .track-row,.overview .queue-list .track-row {grid-template-columns:48px minmax(0,1fr) 48px;}
+.add-button.added {opacity:1;color:var(--muted);background:transparent;}
+.lyrics-window .lyric {opacity:1;}
+.lyrics-window {min-height:170px;max-height:none;flex:1 0 170px;}
+.member-invite-actions {display:flex;justify-content:center;gap:32px;border-top:1px solid var(--border);padding:12px 0 4px;}
+.member-invite-actions .icon-button {width:48px;height:48px;color:var(--primary);}
+.member-invite-actions .icon-button[aria-expanded="true"] {background:var(--surface-soft);}
+.member-invite-qr {text-align:center;}
+.member-invite-qr .invite-code {display:block;font-size:var(--font-small);}
+#copy-fallback {user-select:text;overflow-wrap:anywhere;padding:12px;background:var(--surface-soft);border-radius:12px;}
+.chat-row.mine .chat-name {text-align:right;}
+@media (max-width:600px) and (max-height:640px) and (orientation:portrait) {
+  .player-scene>.player-art {width:150px;margin-bottom:12px;}
+  .player-scene .lyrics-window {margin-top:12px;}
+}
+.player-footer:focus-within input[type="range"]::-webkit-slider-thumb {opacity:0;}
+.player-footer.seeking input[type="range"]::-webkit-slider-thumb,.player-footer input[type="range"]:focus-visible::-webkit-slider-thumb {opacity:1;}
+.player-footer.seeking input[type="range"]::-moz-range-thumb,.player-footer input[type="range"]:focus-visible::-moz-range-thumb {opacity:1;}
+
+</style>
+
+</head>
+<body data-theme="light">
+  <header class="studio-header">
+    <a class="studio-brand" href="#queue"><span class="brand-mark" data-icon="headphones"></span><span>ListenTogether<span class="brand-divider"> / </span><span class="studio-subtitle">设计工作台</span></span></a>
+    <div class="studio-actions">
+      <span class="version-label">UI CONCEPT 03</span>
+      <button class="toolbar-button" id="theme-toggle" aria-label="切换深色主题" data-icon="moon"></button>
+      <button class="toolbar-button overview-toggle" id="overview-toggle">多屏总览</button>
+    </div>
+  </header>
+  <main class="studio-layout">
+    <aside class="design-sidebar">
+      <p class="eyebrow">A LITTLE CLOSER, THROUGH MUSIC</p>
+      <h1 class="sidebar-title">把音乐，<br>听成陪伴。</h1>
+      <p class="sidebar-copy">暖白、松绿与恰好的留白。<br>一个入口，一次表达。</p>
+      <nav class="screen-nav" aria-label="原型页面">
+        <button data-screen="home"><span class="nav-number">01</span><span>创建 / 加入</span><span data-icon="arrow-right"></span></button>
+        <button data-screen="queue" class="active"><span class="nav-number">02</span><span>一起听 · 队列</span><span data-icon="arrow-right"></span></button>
+        <button data-screen="search"><span class="nav-number">03</span><span>点一首歌</span><span data-icon="arrow-right"></span></button>
+        <button data-screen="chat"><span class="nav-number">04</span><span>边听边聊</span><span data-icon="arrow-right"></span></button>
+        <button data-screen="player"><span class="nav-number">05</span><span>沉浸播放器</span><span data-icon="arrow-right"></span></button>
+      </nav>
+      <div class="sidebar-footer"><span class="status-dot"></span> 可交互设计原型 <p>样本数据 · 不连接真实房间</p></div>
+    </aside>
+    <section class="preview-stage" aria-label="交互预览">
+      <div class="stage-heading"><span class="stage-index" id="stage-index">02 / 05</span><span id="stage-title">一起听 · 队列</span><span class="stage-device">390 × 800</span></div>
+      <div class="phone" id="prototype-phone">
+        <div class="phone-status" aria-hidden="true"><span>9:41</span><span class="device-indicators"><span data-icon="signal"></span><span data-icon="wifi"></span><span data-icon="battery"></span></span></div>
+        <div class="app" id="app"></div>
+        <div class="phone-bottom" aria-hidden="true"><span></span></div>
+      </div>
+      <p class="stage-caption" id="stage-caption">点击点歌、播放或聊天，试试一段完整的一起听。</p>
+      <div class="overview hidden" id="overview" aria-label="多屏设计总览"></div>
+    </section>
+    <aside class="design-notes">
+      <section class="notes-section"><p class="eyebrow">THE FEELING</p><h2>轻一点，近一点。</h2><p>让歌曲和聊天留在前面，让操作各有位置。</p></section>
+      <section class="notes-section"><p class="eyebrow">COLOR STORY</p><div class="swatch-grid"><div class="swatch"><span style="background:#F7F5F0"></span><b>暖纸白</b><small>#F7F5F0</small></div><div class="swatch"><span style="background:#285A47"></span><b>松叶绿</b><small>#285A47</small></div><div class="swatch"><span style="background:#E7C6A5"></span><b>柔杏色</b><small>#E7C6A5</small></div></div></section>
+      <section class="notes-section"><p class="eyebrow">DESIGN NOTES</p><div id="screen-notes"></div></section>
+      <section class="notes-section scenario-section"><p class="eyebrow">试试不同状态</p><label class="scenario-label" for="role-select">预览身份</label><select id="role-select"><option value="host">房主</option><option value="member">成员</option></select><label class="scenario-label" for="state-select">连接 / 队列</label><select id="state-select"><option value="ready">正常连接</option><option value="empty">空队列</option><option value="reconnecting">正在重连</option><option value="incompatible">版本不兼容</option></select><button class="text-button" id="fail-message">模拟下条聊天发送失败</button><button class="text-button" id="incoming-message">模拟收到好友消息</button><button class="text-button" id="reset-demo">重置原型</button></section>
+      <p class="notes-footnote">Android · Jetpack Compose<br>竖屏布局 · 触控目标 ≥48dp</p>
+    </aside>
+  </main>
+  <div id="announcer" class="sr-only" aria-live="polite" role="status"></div>
+<script>
+/* 离线 UI 原型：所有队列、聊天与连接状态仅在本页内存中模拟，不调用产品接口。 */
+'use strict';
+
+const paths = {
+  headphones: '<path d="M4 14v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="12" width="4" height="8" rx="2"/><rect x="17" y="12" width="4" height="8" rx="2"/>',
+  'arrow-right': '<path d="M5 12h14m-5-5 5 5-5 5"/>',
+  'chevron-down': '<path d="m6 9 6 6 6-6"/>',
+  'chevron-up': '<path d="m6 15 6-6 6 6"/>',
+  close: '<path d="m6 6 12 12M6 18 18 6"/>',
+  more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
+  play: '<path d="m9 5 11 7-11 7z" fill="currentColor" stroke="none"/>',
+  pause: '<path d="M8 5v14M16 5v14" stroke-width="4"/>',
+  next: '<path d="m5 5 10 7-10 7z" fill="currentColor" stroke="none"/><path d="M19 5v14"/>',
+  restart: '<path d="M3 11a9 9 0 1 1 2 7M3 5v6h6"/>',
+  share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m9 10 6-4m-6 8 6 4"/>',
+  qr: '<path d="M3 3h6v6H3zM15 3h6v6h-6zM3 15h6v6H3zM15 15h3v3h3v3h-6zM12 3v3M3 12h3m6 0h3m6 0v3m-9 6v-3"/>',
+  search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  check: '<path d="m5 12 4 4L19 6"/>',
+  shuffle: '<path d="M3 5h3c5 0 7 14 12 14h3M3 19h3c2 0 4-3 6-7m3-5c1-1 2-2 3-2h3m-3-3 3 3-3 3m0 8 3 3-3 3"/>',
+  send: '<path d="m3 3 19 9-19 9 4-9zM7 12h15"/>',
+  moon: '<path d="M20 15A9 9 0 0 1 9 4a9 9 0 1 0 11 11z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1 1m12 12 1 1M5 19l1-1M18 6l1-1"/>',
+  signal: '<path d="M4 19v-3m5 3v-6m5 6V9m5 10V5"/>',
+  wifi: '<path d="M3 8a15 15 0 0 1 18 0M6 12a10 10 0 0 1 12 0m-9 4a5 5 0 0 1 6 0"/><circle cx="12" cy="20" r=".5"/>',
+  battery: '<rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 10v4"/><rect x="5" y="10" width="11" height="4" rx=".5" fill="currentColor" stroke="none"/>',
+  music: '<path d="M9 18V5l11-2v13M9 9l11-2"/><ellipse cx="6" cy="18" rx="3" ry="2"/><ellipse cx="17" cy="16" rx="3" ry="2"/>',
+  users: '<circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3m2-16a3 3 0 0 1 0 6m2 4a6 6 0 0 1 2 4v2"/>',
+  logout: '<path d="M9 4H4v16h5m5-12 4 4-4 4m-6-4h14"/>',
+  alert: '<path d="m12 3 10 18H2zM12 9v5"/><circle cx="12" cy="18" r=".5"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  copy: '<rect x="8" y="8" width="12" height="13" rx="2"/><path d="M15 8V3H3v12h5"/>'
+};
+paths.list = '<path d="M9 6h12M9 12h12M9 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/>';
+paths.chat = '<path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l-2 2V11.5A8.5 8.5 0 0 1 10.5 3h2a8.5 8.5 0 0 1 8.5 8.5Z"/><path d="M7 10h9M7 14h6"/>';
+paths['music-add'] = '<path d="M8 18V5l8-2v11M8 9l8-2"/><ellipse cx="5" cy="18" rx="3" ry="2"/><path d="M19 15v6m-3-3h6"/>';
+paths['shuffle-add'] = '<path d="M2 6h3c4 0 6 11 10 11M2 17h3c4 0 6-11 10-11h3m-3-3 3 3-3 3M19 14v7m-3-3.5h6"/>';
+const icon = name => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.music}</svg>`;
+const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const tracks = [
+  {id:'cheng-quan', title:'成全', artist:'林宥嘉', duration:309, cover:'cheng-quan.jpg'},
+  {id:'dan-che', title:'单车', artist:'陈奕迅', duration:211, cover:'dan-che.jpg'},
+  {id:'wan-feng', title:'晚风', artist:'伍佰 & China Blue', duration:225, cover:'wan-feng.jpg'},
+  {id:'hong-dou', title:'红豆', artist:'王菲', duration:257, cover:'hong-dou.jpg'},
+  {id:'fu-shi-shan-xia', title:'富士山下', artist:'陈奕迅', duration:259, cover:'fu-shi-shan-xia.png'},
+  {id:'hong-se-gao-gen-xie', title:'红色高跟鞋', artist:'蔡健雅', duration:206, cover:'hong-se-gao-gen-xie.jpg'},
+  {id:'ju-hao', title:'句号', artist:'G.E.M.邓紫棋', duration:235, cover:'ju-hao.jpg'},
+  {id:'da-mian', title:'大眠', artist:'王心凌', duration:239, cover:'da-mian.jpg'},
+  {id:'he-bu-ke', title:'有何不可', artist:'许嵩', duration:241, cover:'he-bu-ke.jpg'}
+];
+const screens = {
+  home:{index:'01',title:'创建 / 加入',caption:'离线交互原型 · 不连接房间、不播放音频。',notes:['创建与加入共用表单。','邀请信息仅为示例。','服务器地址保留在高级设置。']},
+  queue:{index:'02',title:'队列',caption:'长按歌曲行拖动排序 · 底部展开播放器。',notes:['队列只展示待播歌曲，当前曲只在底部。','房主长按 380ms 拖动；成员只可撤回自己的歌。','头像打开成员面板，邀请收进同一处。']},
+  search:{index:'03',title:'点歌',caption:'加号点歌，勾号表示已点；随机按钮每次添加一首。',notes:['封面、歌名、歌手、加号。','去掉点歌人、时长、来源和重复说明。','成员达到待播限制时再给出反馈。']},
+  chat:{index:'04',title:'聊天',caption:'聊天草稿跨页保留，发送失败可以原地重试。',notes:['保留聊天身份，省略每条消息的时间。','只显示发送中和失败状态。','未读用导航上的圆点表示。']},
+  player:{index:'05',title:'播放器',caption:'内嵌封面和原创歌词均为排版示意 · 不播放音频。',notes:['封面、歌名、歌手、歌词按顺序直接呈现。','进度与播放键集中在一个控制区。','时间只在操作进度条时显示。']}
+};
+const makeEntry = (track, who='小夏', random=false) => ({entryId:crypto.randomUUID(), track, who, mine:who==='我', random});
+function initialState() {
+  return {screen:'queue', room:true, role:'host', scenario:'ready', current:tracks[0], currentWho:'我', currentRandom:false, queue:[makeEntry(tracks[1],'我'),makeEntry(tracks[2],'小夏',true),makeEntry(tracks[3],'阿宁'),makeEntry(tracks[4],'我')], playing:true, localPaused:false, position:138, query:'', pageLimit:9, name:'小听', code:'', address:'http://127.0.0.1:3000', joining:false, advanced:false, invite:false, formError:'', draft:'', unread:2, failNext:false, messages:[{id:'m1',who:'小夏',text:'这首歌好适合晚上听。',time:'21:06',mine:false,status:'sent'},{id:'m2',who:'阿宁',text:'那我点一首《红豆》，接着听。',time:'21:07',mine:false,status:'sent'},{id:'m3',who:'我',text:'好呀，今晚慢慢听。',time:'21:08',mine:true,status:'sent'}], playerFrom:'queue', modal:null, overview:false};
+}
+let state = initialState();
+let toastTimer;
+let dragSession=null, dragFrame=0, suppressClickUntil=0;
+let scrollToChatEnd = false;
+let modalReturnFocus = null;
+const app = document.querySelector('#app');
+const connected = () => state.scenario==='ready' || state.scenario==='empty';
+const effectivePlaying = () => state.playing && !state.localPaused;
+const time = seconds => `${Math.floor(seconds/60)}:${String(Math.floor(seconds%60)).padStart(2,'0')}`;
+const coverStudies = ["data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0ODAiIGhlaWdodD0iNDgwIiB2aWV3Qm94PSIwIDAgNDgwIDQ4MCI+PHJlY3Qgd2lkdGg9IjQ4MCIgaGVpZ2h0PSI0ODAiIGZpbGw9IiMyNjNlMzgiLz48Y2lyY2xlIGN4PSIyOTAiIGN5PSIxNTEiIHI9IjEwNCIgZmlsbD0iI2QwYWI3ZCIvPjxwYXRoIGQ9Ik0wIDM1MVExMjUgMjI2IDI1NyAzNTNUNDgwIDMzNVY0ODBIMFoiIGZpbGw9IiNmNWU5ZDMiIG9wYWNpdHk9Ii44NSIvPjxwYXRoIGQ9Ik0wIDM5OFExNjAgMjY3IDMwMCAzOTFUNDgwIDM2OFY0ODBIMFoiIGZpbGw9IiNkMGFiN2QiIG9wYWNpdHk9Ii44Ii8+PHBhdGggZD0iTTg1IDB2NDgwTTAgODloNDgwIiBzdHJva2U9IiNmNWU5ZDMiIG9wYWNpdHk9Ii4xMiIvPjxyZWN0IHg9IjMwIiB5PSIzMCIgd2lkdGg9IjQyMCIgaGVpZ2h0PSI0MjAiIHJ4PSI1IiBzdHJva2U9IiNmNWU5ZDMiIGZpbGw9Im5vbmUiIG9wYWNpdHk9Ii4yNiIvPjx0ZXh0IHg9IjQwIiB5PSI3MCIgZmlsbD0iI2Y1ZTlkMyIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTMiIGxldHRlci1zcGFjaW5nPSI1Ij5MSVNURU4gLyAwMTwvdGV4dD48L3N2Zz4=", "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0ODAiIGhlaWdodD0iNDgwIiB2aWV3Qm94PSIwIDAgNDgwIDQ4MCI+PHJlY3Qgd2lkdGg9IjQ4MCIgaGVpZ2h0PSI0ODAiIGZpbGw9IiM2ZDgxNzciLz48Y2lyY2xlIGN4PSIyODEiIGN5PSIxNTkiIHI9IjEwNCIgZmlsbD0iI2VhZGNjMyIvPjxwYXRoIGQ9Ik0wIDM1MVExMjUgMjI2IDI1NyAzNTNUNDgwIDMzNVY0ODBIMFoiIGZpbGw9IiMzNTQ5M2UiIG9wYWNpdHk9Ii44NSIvPjxwYXRoIGQ9Ik0wIDM5OFExNjAgMjY3IDMwMCAzOTFUNDgwIDM2OFY0ODBIMFoiIGZpbGw9IiNlYWRjYzMiIG9wYWNpdHk9Ii44Ii8+PHBhdGggZD0iTTg5IDB2NDgwTTAgOTZoNDgwIiBzdHJva2U9IiMzNTQ5M2UiIG9wYWNpdHk9Ii4xMiIvPjxyZWN0IHg9IjMwIiB5PSIzMCIgd2lkdGg9IjQyMCIgaGVpZ2h0PSI0MjAiIHJ4PSI1IiBzdHJva2U9IiMzNTQ5M2UiIGZpbGw9Im5vbmUiIG9wYWNpdHk9Ii4yNiIvPjx0ZXh0IHg9IjQwIiB5PSI3MCIgZmlsbD0iIzM1NDkzZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTMiIGxldHRlci1zcGFjaW5nPSI1Ij5MSVNURU4gLyAwMjwvdGV4dD48L3N2Zz4=", "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0ODAiIGhlaWdodD0iNDgwIiB2aWV3Qm94PSIwIDAgNDgwIDQ4MCI+PHJlY3Qgd2lkdGg9IjQ4MCIgaGVpZ2h0PSI0ODAiIGZpbGw9IiNjMzg5NmEiLz48Y2lyY2xlIGN4PSIyNzIiIGN5PSIxNjciIHI9IjEwNCIgZmlsbD0iI2VkYzU5YyIvPjxwYXRoIGQ9Ik0wIDM1MVExMjUgMjI2IDI1NyAzNTNUNDgwIDMzNVY0ODBIMFoiIGZpbGw9IiM1MTQ3MzYiIG9wYWNpdHk9Ii44NSIvPjxwYXRoIGQ9Ik0wIDM5OFExNjAgMjY3IDMwMCAzOTFUNDgwIDM2OFY0ODBIMFoiIGZpbGw9IiNlZGM1OWMiIG9wYWNpdHk9Ii44Ii8+PHBhdGggZD0iTTkzIDB2NDgwTTAgMTAzaDQ4MCIgc3Ryb2tlPSIjNTE0NzM2IiBvcGFjaXR5PSIuMTIiLz48cmVjdCB4PSIzMCIgeT0iMzAiIHdpZHRoPSI0MjAiIGhlaWdodD0iNDIwIiByeD0iNSIgc3Ryb2tlPSIjNTE0NzM2IiBmaWxsPSJub25lIiBvcGFjaXR5PSIuMjYiLz48dGV4dCB4PSI0MCIgeT0iNzAiIGZpbGw9IiM1MTQ3MzYiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjEzIiBsZXR0ZXItc3BhY2luZz0iNSI+TElTVEVOIC8gMDM8L3RleHQ+PC9zdmc+", "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0ODAiIGhlaWdodD0iNDgwIiB2aWV3Qm94PSIwIDAgNDgwIDQ4MCI+PHJlY3Qgd2lkdGg9IjQ4MCIgaGVpZ2h0PSI0ODAiIGZpbGw9IiM3NTQxM2UiLz48Y2lyY2xlIGN4PSIyNjMiIGN5PSIxNzUiIHI9IjEwNCIgZmlsbD0iI2RiOWU4NCIvPjxwYXRoIGQ9Ik0wIDM1MVExMjUgMjI2IDI1NyAzNTNUNDgwIDMzNVY0ODBIMFoiIGZpbGw9IiNmM2QyYjIiIG9wYWNpdHk9Ii44NSIvPjxwYXRoIGQ9Ik0wIDM5OFExNjAgMjY3IDMwMCAzOTFUNDgwIDM2OFY0ODBIMFoiIGZpbGw9IiNkYjllODQiIG9wYWNpdHk9Ii44Ii8+PHBhdGggZD0iTTk3IDB2NDgwTTAgMTEwaDQ4MCIgc3Ryb2tlPSIjZjNkMmIyIiBvcGFjaXR5PSIuMTIiLz48cmVjdCB4PSIzMCIgeT0iMzAiIHdpZHRoPSI0MjAiIGhlaWdodD0iNDIwIiByeD0iNSIgc3Ryb2tlPSIjZjNkMmIyIiBmaWxsPSJub25lIiBvcGFjaXR5PSIuMjYiLz48dGV4dCB4PSI0MCIgeT0iNzAiIGZpbGw9IiNmM2QyYjIiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjEzIiBsZXR0ZXItc3BhY2luZz0iNSI+TElTVEVOIC8gMDQ8L3RleHQ+PC9zdmc+", "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0ODAiIGhlaWdodD0iNDgwIiB2aWV3Qm94PSIwIDAgNDgwIDQ4MCI+PHJlY3Qgd2lkdGg9IjQ4MCIgaGVpZ2h0PSI0ODAiIGZpbGw9IiM0ZDZiNzAiLz48Y2lyY2xlIGN4PSIyNTQiIGN5PSIxODMiIHI9IjEwNCIgZmlsbD0iI2MyYzJhZiIvPjxwYXRoIGQ9Ik0wIDM1MVExMjUgMjI2IDI1NyAzNTNUNDgwIDMzNVY0ODBIMFoiIGZpbGw9IiNlZWYwZGYiIG9wYWNpdHk9Ii44NSIvPjxwYXRoIGQ9Ik0wIDM5OFExNjAgMjY3IDMwMCAzOTFUNDgwIDM2OFY0ODBIMFoiIGZpbGw9IiNjMmMyYWYiIG9wYWNpdHk9Ii44Ii8+PHBhdGggZD0iTTEwMSAwdjQ4ME0wIDExN2g0ODAiIHN0cm9rZT0iI2VlZjBkZiIgb3BhY2l0eT0iLjEyIi8+PHJlY3QgeD0iMzAiIHk9IjMwIiB3aWR0aD0iNDIwIiBoZWlnaHQ9IjQyMCIgcng9IjUiIHN0cm9rZT0iI2VlZjBkZiIgZmlsbD0ibm9uZSIgb3BhY2l0eT0iLjI2Ii8+PHRleHQgeD0iNDAiIHk9IjcwIiBmaWxsPSIjZWVmMGRmIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgbGV0dGVyLXNwYWNpbmc9IjUiPkxJU1RFTiAvIDA1PC90ZXh0Pjwvc3ZnPg==", "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0ODAiIGhlaWdodD0iNDgwIiB2aWV3Qm94PSIwIDAgNDgwIDQ4MCI+PHJlY3Qgd2lkdGg9IjQ4MCIgaGVpZ2h0PSI0ODAiIGZpbGw9IiNiYjc5NWYiLz48Y2lyY2xlIGN4PSIyNDUiIGN5PSIxOTEiIHI9IjEwNCIgZmlsbD0iI2Y1ZDdiOSIvPjxwYXRoIGQ9Ik0wIDM1MVExMjUgMjI2IDI1NyAzNTNUNDgwIDMzNVY0ODBIMFoiIGZpbGw9IiM2NTM5MzIiIG9wYWNpdHk9Ii44NSIvPjxwYXRoIGQ9Ik0wIDM5OFExNjAgMjY3IDMwMCAzOTFUNDgwIDM2OFY0ODBIMFoiIGZpbGw9IiNmNWQ3YjkiIG9wYWNpdHk9Ii44Ii8+PHBhdGggZD0iTTEwNSAwdjQ4ME0wIDEyNGg0ODAiIHN0cm9rZT0iIzY1MzkzMiIgb3BhY2l0eT0iLjEyIi8+PHJlY3QgeD0iMzAiIHk9IjMwIiB3aWR0aD0iNDIwIiBoZWlnaHQ9IjQyMCIgcng9IjUiIHN0cm9rZT0iIzY1MzkzMiIgZmlsbD0ibm9uZSIgb3BhY2l0eT0iLjI2Ii8+PHRleHQgeD0iNDAiIHk9IjcwIiBmaWxsPSIjNjUzOTMyIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgbGV0dGVyLXNwYWNpbmc9IjUiPkxJU1RFTiAvIDA2PC90ZXh0Pjwvc3ZnPg==", "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0ODAiIGhlaWdodD0iNDgwIiB2aWV3Qm94PSIwIDAgNDgwIDQ4MCI+PHJlY3Qgd2lkdGg9IjQ4MCIgaGVpZ2h0PSI0ODAiIGZpbGw9IiM0NTQ2NTUiLz48Y2lyY2xlIGN4PSIyMzYiIGN5PSIxOTkiIHI9IjEwNCIgZmlsbD0iI2I4YTNhYSIvPjxwYXRoIGQ9Ik0wIDM1MVExMjUgMjI2IDI1NyAzNTNUNDgwIDMzNVY0ODBIMFoiIGZpbGw9IiNlM2Q1YzYiIG9wYWNpdHk9Ii44NSIvPjxwYXRoIGQ9Ik0wIDM5OFExNjAgMjY3IDMwMCAzOTFUNDgwIDM2OFY0ODBIMFoiIGZpbGw9IiNiOGEzYWEiIG9wYWNpdHk9Ii44Ii8+PHBhdGggZD0iTTEwOSAwdjQ4ME0wIDEzMWg0ODAiIHN0cm9rZT0iI2UzZDVjNiIgb3BhY2l0eT0iLjEyIi8+PHJlY3QgeD0iMzAiIHk9IjMwIiB3aWR0aD0iNDIwIiBoZWlnaHQ9IjQyMCIgcng9IjUiIHN0cm9rZT0iI2UzZDVjNiIgZmlsbD0ibm9uZSIgb3BhY2l0eT0iLjI2Ii8+PHRleHQgeD0iNDAiIHk9IjcwIiBmaWxsPSIjZTNkNWM2IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgbGV0dGVyLXNwYWNpbmc9IjUiPkxJU1RFTiAvIDA3PC90ZXh0Pjwvc3ZnPg==", "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0ODAiIGhlaWdodD0iNDgwIiB2aWV3Qm94PSIwIDAgNDgwIDQ4MCI+PHJlY3Qgd2lkdGg9IjQ4MCIgaGVpZ2h0PSI0ODAiIGZpbGw9IiM3NDdjNWYiLz48Y2lyY2xlIGN4PSIyMjciIGN5PSIyMDciIHI9IjEwNCIgZmlsbD0iI2Q1YzhhNSIvPjxwYXRoIGQ9Ik0wIDM1MVExMjUgMjI2IDI1NyAzNTNUNDgwIDMzNVY0ODBIMFoiIGZpbGw9IiNmMWU3YzkiIG9wYWNpdHk9Ii44NSIvPjxwYXRoIGQ9Ik0wIDM5OFExNjAgMjY3IDMwMCAzOTFUNDgwIDM2OFY0ODBIMFoiIGZpbGw9IiNkNWM4YTUiIG9wYWNpdHk9Ii44Ii8+PHBhdGggZD0iTTExMyAwdjQ4ME0wIDEzOGg0ODAiIHN0cm9rZT0iI2YxZTdjOSIgb3BhY2l0eT0iLjEyIi8+PHJlY3QgeD0iMzAiIHk9IjMwIiB3aWR0aD0iNDIwIiBoZWlnaHQ9IjQyMCIgcng9IjUiIHN0cm9rZT0iI2YxZTdjOSIgZmlsbD0ibm9uZSIgb3BhY2l0eT0iLjI2Ii8+PHRleHQgeD0iNDAiIHk9IjcwIiBmaWxsPSIjZjFlN2M5IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgbGV0dGVyLXNwYWNpbmc9IjUiPkxJU1RFTiAvIDA4PC90ZXh0Pjwvc3ZnPg==", "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0ODAiIGhlaWdodD0iNDgwIiB2aWV3Qm94PSIwIDAgNDgwIDQ4MCI+PHJlY3Qgd2lkdGg9IjQ4MCIgaGVpZ2h0PSI0ODAiIGZpbGw9IiM1NTdlNmMiLz48Y2lyY2xlIGN4PSIyMTgiIGN5PSIyMTUiIHI9IjEwNCIgZmlsbD0iI2VmY2RiMyIvPjxwYXRoIGQ9Ik0wIDM1MVExMjUgMjI2IDI1NyAzNTNUNDgwIDMzNVY0ODBIMFoiIGZpbGw9IiNjOWRlZDAiIG9wYWNpdHk9Ii44NSIvPjxwYXRoIGQ9Ik0wIDM5OFExNjAgMjY3IDMwMCAzOTFUNDgwIDM2OFY0ODBIMFoiIGZpbGw9IiNlZmNkYjMiIG9wYWNpdHk9Ii44Ii8+PHBhdGggZD0iTTExNyAwdjQ4ME0wIDE0NWg0ODAiIHN0cm9rZT0iI2M5ZGVkMCIgb3BhY2l0eT0iLjEyIi8+PHJlY3QgeD0iMzAiIHk9IjMwIiB3aWR0aD0iNDIwIiBoZWlnaHQ9IjQyMCIgcng9IjUiIHN0cm9rZT0iI2M5ZGVkMCIgZmlsbD0ibm9uZSIgb3BhY2l0eT0iLjI2Ii8+PHRleHQgeD0iNDAiIHk9IjcwIiBmaWxsPSIjYzlkZWQwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgbGV0dGVyLXNwYWNpbmc9IjUiPkxJU1RFTiAvIDA5PC90ZXh0Pjwvc3ZnPg=="];
+const art = (track, className='track-art') => `<img class="${className}" src="${coverStudies[tracks.indexOf(track)]}" width="480" height="480" alt="" draggable="false">`;
+const button = (action, label, name, extra='') => `<button class="icon-button" data-action="${action}" aria-label="${escapeHtml(label)}" ${extra}>${icon(name)}</button>`;
+const avatars = () => '<span class="avatar-stack"><span class="avatar sage">听</span><span class="avatar sand">夏</span><span class="avatar rose">宁</span></span>';
+function header(home=false) {
+  return `<header class="app-header"><div class="app-title"><span class="brand-mark">${icon('headphones')}</span><h2>一起听歌</h2></div><div class="app-actions">${home?(state.joining?button('scan','扫码加入','qr'):''):button('leave-confirm','退出房间','logout')}</div></header>`;
+}
+function notice() {
+  if(state.scenario==='reconnecting') return `<div class="notice warning" role="status">${icon('wifi')}<strong>正在重连</strong><button class="text-button" data-action="reconnect">重试</button></div>`;
+  return '';
+}
+function tabs() {
+  const names=['队列','点歌',state.unread?`聊天，${state.unread} 条未读消息`:'聊天'], icons=['list','music-add','chat'];
+  return `<div class="tabs" role="tablist" aria-label="房间内容">${['queue','search','chat'].map((screen,i)=>`<button class="${state.screen===screen?'active':''}" role="tab" id="tab-${screen}" aria-label="${names[i]}" aria-selected="${state.screen===screen}" aria-controls="room-panel" tabindex="${state.screen===screen?0:-1}" data-screen="${screen}">${icon(icons[i])}${screen==='chat'&&state.unread?`<span class="unread-dot" aria-label="${state.unread} 条未读"></span>`:''}</button>`).join('')}</div>`;
+}
+function roomTop() {
+  return `${header()}<button class="members-button" data-action="members" aria-label="查看 3 位成员${state.role==='host'?'，你是房主':''}">${avatars()}<span class="member-meta"><strong>3 人一起听</strong></span>${icon('chevron-down')}</button>${notice()}${tabs()}`;
+}
+function emptyView() {
+  return `<div class="empty-state"><div class="empty-art">${icon('music')}</div><h3>${state.current?'等一首好歌':'点一首，开始听'}</h3>${button('browse','点歌','music-add')}</div>`;
+}
+function queueView() {
+  return `<div class="view-inner queue-view"><div class="section-heading queue-heading"><h3>接下来 <span class="count">${state.queue.length}</span></h3></div>${state.queue.length?`<p id="sort-help" class="sr-only">房主可长按拖动排序，或聚焦歌曲行后按 Alt 加上下方向键移动。</p><div class="track-list queue-list">${state.queue.map((entry,index)=>`<div class="track-row" data-entry="${entry.entryId}" ${state.role==='host'&&connected()?'data-sortable="true" tabindex="0" aria-describedby="sort-help"':''}>${art(entry.track)}<div class="track-copy"><strong class="track-title">${entry.track.title}</strong><span class="track-artist">${entry.track.artist}</span></div><div class="row-actions">${state.role==='host'||entry.mine?button('track-menu',`管理 ${entry.track.title}`,'more',`data-id="${entry.entryId}" ${connected()?'':'disabled'}`):''}</div></div>`).join('')}</div>`:emptyView()}</div>`;
+}
+function searchRows() {
+  const query=state.query.trim().toLocaleLowerCase();
+  const matches=tracks.filter(t=>`${t.title} ${t.artist}`.toLocaleLowerCase().includes(query));
+  const full=state.role==='member'&&state.queue.filter(e=>e.mine).length>=5;
+  return matches.length?`<div class="track-list">${matches.slice(0,state.pageLimit).map(t=>{
+    const queued=state.current?.id===t.id||state.queue.some(e=>e.track.id===t.id);
+    return `<div class="track-row">${art(t)}<div class="track-copy"><strong class="track-title">${t.title}</strong><span class="track-artist">${t.artist}</span></div><button class="add-button ${queued?'added':''}" data-action="add" data-id="${t.id}" aria-label="${queued?'已点':full?'待播已满，无法加入':'加入'} ${t.title}" ${queued||!connected()?'disabled':''}>${icon(queued?'check':'plus')}</button></div>`;
+  }).join('')}</div>${matches.length>state.pageLimit?'<button class="secondary-button load-more" data-action="more-results">加载更多</button>':''}`:`<div class="search-empty">${icon('search')}<h3>没有找到歌曲</h3></div>`;
+}
+function searchView() {
+  return `<div class="search-wrap"><div class="search-tools"><div class="search-field">${icon('search')}<label class="sr-only" for="song-search">搜索歌名或歌手</label><input type="search" id="song-search" placeholder="歌名 / 歌手" value="${escapeHtml(state.query)}" autocomplete="off">${button('clear-search','清空搜索','close')}</div>${button('random','随机加入一首','shuffle-add',connected()?'':'disabled')}</div></div><div id="search-results" class="view-inner search-view">${searchRows()}</div>`;
+}
+function chatView() {
+  return `<div class="chat-history" id="chat-history" tabindex="0" aria-label="聊天记录">${state.messages.map(m=>`<div class="chat-row ${m.mine?'mine':''}">${m.mine?'':`<span class="chat-avatar avatar ${m.who==='小夏'?'sand':'rose'}" aria-label="${escapeHtml(m.who)}">${m.who==='小夏'?'夏':'宁'}</span>`}<div class="chat-content"><span class="chat-name">${escapeHtml(m.who)}</span><div class="chat-bubble ${m.status==='failed'?'failed':''}">${escapeHtml(m.text)}</div>${m.status==='sent'?'':`<div class="chat-time">${m.status==='pending'?`${icon('clock')} 发送中`:`<span class="chat-state">${icon('alert')} 发送失败</span><button class="chat-retry" data-action="retry-message" data-id="${m.id}" ${connected()?'':'disabled'}>重试</button>`}</div>`}</div></div>`).join('')}</div><form class="chat-compose" id="chat-form"><label class="sr-only" for="chat-draft">聊天消息</label><textarea id="chat-draft" rows="1" placeholder="说点什么…" maxlength="500">${escapeHtml(state.draft)}</textarea><button class="send-button" type="submit" aria-label="发送消息" ${!state.draft.trim()||!connected()?'disabled':''}>${icon('send')}</button></form>`;
+}
+function miniPlayer() {
+  const t=state.current;
+  if(!t) return '';
+  return `<div class="mini-player"><div class="mini-progress" style="--progress:${state.position/t.duration*100}%"></div><button class="mini-open" data-action="player" aria-label="展开 ${t.title} 播放器">${art(t,'mini-art')}<span class="mini-copy"><strong>${t.title}</strong><span>${t.artist}</span></span></button><div class="mini-controls">${button('play',effectivePlaying()?'暂停'+(state.role==='member'?'本机':'播放'):'播放',effectivePlaying()?'pause':'play',connected()?'':'disabled')}${state.role==='host'?button('skip','下一首','next',!connected()?'disabled':''):''}</div></div>`;
+}
+function homeView() {
+  return `${header(true)}<div class="view home-view"><div class="home-heading"><span class="eyebrow">${state.joining?'JOIN A ROOM':'START A ROOM'}</span><h3>${state.joining?'加入房间':'创建房间'}</h3></div><form id="join-form" class="join-card"><div class="mode-switch" role="tablist" aria-label="入房方式"><button type="button" role="tab" aria-selected="${!state.joining}" data-action="create-mode" class="${state.joining?'':'active'}">创建房间</button><button type="button" role="tab" aria-selected="${state.joining}" data-action="join-mode" class="${state.joining?'active':''}">加入房间</button></div><div class="field"><label for="nickname">怎么称呼你</label><input id="nickname" name="nickname" value="${escapeHtml(state.name)}" maxlength="24" autocomplete="nickname" required></div>${state.joining?(state.invite?`<div class="invite-confirm"><p class="eyebrow">已识别邀请</p><strong>${escapeHtml(state.code)}</strong><p>加入前，请确认房间与服务器地址。</p><span class="invite-address">${escapeHtml(state.address)}</span><button type="button" class="text-button" data-action="reset-invite">重新输入</button></div>`:`<div class="field"><label for="invite-code">8 位邀请码</label><input id="invite-code" name="code" value="${escapeHtml(state.code)}" maxlength="8" pattern="[0-9A-Fa-f]{8}" autocapitalize="characters" autocomplete="off" placeholder="例如 A84AFF71" required><span class="helper">向房主获取邀请码，或点击右上角扫码。</span></div>`):''}<details class="advanced" ${state.advanced||!state.address?'open':''}><summary>高级设置 ${icon('chevron-down')}</summary><div class="field"><label for="server-address">服务器地址</label><input id="server-address" name="address" type="url" value="${escapeHtml(state.address)}" placeholder="https://music.example.com" required><span class="helper">与好友使用同一个服务器地址</span></div></details>${state.formError?`<p class="field-error" role="alert">${escapeHtml(state.formError)}</p>`:''}<button type="submit" class="primary-button">${state.joining?'加入，一起听':'创建房间'} ${icon('arrow-right')}</button></form></div>`;
+}
+function incompatibleView() {
+  return `<header class="app-header"><div class="app-title"><span class="brand-mark">${icon('headphones')}</span><h2>一起听歌</h2></div></header><div class="view"><div class="empty-state incompatible-state"><div class="empty-art">${icon('alert')}</div><h3>服务器需要更新</h3><p>当前服务器不支持点歌队列与聊天。<br>请联系房主更新服务器后再加入。</p><button class="primary-button" data-action="go-home">返回首页</button></div></div>`;
+}
+function appMarkup(screen) {
+  if(screen==='home') return homeView();
+  if(state.scenario==='incompatible') return incompatibleView();
+  return `${roomTop()}<section class="view ${screen==='chat'?'chat-view':''}" id="room-panel" role="tabpanel" aria-labelledby="tab-${screen}">${screen==='queue'?queueView():screen==='search'?searchView():chatView()}</section>${miniPlayer()}`;
+}
+function render() {
+  cancelPress();
+  const oldHistory=document.querySelector('#chat-history');
+  const chatPosition=oldHistory?.scrollTop||0;
+  const atBottom=!oldHistory||oldHistory.scrollHeight-oldHistory.scrollTop-oldHistory.clientHeight<60;
+  const underlying=state.screen==='player'?(state.playerFrom||'queue'):state.screen;
+  const detail=screens[state.screen];
+  app.inert=false;
+  document.querySelector('#stage-index').textContent=`${detail.index} / 05`;
+  document.querySelector('#stage-title').textContent=detail.title;
+  document.querySelector('#stage-caption').textContent=detail.caption;
+  document.querySelector('#screen-notes').innerHTML=detail.notes.map((n,i)=>`<p class="note-item"><span>0${i+1}</span>${n}</p>`).join('');
+  document.querySelectorAll('.screen-nav [data-screen]').forEach(b=>{b.classList.toggle('active',b.dataset.screen===state.screen);b.setAttribute('aria-current',b.dataset.screen===state.screen?'page':'false');});
+  app.innerHTML=appMarkup(underlying);
+  if(underlying==='chat') {const history=document.querySelector('#chat-history'); history.scrollTop=scrollToChatEnd||atBottom?history.scrollHeight:chatPosition;scrollToChatEnd=false;}
+  if(state.scenario==='incompatible') state.modal=null;
+  else if(state.screen==='player') state.modal='player';
+  document.querySelector('#overview').classList.toggle('hidden',!state.overview);
+  document.querySelector('#prototype-phone').classList.toggle('hidden',state.overview);
+  document.querySelector('#stage-caption').classList.toggle('hidden',state.overview);
+  document.body.classList.toggle('overview-mode',state.overview);
+  document.querySelector('#overview-toggle').textContent=state.overview?'返回交互':'多屏总览';
+  if(state.modal) renderModal();
+  if(state.overview) renderOverview();
+}
+function go(screen) {
+  if(!screens[screen]) return;
+  if(screen!=='home'&&!state.room) state.room=true;
+  state.modal=null;
+  state.screen=screen;
+  if(screen==='chat'){state.unread=0;scrollToChatEnd=true;}
+  history.replaceState(null,'',`#${screen}`);
+  render();
+}
+function toast(message) {
+  document.querySelector('.toast')?.remove();clearTimeout(toastTimer);
+  const element=document.createElement('div');element.className='toast';element.textContent=message;
+  app.append(element);document.querySelector('#announcer').textContent=message;
+  toastTimer=setTimeout(()=>element.remove(),3500);
+}
+function openModal(name,id) {cancelPress();modalReturnFocus=document.activeElement;state.modal=name;state.modalId=id;renderModal();}
+function closeModal() {
+  if(state.screen==='player') {state.screen=state.playerFrom||'queue';state.modal=null;history.replaceState(null,'',`#${state.screen}`);render();document.querySelector('#app .mini-open')?.focus({preventScroll:true});return;}
+  else {state.modal=null;document.querySelector('.overlay')?.remove();for(const child of app.children) child.inert=false;}
+  if(modalReturnFocus?.isConnected) modalReturnFocus.focus({preventScroll:true});else document.querySelector('#app .members-button')?.focus({preventScroll:true});
+}
+function playerContent() {
+  const t=state.current;
+  if(!t) return `<div class="empty-state"><div class="empty-art">${icon('music')}</div><h3>点一首，开始听</h3>${button('browse','点歌','music-add')}</div>`;
+  return `<div class="player-scene">${art(t,'player-art')}<div class="player-track"><h3>${t.title}</h3><p>${t.artist}</p></div><div class="lyrics-window" tabindex="0" aria-label="示例歌词，非歌曲原词"><div class="lyrics"><span class="lyric">一起听歌</span><span class="lyric active" aria-current="true">让同一段旋律，连接此刻。</span><span class="lyric">今晚的下一首，听你的。</span><span class="lyric">把音乐，听成陪伴。</span><span class="lyric">灯光渐暗，旋律还在。</span></div></div></div><div class="player-footer"><label class="sr-only" for="player-seek">播放进度</label><input type="range" id="player-seek" min="0" max="${t.duration}" value="${state.position}" style="--seek:${state.position/t.duration*100}%" aria-valuetext="${time(state.position)}" ${state.role==='host'&&connected()?'':'disabled'}><div class="seek-readout" aria-hidden="true"><span id="elapsed">${time(state.position)}</span><span>${time(t.duration)}</span></div><div class="player-controls"><span class="control-spacer"></span><button class="main-play" data-action="play" aria-label="${effectivePlaying()?'暂停'+(state.role==='member'?'本机':'播放'):'播放'+(state.role==='member'?'本机':'')}" ${connected()?'':'disabled'}>${icon(effectivePlaying()?'pause':'play')}</button>${state.role==='host'?button('skip','下一首','next',connected()?'':'disabled'):'<span class="control-spacer"></span>'}</div></div>`;
+}
+const inviteQr = '<svg class="invite-qr" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29" aria-label="示例邀请码 A84AFF71 的二维码" role="img"><rect width="29" height="29" fill="#fff"/><path d="M4 4h1v1h-1zM5 4h1v1h-1zM6 4h1v1h-1zM7 4h1v1h-1zM8 4h1v1h-1zM9 4h1v1h-1zM10 4h1v1h-1zM13 4h1v1h-1zM14 4h1v1h-1zM15 4h1v1h-1zM16 4h1v1h-1zM18 4h1v1h-1zM19 4h1v1h-1zM20 4h1v1h-1zM21 4h1v1h-1zM22 4h1v1h-1zM23 4h1v1h-1zM24 4h1v1h-1zM4 5h1v1h-1zM10 5h1v1h-1zM12 5h1v1h-1zM15 5h1v1h-1zM18 5h1v1h-1zM24 5h1v1h-1zM4 6h1v1h-1zM6 6h1v1h-1zM7 6h1v1h-1zM8 6h1v1h-1zM10 6h1v1h-1zM13 6h1v1h-1zM14 6h1v1h-1zM15 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM21 6h1v1h-1zM22 6h1v1h-1zM24 6h1v1h-1zM4 7h1v1h-1zM6 7h1v1h-1zM7 7h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM15 7h1v1h-1zM16 7h1v1h-1zM18 7h1v1h-1zM20 7h1v1h-1zM21 7h1v1h-1zM22 7h1v1h-1zM24 7h1v1h-1zM4 8h1v1h-1zM6 8h1v1h-1zM7 8h1v1h-1zM8 8h1v1h-1zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM15 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM21 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM4 9h1v1h-1zM10 9h1v1h-1zM13 9h1v1h-1zM14 9h1v1h-1zM15 9h1v1h-1zM18 9h1v1h-1zM24 9h1v1h-1zM4 10h1v1h-1zM5 10h1v1h-1zM6 10h1v1h-1zM7 10h1v1h-1zM8 10h1v1h-1zM9 10h1v1h-1zM10 10h1v1h-1zM12 10h1v1h-1zM14 10h1v1h-1zM16 10h1v1h-1zM18 10h1v1h-1zM19 10h1v1h-1zM20 10h1v1h-1zM21 10h1v1h-1zM22 10h1v1h-1zM23 10h1v1h-1zM24 10h1v1h-1zM4 12h1v1h-1zM6 12h1v1h-1zM8 12h1v1h-1zM10 12h1v1h-1zM13 12h1v1h-1zM16 12h1v1h-1zM20 12h1v1h-1zM23 12h1v1h-1zM4 13h1v1h-1zM5 13h1v1h-1zM6 13h1v1h-1zM7 13h1v1h-1zM8 13h1v1h-1zM9 13h1v1h-1zM12 13h1v1h-1zM14 13h1v1h-1zM15 13h1v1h-1zM17 13h1v1h-1zM19 13h1v1h-1zM21 13h1v1h-1zM23 13h1v1h-1zM24 13h1v1h-1zM4 14h1v1h-1zM5 14h1v1h-1zM6 14h1v1h-1zM8 14h1v1h-1zM9 14h1v1h-1zM10 14h1v1h-1zM12 14h1v1h-1zM13 14h1v1h-1zM14 14h1v1h-1zM15 14h1v1h-1zM17 14h1v1h-1zM18 14h1v1h-1zM19 14h1v1h-1zM21 14h1v1h-1zM22 14h1v1h-1zM4 15h1v1h-1zM6 15h1v1h-1zM7 15h1v1h-1zM11 15h1v1h-1zM14 15h1v1h-1zM15 15h1v1h-1zM16 15h1v1h-1zM17 15h1v1h-1zM19 15h1v1h-1zM20 15h1v1h-1zM23 15h1v1h-1zM8 16h1v1h-1zM9 16h1v1h-1zM10 16h1v1h-1zM11 16h1v1h-1zM13 16h1v1h-1zM14 16h1v1h-1zM15 16h1v1h-1zM17 16h1v1h-1zM18 16h1v1h-1zM19 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM12 17h1v1h-1zM13 17h1v1h-1zM18 17h1v1h-1zM19 17h1v1h-1zM22 17h1v1h-1zM4 18h1v1h-1zM5 18h1v1h-1zM6 18h1v1h-1zM7 18h1v1h-1zM8 18h1v1h-1zM9 18h1v1h-1zM10 18h1v1h-1zM13 18h1v1h-1zM14 18h1v1h-1zM16 18h1v1h-1zM20 18h1v1h-1zM22 18h1v1h-1zM24 18h1v1h-1zM4 19h1v1h-1zM10 19h1v1h-1zM13 19h1v1h-1zM14 19h1v1h-1zM18 19h1v1h-1zM19 19h1v1h-1zM21 19h1v1h-1zM22 19h1v1h-1zM23 19h1v1h-1zM4 20h1v1h-1zM6 20h1v1h-1zM7 20h1v1h-1zM8 20h1v1h-1zM10 20h1v1h-1zM12 20h1v1h-1zM14 20h1v1h-1zM16 20h1v1h-1zM18 20h1v1h-1zM20 20h1v1h-1zM23 20h1v1h-1zM24 20h1v1h-1zM4 21h1v1h-1zM6 21h1v1h-1zM7 21h1v1h-1zM8 21h1v1h-1zM10 21h1v1h-1zM13 21h1v1h-1zM14 21h1v1h-1zM15 21h1v1h-1zM17 21h1v1h-1zM19 21h1v1h-1zM20 21h1v1h-1zM22 21h1v1h-1zM23 21h1v1h-1zM4 22h1v1h-1zM6 22h1v1h-1zM7 22h1v1h-1zM8 22h1v1h-1zM10 22h1v1h-1zM12 22h1v1h-1zM13 22h1v1h-1zM15 22h1v1h-1zM17 22h1v1h-1zM18 22h1v1h-1zM19 22h1v1h-1zM22 22h1v1h-1zM24 22h1v1h-1zM4 23h1v1h-1zM10 23h1v1h-1zM13 23h1v1h-1zM15 23h1v1h-1zM16 23h1v1h-1zM17 23h1v1h-1zM21 23h1v1h-1zM22 23h1v1h-1zM23 23h1v1h-1zM24 23h1v1h-1zM4 24h1v1h-1zM5 24h1v1h-1zM6 24h1v1h-1zM7 24h1v1h-1zM8 24h1v1h-1zM9 24h1v1h-1zM10 24h1v1h-1zM12 24h1v1h-1zM13 24h1v1h-1zM15 24h1v1h-1zM17 24h1v1h-1zM18 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1z" fill="#263c35"/></svg>';
+function renderModal() {
+  document.querySelector('.overlay')?.remove();
+  const modal=state.modal;
+  let title='', content='';
+  if(modal==='player') {
+    const t=state.current;
+    title='';
+    content=playerContent();
+  } else if(modal==='members') {
+    title='一起听的朋友';
+    content=`<div class="members-list">${[['听',state.name||'小听','你 · '+(state.role==='host'?'房主':'成员'),'sage'],['夏','小夏',state.role==='host'?'成员':'房主','sand'],['宁','阿宁','成员','rose']].map(m=>`<div class="member-row"><span class="avatar ${m[3]}">${m[0]}</span><span><strong>${escapeHtml(m[1])}</strong><small>${m[2]} · 在线</small></span><span class="status-dot"></span></div>`).join('')}</div><div class="member-invite-actions">${button('toggle-qr','显示邀请二维码','qr','aria-expanded="false" aria-controls="member-invite-qr"')}${button('copy-invite','复制邀请','copy')}${button('system-share','分享邀请','share')}</div><div id="member-invite-qr" class="member-invite-qr hidden">${inviteQr}<p class="helper">示例邀请 · 不连接真实房间</p><strong class="invite-code">A84AFF71</strong></div><p id="copy-fallback" class="helper hidden" tabindex="0"></p>`;
+  } else if(modal==='scan') {
+    title='扫码加入';
+    content='<p class="sheet-description">选择二维码来源</p><button class="secondary-button" data-action="scan-example">使用相机 · 示例扫描</button><button class="secondary-button" data-action="scan-example">从相册选择 · 示例扫描</button><p class="helper">离线原型仅演示识别后的邀请确认，不访问相机与相册。</p>';
+  } else if(modal==='track') {
+    const entry=state.queue.find(e=>e.entryId===state.modalId);
+    if(!entry||!(state.role==='host'||entry.mine)||!connected()) {state.modal=null;for(const child of app.children)child.inert=false;return;}
+    title=entry.track.title;
+    content=`<p class="sheet-description">${entry.track.artist}</p><button class="secondary-button danger-button" data-action="remove">${icon('close')} ${entry.mine&&state.role==='member'?'撤回我的点歌':'移出待播队列'}</button>`;
+  } else if(modal==='leave') {
+    title='退出房间？';content='<p class="sheet-description">本机将停止播放。</p><div class="sheet-actions"><button class="secondary-button" data-action="close-modal">继续听</button><button class="primary-button" data-action="leave">退出房间</button></div>';
+  }
+  const overlay=document.createElement('div');overlay.className='overlay';
+  overlay.innerHTML=`<div class="sheet-backdrop" data-action="close-modal" aria-hidden="true"></div><section class="sheet ${modal==='player'?'player-sheet':''}" role="dialog" aria-modal="true" aria-labelledby="sheet-title" tabindex="-1"><div class="sheet-handle" aria-hidden="true"></div><header class="sheet-header"><h3 id="sheet-title" class="${modal==='player'?'sr-only':''}">${modal==='player'?'播放器':title}</h3>${button('close-modal','关闭','chevron-down')}</header><div class="sheet-body">${content}</div></section>`;
+  app.append(overlay);
+  for(const child of app.children) if(child!==overlay) child.inert=true;
+  overlay.querySelector('.sheet').focus({preventScroll:true});
+}
+function addTrack(id,random=false) {
+  if(!connected()) return false;
+  const track=tracks.find(t=>t.id===id);
+  if(!track||state.current?.id===id||state.queue.some(e=>e.track.id===id)) return false;
+  if(state.role==='member'&&state.queue.filter(e=>e.mine).length>=5) return false;
+  if(!state.current) {state.current=track;state.currentWho='我';state.currentRandom=random;state.position=0;state.playing=false;state.localPaused=false;}
+  else state.queue.push(makeEntry(track,'我',random));
+  return true;
+}
+function settleMessage(message) {
+  const fail=state.failNext;state.failNext=false;
+  const epoch=state;
+  setTimeout(()=>{if(state!==epoch||!state.messages.includes(message))return;message.status=fail?'failed':'sent';render();if(state.screen==='chat')document.querySelector('#chat-draft')?.focus({preventScroll:true});if(fail)document.querySelector('#announcer').textContent='消息发送失败，原文已保留，可重试。';},600);
+}
+function renderOverview() {
+  const root=document.querySelector('#overview'), saved={...state};
+  root.innerHTML=['home','queue','search','chat','player'].map(screen=>{
+    state.screen=screen==='player'?'queue':screen;
+    let panel=appMarkup(state.screen);
+    if(screen==='player')panel=`<div class="sheet player-sheet overview-player"><header class="sheet-header"><h3 class="sr-only">播放器</h3>${button('close-modal','收起播放器','chevron-down')}</header><div class="sheet-body">${playerContent()}</div></div>`;
+    return `<div class="overview-item"><div class="overview-label">${screens[screen].index} / ${screens[screen].title}</div><div class="overview-phone-wrap"><div class="phone"><div class="phone-status"><span>9:41</span><span>${icon('wifi')}${icon('battery')}</span></div><div class="app">${panel}</div><div class="phone-bottom"><span></span></div></div></div><button class="text-button" data-screen="${screen}">进入预览 ${icon('arrow-right')}</button></div>`;
+  }).join('');
+  Object.assign(state,saved);
+  root.querySelectorAll('.overview-phone-wrap').forEach(wrapper=>{wrapper.inert=true;wrapper.setAttribute('aria-hidden','true');});
+  root.querySelectorAll('[id]').forEach(element=>element.removeAttribute('id'));
+}
+const inviteText='一起听歌 · 示例邀请码 A84AFF71（离线原型）';
+function showCopyFallback() {
+  const panel=document.querySelector('#copy-fallback');
+  if(panel){panel.textContent=inviteText;panel.classList.remove('hidden');panel.focus();const selection=getSelection(),range=document.createRange();range.selectNodeContents(panel);selection.removeAllRanges();selection.addRange(range);}
+  toast('邀请内容已选中，可手动复制');
+}
+async function copyInvite(){try{await navigator.clipboard.writeText(inviteText);toast('示例邀请已复制');}catch{showCopyFallback();}}
+function refreshThemeButtons() {document.querySelector('#theme-toggle').innerHTML=icon(document.body.dataset.theme==='light'?'moon':'sun');}
+document.querySelectorAll('[data-icon]').forEach(element=>element.innerHTML=icon(element.dataset.icon));
+document.addEventListener('click',async event=>{
+  const control=event.target.closest('button,[data-action]');if(!control||control.disabled)return;
+  if(control.dataset.screen) {if(state.overview){state.overview=false;document.querySelector('#overview').classList.add('hidden');document.querySelector('#prototype-phone').classList.remove('hidden');document.querySelector('#stage-caption').classList.remove('hidden');document.querySelector('#overview-toggle').textContent='多屏总览';}go(control.dataset.screen);return;}
+  const action=control.dataset.action;
+  if(!action)return;
+  if(action==='player') {modalReturnFocus=control;state.playerFrom=state.screen;state.screen='player';history.replaceState(null,'','#player');render();}
+  else if(['members','scan'].includes(action))openModal(action);
+  else if(action==='close-modal')closeModal();
+  else if(action==='toggle-qr') {const panel=document.querySelector('#member-invite-qr');const expanded=control.getAttribute('aria-expanded')!=='true';panel.classList.toggle('hidden',!expanded);control.setAttribute('aria-expanded',expanded);control.setAttribute('aria-label',expanded?'收起邀请二维码':'显示邀请二维码');}
+  else if(action==='play') {if(!connected()||!state.current)return;if(state.role==='member')state.localPaused=!state.localPaused;else state.playing=!state.playing;render();}
+  else if(action==='skip') {if(state.role!=='host'||!connected()||!state.current)return;const next=state.queue.shift();state.current=next?.track||null;state.currentWho=next?.who||'我';state.currentRandom=next?.random||false;state.position=0;if(!state.current)state.playing=false;render();document.querySelector('#announcer').textContent=state.current?`下一首 ${state.current.title}`:'队列已播完';}
+
+  else if(action==='track-menu')openModal('track',control.dataset.id);
+  else if(action==='remove') {const index=state.queue.findIndex(e=>e.entryId===state.modalId);if(index<0||!connected())return;const entry=state.queue[index];if(!(state.role==='host'||entry.mine))return;state.queue.splice(index,1);state.modal=null;render();toast(state.role==='member'?'已撤回我的点歌':'已移出待播队列');}
+  else if(action==='add') {if(state.role==='member'&&state.queue.filter(e=>e.mine).length>=5){toast('最多 5 首待播歌曲');return;}if(addTrack(control.dataset.id)){const resultScroll=document.querySelector('#room-panel').scrollTop;render();document.querySelector('#room-panel').scrollTop=resultScroll;document.querySelector('#announcer').textContent='已加入队列';const next=[...document.querySelectorAll('#app [data-action="add"]:not(:disabled)')].find(b=>b.dataset.id!==control.dataset.id);next?.focus({preventScroll:true});}}
+  else if(action==='random') {
+    if(!connected())return;
+    if(state.role==='member'&&state.queue.filter(e=>e.mine).length>=5){toast('最多 5 首待播歌曲');return;}
+    const candidates=tracks.filter(t=>state.current?.id!==t.id&&!state.queue.some(e=>e.track.id===t.id));
+    if(!candidates.length){toast('没有可加入的歌曲');return;}
+    if(addTrack(candidates[Math.floor(Math.random()*candidates.length)].id,true)){render();document.querySelector('#app [data-action="random"]')?.focus({preventScroll:true});document.querySelector('#announcer').textContent='已随机加入一首';}
+  }
+  else if(action==='clear-search') {state.query='';state.pageLimit=9;render();document.querySelector('#song-search')?.focus();}
+  else if(action==='more-results') {state.pageLimit+=5;document.querySelector('#search-results').innerHTML=searchRows();}
+  else if(action==='reconnect') {state.scenario='ready';document.querySelector('#state-select').value='ready';state.playing=false;render();toast('连接已恢复，点播放继续。');}
+  else if(action==='retry-message') {const m=state.messages.find(m=>m.id===control.dataset.id);if(!m||m.status!=='failed'||!connected())return;m.status='pending';render();settleMessage(m);}
+  else if(action==='create-mode'||action==='join-mode') {state.joining=action==='join-mode';state.formError='';render();}
+  else if(action==='scan-example') {state.joining=true;state.code='A84AFF71';state.invite=true;state.modal=null;state.screen='home';render();}
+  else if(action==='reset-invite') {state.invite=false;render();}
+  else if(action==='browse')go('search');
+  else if(action==='system-share') {const text=inviteText;if(navigator.share){try{await navigator.share({title:'一起听歌',text});}catch(error){if(error.name!=='AbortError')showCopyFallback();}}else await copyInvite();}
+  else if(action==='copy-invite') await copyInvite();
+  else if(action==='leave-confirm')openModal('leave');
+  else if(action==='leave'||action==='go-home') {state.room=false;state.current=null;state.queue=[];state.playing=false;state.messages=[];state.draft='';state.unread=0;state.localPaused=false;state.scenario='ready';document.querySelector('#state-select').value='ready';go('home');}
+});
+document.addEventListener('input',event=>{
+  const input=event.target;
+  if(input.id==='song-search') {state.query=input.value;state.pageLimit=9;document.querySelector('#search-results').innerHTML=searchRows();}
+  else if(input.id==='chat-draft') {state.draft=input.value;document.querySelector('.send-button').disabled=!input.value.trim()||!connected();}
+  else if(input.id==='nickname') state.name=input.value;
+  else if(input.id==='invite-code') {state.code=input.value.toUpperCase().replace(/\s/g,'').slice(0,8);input.value=state.code;}
+  else if(input.id==='server-address')state.address=input.value;
+  else if(input.id==='player-seek'&&state.role==='host'&&connected()) {state.position=Number(input.value);document.querySelector('#elapsed').textContent=time(state.position);input.style.setProperty('--seek',state.position/state.current.duration*100+'%');input.setAttribute('aria-valuetext',time(state.position));const progress=document.querySelector('#app .mini-progress');if(progress)progress.style.setProperty('--progress',state.position/state.current.duration*100+'%');}
+});
+document.addEventListener('toggle',event=>{if(event.target.matches?.('.advanced'))state.advanced=event.target.open;},true);
+document.addEventListener('submit',event=>{
+  if(event.target.id==='join-form') {event.preventDefault();state.formError='';if(!state.name.trim()||!/^https?:\/\//.test(state.address.trim())||(state.joining&&!/^[A-F0-9]{8}$/.test(state.code))){state.formError='请填写昵称、有效服务器地址和 8 位邀请码。';render();return;}state.room=true;state.scenario='ready';state.role=state.joining?'member':'host';state.localPaused=false;state.messages=initialState().messages;state.unread=0;document.querySelector('#state-select').value='ready';document.querySelector('#role-select').value=state.role;if(state.joining){state.current=tracks[0];state.queue=initialState().queue;state.playing=true;state.position=138;}else{state.current=null;state.queue=[];state.playing=false;state.position=0;}go('queue');}
+  else if(event.target.id==='chat-form') {event.preventDefault();if(!state.draft.trim()||!connected())return;const text=state.draft.trim();if([...text].length>500||new TextEncoder().encode(text).length>2048){toast('消息最多 500 字，且不超过 2048 字节。');return;}const id=crypto.randomUUID();const message={id,requestId:id,clientMessageId:id,issuedAtMs:Date.now(),who:'我',text,time:'21:09',mine:true,status:'pending'};state.messages.push(message);state.messages=state.messages.slice(-100);state.draft='';scrollToChatEnd=true;render();document.querySelector('#chat-draft').focus({preventScroll:true});settleMessage(message);}
+});
+document.addEventListener('keydown',event=>{
+  const dialog=document.querySelector('#app .sheet');
+  if(event.key==='Escape'&&dialog){event.preventDefault();closeModal();return;}
+  if(event.key==='Tab'&&dialog){const focusable=[...dialog.querySelectorAll('button:not(:disabled),input:not(:disabled),textarea,select,[tabindex="0"]')];if(!focusable.length){event.preventDefault();return;}const first=focusable[0],last=focusable.at(-1);if(event.shiftKey&&(document.activeElement===first||document.activeElement===dialog)){event.preventDefault();last.focus();}else if(!event.shiftKey&&(document.activeElement===last||document.activeElement===dialog)){event.preventDefault();first.focus();}}
+  if(event.target.matches('.tabs [role="tab"]')&&['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const sequence=['queue','search','chat'];const index=sequence.indexOf(state.screen);go(event.key==='Home'?'queue':event.key==='End'?'chat':sequence[(index+(event.key==='ArrowRight'?1:2))%3]);document.querySelector(`#tab-${state.screen}`).focus();}
+});
+document.querySelector('#theme-toggle').addEventListener('click',()=>{document.body.dataset.theme=document.body.dataset.theme==='light'?'dark':'light';refreshThemeButtons();});
+document.querySelector('#overview-toggle').addEventListener('click',()=>{state.overview=!state.overview;document.querySelector('#overview').classList.toggle('hidden',!state.overview);document.querySelector('#prototype-phone').classList.toggle('hidden',state.overview);document.querySelector('#stage-caption').classList.toggle('hidden',state.overview);document.querySelector('#overview-toggle').textContent=state.overview?'返回交互':'多屏总览';document.body.classList.toggle('overview-mode',state.overview);if(state.overview)renderOverview();});
+document.querySelector('#role-select').addEventListener('change',event=>{state.role=event.target.value;state.localPaused=false;render();});
+document.querySelector('#state-select').addEventListener('change',event=>{state.scenario=event.target.value;if(state.scenario==='empty'){state.current=null;state.queue=[];state.playing=false;state.position=0;}render();});
+document.querySelector('#fail-message').addEventListener('click',()=>{state.failNext=true;go('chat');toast('下一条消息将模拟失败，原文会留在气泡中。');});
+document.querySelector('#incoming-message').addEventListener('click',()=>{state.messages.push({id:crypto.randomUUID(),who:'小夏',text:'我又找到一首好听的，你们听听看。',time:'21:10',mine:false,status:'sent'});state.messages=state.messages.slice(-100);if(state.screen!=='chat')state.unread++;render();});
+document.querySelector('#reset-demo').addEventListener('click',()=>{state=initialState();document.querySelector('#role-select').value='host';document.querySelector('#state-select').value='ready';go('queue');toast('原型已重置');});
+window.addEventListener('hashchange',()=>go(location.hash.slice(1)));
+refreshThemeButtons();
+go(screens[location.hash.slice(1)]?location.hash.slice(1):'queue');
+
+/* 长按前允许原生滚动，越过移动阈值即取消；激活后由 RAF 在列表边缘滚动。 */
+function cancelPress() {
+  const d=dragSession;if(!d)return;
+  clearTimeout(d.timer);cancelAnimationFrame(dragFrame);dragSession=null;
+  d.ghost?.remove();d.row.classList.remove('drag-placeholder');document.body.classList.remove('sorting');
+  if(d.active){suppressClickUntil=Date.now()+450;const rows=new Map([...d.list.children].map(row=>[row.dataset.entry,row]));for(const entry of state.queue){const row=rows.get(entry.entryId);if(row)d.list.append(row);}document.querySelector('#announcer').textContent='已取消排序';}
+}
+function beginPress(row,x,y,source,id) {
+  if(dragSession||state.modal||state.screen!=='queue'||state.role!=='host'||!connected())return;
+  const scroller=row.closest('.view');
+  dragSession={row,x,y,startX:x,startY:y,source,id,list:row.parentElement,scroller,scrollStart:scroller.scrollTop,active:false};
+  dragSession.timer=setTimeout(()=>{
+    const d=dragSession;if(!d||!d.row.isConnected||state.role!=='host'||!connected()||Math.abs(d.scroller.scrollTop-d.scrollStart)>2){cancelPress();return;}
+    d.active=true;const rect=d.row.getBoundingClientRect();d.offsetY=d.startY-rect.top;
+    d.ghost=d.row.cloneNode(true);d.ghost.classList.add('drag-ghost');d.ghost.removeAttribute('data-entry');d.ghost.removeAttribute('data-sortable');d.ghost.removeAttribute('tabindex');d.ghost.inert=true;d.ghost.setAttribute('aria-hidden','true');
+    Object.assign(d.ghost.style,{left:rect.left+'px',top:rect.top+'px',width:rect.width+'px',height:rect.height+'px'});
+    document.body.append(d.ghost);d.row.classList.add('drag-placeholder');document.body.classList.add('sorting');
+    navigator.vibrate?.(15);document.querySelector('#announcer').textContent='开始排序 '+d.row.querySelector('.track-title').textContent;
+    dragFrame=requestAnimationFrame(dragTick);
+  },380);
+}
+function movePress(x,y) {
+  const d=dragSession;if(!d)return;d.x=x;d.y=y;
+  if(!d.active&&Math.hypot(x-d.startX,y-d.startY)>8)cancelPress();
+}
+function dragTick(now) {
+  const d=dragSession;if(!d?.active)return;
+  if(!d.row.isConnected||state.role!=='host'||!connected()||state.modal||state.screen!=='queue'){cancelPress();return;}
+  const bounds=d.scroller.getBoundingClientRect(),edge=48;
+  // 速度按时间而非帧率计算，60Hz 与 120Hz 屏幕保持同一手感。
+  const dt=Math.min(32,d.lastFrame?now-d.lastFrame:16);d.lastFrame=now;
+  const speed=d.y<bounds.top+edge?-Math.min(600,(bounds.top+edge-d.y)*12):d.y>bounds.bottom-edge?Math.min(600,(d.y-bounds.bottom+edge)*12):0;
+  d.scroller.scrollTop+=speed*dt/1000;
+  const top=Math.max(bounds.top,Math.min(bounds.bottom-d.ghost.offsetHeight,d.y-d.offsetY));d.ghost.style.top=top+'px';
+  const center=top+d.ghost.offsetHeight/2;
+  const siblings=[...d.list.children].filter(row=>row!==d.row),target=siblings.find(row=>center<row.getBoundingClientRect().top+row.offsetHeight/2)||null;
+  if(d.row.nextElementSibling!==target) {
+    const positions=new Map([...d.list.children].map(row=>[row,row.getBoundingClientRect().top]));
+    d.list.insertBefore(d.row,target);
+    if(!matchMedia('(prefers-reduced-motion: reduce)').matches)for(const row of siblings){const delta=positions.get(row)-row.getBoundingClientRect().top;if(delta)row.animate([{transform:`translateY(${delta}px)`},{transform:'translateY(0)'}],{duration:140,easing:'ease-out'});}
+  }
+  dragFrame=requestAnimationFrame(dragTick);
+}
+function finishPress(commit=true) {
+  const d=dragSession;if(!d)return;
+  if(!commit||!d.active||state.role!=='host'||!connected()){cancelPress();return;}
+  const ids=[...d.list.children].map(row=>row.dataset.entry),byId=new Map(state.queue.map(entry=>[entry.entryId,entry]));
+  const valid=ids.length===state.queue.length&&new Set(ids).size===ids.length&&ids.every(id=>byId.has(id));
+  if(!valid){cancelPress();return;}
+  state.queue=ids.map(id=>byId.get(id));const scroll=d.scroller.scrollTop,focused=d.row.dataset.entry;
+  clearTimeout(d.timer);cancelAnimationFrame(dragFrame);dragSession=null;d.ghost.remove();document.body.classList.remove('sorting');suppressClickUntil=Date.now()+450;
+  render();document.querySelector('#room-panel').scrollTop=scroll;
+  document.querySelector(`#app [data-entry="${focused}"]`)?.focus({preventScroll:true});
+  document.querySelector('#announcer').textContent='队列顺序已更新';
+}
+document.addEventListener('pointerdown',event=>{
+  if(event.pointerType==='touch'||event.button!==0||event.target.closest('button'))return;
+  const row=event.target.closest('#app .queue-list [data-sortable]');if(row)beginPress(row,event.clientX,event.clientY,'pointer',event.pointerId);
+});
+document.addEventListener('pointermove',event=>{if(dragSession?.source==='pointer'&&event.pointerId===dragSession.id)movePress(event.clientX,event.clientY);});
+document.addEventListener('pointerup',event=>{if(dragSession?.source==='pointer'&&event.pointerId===dragSession.id)finishPress();});
+document.addEventListener('pointercancel',event=>{if(dragSession?.source==='pointer'&&event.pointerId===dragSession.id)finishPress(false);});
+document.addEventListener('touchstart',event=>{
+  if(event.touches.length!==1||event.target.closest('button')){cancelPress();return;}
+  const row=event.target.closest('#app .queue-list [data-sortable]'),touch=event.touches[0];if(row)beginPress(row,touch.clientX,touch.clientY,'touch',touch.identifier);
+},{passive:true});
+document.addEventListener('touchmove',event=>{
+  if(dragSession?.source!=='touch')return;const touch=[...event.touches].find(t=>t.identifier===dragSession.id);if(!touch||event.touches.length!==1){cancelPress();return;}
+  if(dragSession.active)event.preventDefault();movePress(touch.clientX,touch.clientY);
+},{passive:false});
+document.addEventListener('touchend',event=>{if(dragSession?.source==='touch'&&[...event.changedTouches].some(t=>t.identifier===dragSession.id))finishPress();});
+document.addEventListener('touchcancel',()=>{if(dragSession?.source==='touch')finishPress(false);});
+document.addEventListener('contextmenu',event=>{if(event.target.closest('#app .queue-list [data-sortable]'))event.preventDefault();});
+document.addEventListener('click',event=>{if(Date.now()<suppressClickUntil){event.preventDefault();event.stopImmediatePropagation();}else if(dragSession)finishPress(false);},true);
+document.addEventListener('keydown',event=>{
+  if(event.key==='Escape'&&dragSession){event.preventDefault();finishPress(false);return;}
+  const row=event.target.closest('#app .queue-list [data-sortable]');
+  if(!row||event.target!==row||!event.altKey||!['ArrowUp','ArrowDown'].includes(event.key)||state.role!=='host'||!connected())return;
+  event.preventDefault();cancelPress();const index=state.queue.findIndex(entry=>entry.entryId===row.dataset.entry),dest=index+(event.key==='ArrowUp'?-1:1);
+  if(index<0||dest<0||dest>=state.queue.length)return;
+  const [entry]=state.queue.splice(index,1);state.queue.splice(dest,0,entry);const scroll=document.querySelector('#room-panel').scrollTop;render();document.querySelector('#room-panel').scrollTop=scroll;
+  document.querySelector(`#app [data-entry="${entry.entryId}"]`)?.focus({preventScroll:true});document.querySelector('#announcer').textContent=`${entry.track.title} 已移到第 ${dest+1} 位`;
+});
+window.addEventListener('blur',()=>cancelPress());
+document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelPress();});
+document.addEventListener('scroll',event=>{if(dragSession&&!dragSession.active&&event.target===dragSession.scroller)cancelPress();},true);
+/* 只在实际操作进度时显示时间；指针结束、键盘失焦和取消都及时收起。 */
+document.addEventListener('pointerdown',event=>{if(event.target.id==='player-seek'&&!event.target.disabled)event.target.closest('.player-footer').classList.add('seeking');});
+function stopSeeking(){document.querySelector('.player-footer.seeking')?.classList.remove('seeking');}
+document.addEventListener('pointerup',stopSeeking);
+document.addEventListener('pointercancel',stopSeeking);
+window.addEventListener('blur',stopSeeking);
+</script>
+</body>
+</html>

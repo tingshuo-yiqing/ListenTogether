@@ -2,16 +2,26 @@ package com.listentogether.app.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
+import com.listentogether.app.network.Member
 
 /** memberId 稳定散列映射到色板索引；同一成员恒定同色，索引始终落在 [0, paletteSize)。 */
 internal fun avatarPaletteIndex(memberId: String, paletteSize: Int): Int {
@@ -34,13 +44,12 @@ internal fun memberAvatarGlyph(name: String): String {
 internal fun memberDisplayName(name: String): String = splitAvatarPrefix(name).second.ifBlank { name.trim() }
 
 /**
- * 圆形成员头像：昵称首个字素（emoji 则直接用 emoji，见 [splitAvatarPrefix]），
- * 背景从主题派生的 6 色固定色板取色（primary/secondary/tertiary 及各自 container，配对对应 on 色，禁止硬编码）。
- * 右下角在线状态点：在线 primary、离线 outline；描边用 surface 保证点在任意头像底色上可见。
+ * 圆形成员头像：优先显示服务端分配的内置动物图，缺失/未知 ID 回落昵称字素与主题色。
+ * 右下角在线状态点只在 online 非 null 时显示；聊天和摘要不将历史消息标成离线。
  * 角色与在线/离线仍由旁边文字行承载，不单靠颜色传达状态。
  */
 @Composable
-fun MemberAvatar(memberId: String, name: String, online: Boolean, modifier: Modifier = Modifier) {
+fun MemberAvatar(memberId: String, name: String, online: Boolean?, modifier: Modifier = Modifier, avatarId: String? = null) {
     val colorScheme = MaterialTheme.colorScheme
     // (背景, 内容) 成对派生自主题；每次重组直接读取，跟随亮暗方案切换，不做跨配置缓存。
     val palette = listOf(
@@ -52,14 +61,20 @@ fun MemberAvatar(memberId: String, name: String, online: Boolean, modifier: Modi
         colorScheme.tertiaryContainer to colorScheme.onTertiaryContainer
     )
     val (background, content) = palette[avatarPaletteIndex(memberId, palette.size)]
+    val resource = animalAvatarResource(avatarId)
     Box(modifier = modifier.size(40.dp)) {
         Box(
             modifier = Modifier
-                .size(36.dp)
-                .background(background, CircleShape),
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(background)
+                .border(2.dp, colorScheme.surface, CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Text(
+            if (resource != null) Image(
+                painterResource(resource), contentDescription = null,
+                modifier = Modifier.size(36.dp).clip(CircleShape), contentScale = ContentScale.Crop
+            ) else Text(
                 memberAvatarGlyph(name),
                 style = MaterialTheme.typography.titleSmall,
                 color = content,
@@ -67,12 +82,26 @@ fun MemberAvatar(memberId: String, name: String, online: Boolean, modifier: Modi
                 overflow = TextOverflow.Ellipsis
             )
         }
-        Box(
+        if (online != null) Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .size(10.dp)
                 .background(if (online) colorScheme.primary else colorScheme.outline, CircleShape)
                 .border(1.5.dp, colorScheme.surface, CircleShape)
         )
+    }
+}
+
+/** 摘要最多三个头像，每个重叠 12dp；左侧头像在前，主题色描边保持轮廓清楚。 */
+@Composable
+internal fun AvatarStack(members: List<Member>, modifier: Modifier = Modifier) {
+    val visible = members.take(3)
+    Row(modifier.clearAndSetSemantics {}, horizontalArrangement = Arrangement.spacedBy((-12).dp)) {
+        visible.forEachIndexed { index, member ->
+            key(member.id) {
+                MemberAvatar(member.id, member.name, online = null,
+                    modifier = Modifier.zIndex((visible.size - index).toFloat()), avatarId = member.avatarId)
+            }
+        }
     }
 }

@@ -22,14 +22,14 @@ class ScreenStateTest {
 
     @Test fun businessChangesStillReachScreen() = runTest {
         val base = UiState(credentials = Credentials("12345678", "member", "token"))
-        val states = listOf(base, base.copy(tracks = listOf(Track("a", "歌曲", 120000))),
+        val states = listOf(base, base.copy(queue = com.listentogether.app.network.QueueState(1, emptyList())),
             base.copy(status = ConnectionStatus.Reconnecting, message = "断线"),
             base.copy(locallyPaused = true), UiState())
         assertEquals(states, states.asFlow().screenStates().toList())
     }
 
     @Test fun seekConfirmationVersionAndPositionArePreserved() = runTest {
-        val room = RoomState("host", emptyList(), "a", true, 40000, 1000, 1)
+        val room = RoomState("host", emptyList(), Track("a", "歌曲", 120000), true, 40000, 1000, 1)
         val before = UiState(room = room)
         val after = before.copy(room = room.copy(positionMs = 0, version = 2), positionMs = 900)
         val result = listOf(before, after).asFlow().screenStates().toList()

@@ -49,9 +49,25 @@ test('catalog loads an independent cover and returns a content-based cache versi
   }]));
   const tracks = await loadCatalog(root);
   assert.equal(tracks[0].cover?.mime, 'image/png');
-  assert.deepEqual(tracks[0].cover?.data, png);
+  // QC-D：引用形态（路径 + 来源 + 类型），字节不再随 catalog 常驻内存。
+  assert.equal(tracks[0].cover?.embedded, false);
+  assert.ok(tracks[0].cover?.file?.endsWith('tone.png'));
   assert.equal(typeof tracks[0].coverVer, 'number');
   assert.notEqual(tracks[0].coverVer, null);
+});
+test('loadCatalog caps parse concurrency at 4 and reports the peak', async t => {
+  const root = await mkdtemp(join(tmpdir(), 'listen-catalog-concurrency-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const tone = await readFile(fileURLToPath(new URL('./fixtures/tone.mp3', import.meta.url)));
+  const entries = [];
+  for (let i = 0; i < 10; i++) {
+    await writeFile(join(root, `t${i}.mp3`), tone);
+    entries.push({ id: `t${i}`, title: `曲${i}`, file: `t${i}.mp3` });
+  }
+  await writeFile(join(root, 'catalog.json'), JSON.stringify(entries));
+  const stats = { peak: 0 };
+  await loadCatalog(root, { stats });
+  assert.equal(stats.peak, 4); // 10 首 × 上限 4：启动解析并发不随曲库规模增长
 });
 test('catalog rejects cover paths outside the library and invalid image bytes', async t => {
   const root = await mkdtemp(join(tmpdir(), 'listen-catalog-cover-boundary-'));

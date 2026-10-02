@@ -1,0 +1,801 @@
+{
+  "at": "2026-10-01T17:45:43.187940+00:00",
+  "gitHeadIsBaselineOnly": true,
+  "files": [
+    {
+      "path": "android/app/build.gradle.kts",
+      "bytes": 2697,
+      "sha256": "91863f6f032c637b932380ea8e32b13d67d60aa756ebeb282cf3dde4c3684337"
+    },
+    {
+      "path": "android/app/src/main/AndroidManifest.xml",
+      "bytes": 1638,
+      "sha256": "352ee5b01f80b4ace2e1d67c6c81ee09b712b042545d498870591d2dff9ca22e"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/diagnostics/DiagnosticsLog.kt",
+      "bytes": 5824,
+      "sha256": "5b3fd59f265c09dfa9f9f2eb6685b429c0442532a4ae4687eae27ef439d43f1a"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/InviteCode.kt",
+      "bytes": 2900,
+      "sha256": "cbe84b8cdca155b3a4dbc5d1428b584a21bddee869dee52c78794572df3b3c43"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ListenApplication.kt",
+      "bytes": 611,
+      "sha256": "b921877548d428dfa4c004065857a91cca7700ee60e714aebd91e42a4d544b44"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/MainActivity.kt",
+      "bytes": 15079,
+      "sha256": "93e227c6c54388df16b03f9de5c6a1ae7dc892ced4d718396aa4be5e1cf0ed90"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/network/ConnectionStore.kt",
+      "bytes": 1546,
+      "sha256": "866a50ca843889d88e2bb790d8b486fbc2f427cebf58171f7883c36e7c6f05e6"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/network/CoverCache.kt",
+      "bytes": 2459,
+      "sha256": "0f5bb702516bb4f7deff7156806132c6e523d187621d19ac86997196a8fc1911"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/network/LrcCache.kt",
+      "bytes": 665,
+      "sha256": "5969ddc990cc8cb0ea9a1fae55c1ab37063d1c19528d2098fb496e218f0464b2"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/network/Models.kt",
+      "bytes": 7769,
+      "sha256": "38127830c95df7b8225ed6db7915864b5096ee70d18e4dfb6ff6f2fc74ccd2d4"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/network/RoomClient.kt",
+      "bytes": 45651,
+      "sha256": "3becd202499fb1bb7916a781c29989cb50f602619e3f3e8f864c0cc48c89b415"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/network/SessionContext.kt",
+      "bytes": 796,
+      "sha256": "38e38cb8ccb60a0a343e2da553cf899d7f83b47fa4626a3c7df9ea631153cc05"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/network/SnapshotCollector.kt",
+      "bytes": 3081,
+      "sha256": "45e5e777bf1e591ded3e2a2fc9ea15a9473d68489219765e873194dfc5c9dbd1"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/playback/PlaybackFailure.kt",
+      "bytes": 707,
+      "sha256": "3c2105b2690eb77a95b22a9cb3aa968558207752000dacfdf7cbcf7ab30f4e9d"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/playback/PlaybackService.kt",
+      "bytes": 17469,
+      "sha256": "50c28b8375ced6f2bc22e529c94fe38b8110cebfe94f00531a6fccf96d74cd37"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/playback/TrackMetadata.kt",
+      "bytes": 429,
+      "sha256": "42b2af77f6be8935957f254a6403bd3b6bd2d231ebc53bb112740aebe6cb2c7d"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/sync/ClockEstimator.kt",
+      "bytes": 2889,
+      "sha256": "7d7c8617b0fca17c69266a18dfe75a4d9575e101a17272cac385f6ad0a7eb5e9"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/sync/PlaybackPolicy.kt",
+      "bytes": 1121,
+      "sha256": "99c6c26f6733cbbcc9bf44a11a819b7e167a5c8cc832542d45a33ae917bd89a8"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/sync/SyncMath.kt",
+      "bytes": 2071,
+      "sha256": "ad356855b3f92bfcea4e4b69bff51c3bb3f41fd0c05b1e6ba7a42047ca501fd4"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/AnimalAvatars.kt",
+      "bytes": 934,
+      "sha256": "92afe4438ef19d60fc195abd57ae798b1079107cdca3577005b8c69ad71588d3"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/CatalogScreen.kt",
+      "bytes": 7389,
+      "sha256": "158e6b5bae69261350a01e9d9bb28d81a3309c3e5dafef761f7e7f73dc79a118"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/CommonUi.kt",
+      "bytes": 7218,
+      "sha256": "9e215c65fd38f519489dc2177c24094cfddd3215c601e6db6ba1d184b2384d9e"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/ConversationScreen.kt",
+      "bytes": 9103,
+      "sha256": "a1727ce8ac2994aa5dc8d9dabff4206ee9a3c698e3108823c5785c2f9ea8ed69"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/CoverView.kt",
+      "bytes": 2758,
+      "sha256": "27c82803566e5b011807c3767506675f6585af980a1736926164b0f7460b6401"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/DisplayName.kt",
+      "bytes": 6051,
+      "sha256": "c680ff0c3443e365029fb1b0fd45b9781ffd17b115f25daa53b304ba5e5dc69c"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/HomeScreen.kt",
+      "bytes": 13572,
+      "sha256": "b63ae21069d41dee66af7f1e60c3255286bb5a6384449959c471ce48ae164e73"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/InviteQr.kt",
+      "bytes": 576,
+      "sha256": "13977f7eca864b65109a65749967bba7579f0dd442c37307a2c14b23bd925d1d"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/LocalQrDecoder.kt",
+      "bytes": 5780,
+      "sha256": "e18ea477a9007ad76883e6fa8e9e5b707afc7a7ff7c756db905a74be6a006326"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/LrcParser.kt",
+      "bytes": 2992,
+      "sha256": "4ba5e47ec542b409975ea185ec6aeae7fbc1630a8075b7b48d5b34dd3ec97fec"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/LyricsFollow.kt",
+      "bytes": 892,
+      "sha256": "f40b511a1577b2bc94827094bcbff7ba308284617f59f09191f49b60c11b9a43"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/LyricsState.kt",
+      "bytes": 2638,
+      "sha256": "bab8c2b23615d964afb4266bc8ff7dbf8b4ba81a21591c53f3cec68bf9e6488a"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/MemberAvatar.kt",
+      "bytes": 4885,
+      "sha256": "bce4962a6cb9d902cab5ad545ce01caee5e68c9adb5caf740b23cd2d5637a710"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/MembersSheet.kt",
+      "bytes": 4917,
+      "sha256": "ff895b44098f593b9926ae362b1b491a57a1efc25c7d5fc2303c5113751d16b0"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/PlaybackView.kt",
+      "bytes": 919,
+      "sha256": "aa63fedfc02606233e459b45d9d06477b6ad8266aa2e40b23789a0833ff62619"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/QueueMove.kt",
+      "bytes": 1138,
+      "sha256": "7c7b9a834d08bdc5222a7a21f4fa1952b4c34c819521cb981abdf37fe685bd67"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/QueueScreen.kt",
+      "bytes": 8162,
+      "sha256": "e969cb0e3289f301410c1f016902e9acc8eea99903ef6f8f3526970c3141645d"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/QueueSwipeRow.kt",
+      "bytes": 5627,
+      "sha256": "1767e7b9dac66444e436effe3174234213bca1a22992079f987b764f6a110646"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/RoomLayout.kt",
+      "bytes": 5366,
+      "sha256": "ce8e0e2f1db4cee86e9aa8108356513ff4278944a8cf306b1fa8cbe09efb790b"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/RoomPlayer.kt",
+      "bytes": 29450,
+      "sha256": "47fbd3538a511e4a114b2cab627bc330f8b16e28e0002b2dc85d83c546067f78"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/RoomScreen.kt",
+      "bytes": 3593,
+      "sha256": "42a2aad5b44247671461518f2c54e3ef97759ddb0b13be5b2cba39505ad9ebd5"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/ScreenState.kt",
+      "bytes": 523,
+      "sha256": "1f5a469108fc1e1e23c478c8e0b6402c6932642ee896371841876f4b466c3e7f"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/theme/Color.kt",
+      "bytes": 1655,
+      "sha256": "f8723ed8baaa67face78adb825551c2deb246af3757e24b5162eb037d16ef90f"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/theme/Shape.kt",
+      "bytes": 675,
+      "sha256": "9d0bd9c6264aa09d1d495da849b7c9cce8bcaef0b6050f4bce1430c8636fa0f9"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/theme/Theme.kt",
+      "bytes": 5072,
+      "sha256": "46e522b6cd3e4f9a02b4f220f77cd8556f1f065841d681d6aac5ee39a2c5c2af"
+    },
+    {
+      "path": "android/app/src/main/java/com/listentogether/app/ui/ThemeSelector.kt",
+      "bytes": 1697,
+      "sha256": "2a6d9ec8fbf468f4be694268ec03174f8e0952d2b69ac2d41e3d88ff1ec85bc4"
+    },
+    {
+      "path": "android/app/src/main/res/drawable/ic_launcher_foreground.xml",
+      "bytes": 1024,
+      "sha256": "94d0e8915629167d1d9d894e9e362beed16c09a94dc0a624e5e1d29696c3b33f"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-nodpi/avatar_bear.webp",
+      "bytes": 54430,
+      "sha256": "d02bda1bc0a1ac53ae15428dff785aa2801f4f61c49f047355a1e7892827362e"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-nodpi/avatar_cat.webp",
+      "bytes": 56824,
+      "sha256": "8af6cefa9c930eb0f2b63f97c25ca7a296a81ae32aac972d38b567b7af1e3436"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-nodpi/avatar_corgi.webp",
+      "bytes": 59734,
+      "sha256": "25a0414f7deb51af1e030561bd25161e27e5d79e6b023892a2527fbffca8b1bd"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-nodpi/avatar_deer.webp",
+      "bytes": 56426,
+      "sha256": "da92e85d684148fe78b9775cce94e89e318948c591c3790938254176fcae8dcf"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-nodpi/avatar_fox.webp",
+      "bytes": 57128,
+      "sha256": "037d91a0f277426373b13131d12fd3799c7e79a49924559710367f2d8ac5b708"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-nodpi/avatar_hamster.webp",
+      "bytes": 58930,
+      "sha256": "5eccf1eb8ca69c5f6ed32332745b1aad35a8d0fcf8fd28d841b3607e61b67a01"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-nodpi/avatar_hedgehog.webp",
+      "bytes": 65088,
+      "sha256": "da2d5110287372040a2df8d817394acd84332bebeb443fea9efd23064cdc68d3"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-nodpi/avatar_koala.webp",
+      "bytes": 53064,
+      "sha256": "dd734553606512a1f2028657e83341d7380df4b60335bfb32a03658d776f15fd"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-nodpi/avatar_otter.webp",
+      "bytes": 55114,
+      "sha256": "3c686627b983c4de812626edfbf51c255680fdd655594cb0b1d4619dc3cc74cc"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-nodpi/avatar_panda.webp",
+      "bytes": 53436,
+      "sha256": "e2c9594c4a6c5f3928d15e85914b49036d92fee3011142bb4c3552ace1a89fbe"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-nodpi/avatar_penguin.webp",
+      "bytes": 48758,
+      "sha256": "115910109deb0250fe30a58e6ac3d29d0a28858604abed056d414b0b2494b51a"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-nodpi/avatar_rabbit.webp",
+      "bytes": 48088,
+      "sha256": "7504130f0997da19f173ccbe6e6cfa6ece76978e0e4447978e73b69d54a0860f"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-nodpi/avatar_red_panda.webp",
+      "bytes": 62546,
+      "sha256": "c4f9397fda98b1cc2a165145409634a087b9345f7845da6686a8482e245ac623"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-nodpi/avatar_seal.webp",
+      "bytes": 52500,
+      "sha256": "1eba6eacfeeb16a2682f361da792871b831484c6095144c039063e49a612b668"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-nodpi/avatar_tiger.webp",
+      "bytes": 65008,
+      "sha256": "da78beb60714dee51bba9bd7d7db6909e60f708f32ff2c1c22312adf3f16ca11"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-anydpi/ic_launcher.xml",
+      "bytes": 222,
+      "sha256": "a18e4ba4355671b50a4a5b589e803e7e93acbdaa641fd5cfdbe103ec8b22c234"
+    },
+    {
+      "path": "android/app/src/main/res/values/colors.xml",
+      "bytes": 69,
+      "sha256": "daa1939302f4b47ae9b9d86a327fd8b2912bca624c33585b4c36cfd8d6a0126d"
+    },
+    {
+      "path": "android/app/src/main/res/values/themes.xml",
+      "bytes": 405,
+      "sha256": "dfaf07966eebe4cc0b2d174a66f76db098cdcfd664140f62e753988f589c7536"
+    },
+    {
+      "path": "android/app/src/main/res/values-night/themes.xml",
+      "bytes": 371,
+      "sha256": "0638d39cf7573450bcaa3f9c44f921f84dcf804cc0c58572b52786a327c1a364"
+    },
+    {
+      "path": "android/app/src/main/res/xml/data_extraction_rules.xml",
+      "bytes": 724,
+      "sha256": "d383da7df82b58fb65c0af15ce2da1d35b8bdfc80a466923709f566fb9ae7c81"
+    },
+    {
+      "path": "android/app/src/test/java/com/listentogether/app/AnimalAvatarTest.kt",
+      "bytes": 2260,
+      "sha256": "2e5d2d76aef9fdd619160108f63f07e35d7e8f8078a0c363bac81d5db55728d6"
+    },
+    {
+      "path": "android/app/src/test/java/com/listentogether/app/AvatarPaletteIndexTest.kt",
+      "bytes": 1194,
+      "sha256": "5ea13961419748131b66ec7853bd830798698ddcfc8437e7a0f348d4f6cb79e3"
+    },
+    {
+      "path": "android/app/src/test/java/com/listentogether/app/ClockEstimatorTest.kt",
+      "bytes": 2482,
+      "sha256": "6724209b4ab38704cc7fdaf9698cfc651529050456a7c93800e33969063d4a04"
+    },
+    {
+      "path": "android/app/src/test/java/com/listentogether/app/diagnostics/DiagnosticsLogTest.kt",
+      "bytes": 9319,
+      "sha256": "25b498d5118b2cf8d77e2b2b051235e25368babbe872b4938ef7c87c06482560"
+    },
+    {
+      "path": "android/app/src/test/java/com/listentogether/app/DisplayNameTest.kt",
+      "bytes": 5517,
+      "sha256": "373a491d14492f83ca5c2571ebff9a55a4abc4afe1572fe6a7d566803564acb8"
+    },
+    {
+      "path": "android/app/src/test/java/com/listentogether/app/FormatTimeTest.kt",
+      "bytes": 762,
+      "sha256": "dcdb12a00f9ad16d13f3192c4c3452fa16bac3e2772aad6443d870df56ab6be0"
+    },
+    {
+      "path": "android/app/src/test/java/com/listentogether/app/InviteCodeTest.kt",
+      "bytes": 3816,
+      "sha256": "f57aabfcbf793e0018f44c9db7ef5ee302b974fcc40761d904a6ae9db1d2434d"
+    },
+    {
+      "path": "android/app/src/test/java/com/listentogether/app/LocalQrDecoderTest.kt",
+      "bytes": 2906,
+      "sha256": "5b0f5e0d6dbdab926029f19141f26c7bb8e10ce678fe7dbf747f7c045161efcf"
+    },
+    {
+      "path": "android/app/src/test/java/com/listentogether/app/LrcTest.kt",
+      "bytes": 3200,
+      "sha256": "037e24e2708040af7e7413e20b2fdb6a41b8fe2910201ae84fe07f05c0508ff8"
+    },
+    {
+      "path": "android/app/src/test/java/com/listentogether/app/LyricsFollowTest.kt",
+      "bytes": 1768,
+      "sha256": "52c16065f3fe32823e7d370504355208472ff56150c93fcfc16c11a5326d3ee9"
+    },
+    {
+      "path": "android/app/src/test/java/com/listentogether/app/LyricsStateTest.kt",
+      "bytes": 3247,
+      "sha256": "8e25f408847549ed1c6ab53119e97e7329234aeb2938ee987742e0319b65d169"
+    },
+    {
+      "path": "android/app/src/test/java/com/listentogether/app/ModelsTest.kt",
+      "bytes": 2888,
+      "sha256": "2a84bdd61784a9c986b0ed66ff23a91e352d96e9de7d102172e3a932ef894882"
+    },
+    {
+      "path": "android/app/src/test/java/com/listentogether/app/PlaybackFailureTest.kt",
+      "bytes": 986,
+      "sha256": "878d3e2740ade03dcdcacb057a7816aeba2ac0ab04ec3eb3815ffe2d3de6a6aa"
+    },
+    {
+      "path": "android/app/src/test/java/com/listentogether/app/PlaybackPolicyTest.kt",
+      "bytes": 1812,
+      "sha256": "3173759befffdb1a2f277c95cfdbcc1e5b69f890f8c42246130b5726ebe3e8fc"
+    },
+    {
+      "path": "android/app/src/test/java/com/listentogether/app/PlaybackViewTest.kt",
+      "bytes": 1496,
+      "sha256": "94e189116813bad2b05f5f32d86d8b1f538a469b8d5ba5036c2cd6ba9d64755b"
+    },
+    {
+      "path": "android/app/src/test/java/com/listentogether/app/QueueChatRecoveryTest.kt",
+      "bytes": 18740,
+      "sha256": "7c24308544ada18081d4c78765f4647c5ed643a3d3e0bfcd72a3480c577a33be"
+    },
+    {
+      "path": "android/app/src/test/java/com/listentogether/app/RoomClientSessionTest.kt",
+      "bytes": 40543,
+      "sha256": "383a981a5a11f8805f57dc5a928da86e0675b77e9f005741d46deaa3de2bc66f"
+    },
+    {
+      "path": "android/app/src/test/java/com/listentogether/app/RoomUiInteractionTest.kt",
+      "bytes": 4452,
+      "sha256": "667b330dcb0106b76e6973f645c7fdce75d06dc68840abb31c8e01b2806861f5"
+    },
+    {
+      "path": "android/app/src/test/java/com/listentogether/app/ScreenStateTest.kt",
+      "bytes": 1846,
+      "sha256": "540383de260c294d38f7f249cca31f6c4e318111adb7ed265c17bc3161a397a6"
+    },
+    {
+      "path": "android/app/src/test/java/com/listentogether/app/SeekConfirmTest.kt",
+      "bytes": 2100,
+      "sha256": "8349a25c49753fbc5bb4faacc36b60d0624c5694711bbb41edce3fb6ab190fd7"
+    },
+    {
+      "path": "android/app/src/test/java/com/listentogether/app/SnapshotCollectorTest.kt",
+      "bytes": 4070,
+      "sha256": "20ae5491d32254e006df745e89bb51b8a3df7c6a57146c43af3fee99fb4bede3"
+    },
+    {
+      "path": "android/app/src/test/java/com/listentogether/app/SyncMathTest.kt",
+      "bytes": 1473,
+      "sha256": "5d96038939f5044645c2549cd747773102dd627fd3c7ffc53c3cbc96f759f1bc"
+    },
+    {
+      "path": "android/app/src/test/java/com/listentogether/app/TrackMetadataTest.kt",
+      "bytes": 1532,
+      "sha256": "ab5d0e5c98841bce23f48fd2082338e8a689abd8860cc33fae6b00a486517c4d"
+    },
+    {
+      "path": "android/build.gradle.kts",
+      "bytes": 217,
+      "sha256": "1df553bc4ca0f8d14c45baebb13c5a3f4c4d949be18799c1f99e8829581c4cee"
+    },
+    {
+      "path": "android/settings.gradle.kts",
+      "bytes": 276,
+      "sha256": "4ad0f6795bf14b261f2bf7a648493e80f3c5288922c9ed54e9c6f9c97ca5bf22"
+    },
+    {
+      "path": "docs/deployment.md",
+      "bytes": 26255,
+      "sha256": "bd97b3f97f6f81430561a925467050f199aed60f713ac7b2eb7f6b6ab675d6aa"
+    },
+    {
+      "path": "docs/protocol.md",
+      "bytes": 36614,
+      "sha256": "24d2c7ade22aa414076ea082729de7c600086a6a693e973b194c0c436c827534"
+    },
+    {
+      "path": "scripts/check-doc-links.mjs",
+      "bytes": 2100,
+      "sha256": "01c20654cc6c49995211cab300d38e9b934b24365fdb88bfab815e4515770723"
+    },
+    {
+      "path": "scripts/metadata-manager.html",
+      "bytes": 67734,
+      "sha256": "cd8e66a0a0b061a44541486ea979300defbb353d89efa91c381c9dda7e31ed28"
+    },
+    {
+      "path": "scripts/metadata-manager.mjs",
+      "bytes": 63008,
+      "sha256": "c93b046c52278994f376441610a56ce3823961019157919708bfd4cebe849033"
+    },
+    {
+      "path": "scripts/package-deploy.ps1",
+      "bytes": 5969,
+      "sha256": "953f51592561cfb7a3afbbb8417518e1bbb0ccfd57f3b5cb763a54e7a72bec67"
+    },
+    {
+      "path": "server/dist/app.js",
+      "bytes": 6392,
+      "sha256": "eade0707e85a81154a2a486df19affed9f518121ff7703af833c83b826f2af8e"
+    },
+    {
+      "path": "server/dist/events.js",
+      "bytes": 11,
+      "sha256": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
+    },
+    {
+      "path": "server/dist/index.js",
+      "bytes": 462,
+      "sha256": "8c35b18c4c717679213071d80b9dfc71bf0ca0ce1dd7218e323f0563900839c8"
+    },
+    {
+      "path": "server/dist/library/catalog-index.js",
+      "bytes": 3741,
+      "sha256": "8ee64bb0729df8ddf6f5f7437b34170e21cd7831392a76aca1c6676a0dd9d836"
+    },
+    {
+      "path": "server/dist/library/catalog.js",
+      "bytes": 6777,
+      "sha256": "0279bd15ad3da5a6678b36ebcbb9fda937d854bc4fb7b7821f5a7484b77a70e0"
+    },
+    {
+      "path": "server/dist/library/cover-cache.js",
+      "bytes": 3556,
+      "sha256": "3106c12a97ffb2c90c010c5f11ab32c0f69d2f05d80318d7356b4e7c4bebcbe1"
+    },
+    {
+      "path": "server/dist/library/pool.js",
+      "bytes": 1360,
+      "sha256": "7576710b14545620b4c7c13d45431f60e8d0d5dc04530641d6ccf3ee4aeaa518"
+    },
+    {
+      "path": "server/dist/realtime/limits.js",
+      "bytes": 1858,
+      "sha256": "8c2113c5300244378f50363c064949c1cfa5b6ef454d9567cfe80a2046b7b1e6"
+    },
+    {
+      "path": "server/dist/realtime/outbox.js",
+      "bytes": 5607,
+      "sha256": "bd6a25afd7ce1f415776d1b73c3994f6d7a38cfb5832397d964fd49916969d07"
+    },
+    {
+      "path": "server/dist/realtime/protocol-schema.generated.js",
+      "bytes": 10450,
+      "sha256": "36ed1bed6f54d4247c3d6b4acb75650303d0b683dde9d683f0c42b7bfb93ca6b"
+    },
+    {
+      "path": "server/dist/realtime/protocol.js",
+      "bytes": 981,
+      "sha256": "f7fb0dca06ebea5a1be36342c7320637169bca8b002211f41ffd270c1f40fa2c"
+    },
+    {
+      "path": "server/dist/realtime/quotas.js",
+      "bytes": 1619,
+      "sha256": "2e257c70f7a8dd32b226adfcff06ccbc9f0fe657435d9bf15892c9b2bb596ab0"
+    },
+    {
+      "path": "server/dist/realtime/socket.js",
+      "bytes": 15585,
+      "sha256": "c752928dcfa75309bfe1141f5a21b76338cac9eb4c4e65e5f3546db1a460aab9"
+    },
+    {
+      "path": "server/dist/rooms/avatars.js",
+      "bytes": 739,
+      "sha256": "18f9c50ffd4e7f841163d4b34943647656739fcf445b759682b332e0889f7930"
+    },
+    {
+      "path": "server/dist/rooms/dedupe.js",
+      "bytes": 6034,
+      "sha256": "c97feed56b34ce7988867cd7b7ed5ee477461bd92777b24370be81da8c4d8492"
+    },
+    {
+      "path": "server/dist/rooms/store.js",
+      "bytes": 21778,
+      "sha256": "bdf79fd35c631a62f199dc9808715c5dfd3cd1300c6919201c21c49b9dac8907"
+    },
+    {
+      "path": "server/dist/routes/audio.js",
+      "bytes": 1835,
+      "sha256": "a9a9e38df8fa1b2e1a6ad21b6968bcf711b76df40fb4401815c42c0e26d17743"
+    },
+    {
+      "path": "server/dist/routes/cover.js",
+      "bytes": 1112,
+      "sha256": "b82321370ed0f0e6a98111de2ee621991c88f695f05a9c95710682e5b23ba102"
+    },
+    {
+      "path": "server/dist/routes/lyrics.js",
+      "bytes": 1009,
+      "sha256": "bc3f16a0d798c41e2a4ff5648ef514d6cd39e1b8b63021e31cf79743578593aa"
+    },
+    {
+      "path": "server/package-lock.json",
+      "bytes": 54912,
+      "sha256": "b75ffe0e11c939ade4bdde8303efc49b60d4ded0b0ce471562314a739b3c7880"
+    },
+    {
+      "path": "server/package.json",
+      "bytes": 627,
+      "sha256": "5c11986afd54c0c7da2adffcd1a6982bf3992009018c9654d5a224d01bda8f77"
+    },
+    {
+      "path": "server/scripts/protocol-schema.mjs",
+      "bytes": 802,
+      "sha256": "5b7de492014a9985d6277beac577a9b3b972f6adc2b81a915f4b0e9c6a638109"
+    },
+    {
+      "path": "server/src/app.ts",
+      "bytes": 6766,
+      "sha256": "9aeb8751022619ab7789e282f6a13fdc5180cd9c8210bb8174385e517528bdb3"
+    },
+    {
+      "path": "server/src/events.ts",
+      "bytes": 990,
+      "sha256": "ec65dd1c6c528141f74584ee234fae41cd347a44f7933cea923517fa1f69a7dd"
+    },
+    {
+      "path": "server/src/index.ts",
+      "bytes": 467,
+      "sha256": "87d5c2038a054b58644c62c33872c9854f92bfea74a49abb5fc31d8dbd29eb01"
+    },
+    {
+      "path": "server/src/library/catalog-index.ts",
+      "bytes": 4219,
+      "sha256": "2dd5fe2ffb04729c6f71452cc5ceef2ef8c197ddf7ac1d9b0d20f5be45ce920d"
+    },
+    {
+      "path": "server/src/library/catalog.ts",
+      "bytes": 7546,
+      "sha256": "5a7c3a574cff993582d62e3cd7e399aabafda39cfc38bbfbc028b664c82c6be8"
+    },
+    {
+      "path": "server/src/library/cover-cache.ts",
+      "bytes": 3467,
+      "sha256": "0e675c72e0bdf9f05ae053eed168071380dc5e60c47a2204a29cd3f41a540081"
+    },
+    {
+      "path": "server/src/library/pool.ts",
+      "bytes": 1323,
+      "sha256": "c541091c3df3c0c0bb4abe2dfbda812330df129bf6db26825f298a13a6c19e52"
+    },
+    {
+      "path": "server/src/realtime/limits.ts",
+      "bytes": 1803,
+      "sha256": "a442db74c6170a76024fc192e6a2ecb65dbeb981e63bbbe8118ace9eda19ffe4"
+    },
+    {
+      "path": "server/src/realtime/outbox.ts",
+      "bytes": 5261,
+      "sha256": "c6bcaaac8ebe88c5ad0bad783554fec8c571244aecdcef2d4c8925406cba6e88"
+    },
+    {
+      "path": "server/src/realtime/protocol-schema.generated.ts",
+      "bytes": 9241,
+      "sha256": "832718e682c78c4d27b99b39fac748867ce45b897d1e0e5e21bc9163bcd4b159"
+    },
+    {
+      "path": "server/src/realtime/protocol.ts",
+      "bytes": 1077,
+      "sha256": "dcf833897093d95af7f9f4a38e3f147ac170dd8edf5cec4de51082cd2005b046"
+    },
+    {
+      "path": "server/src/realtime/quotas.ts",
+      "bytes": 1642,
+      "sha256": "bba782e6eb223ec3e08226f5ace6a4c094005ec5e8d75b8f0b172a05a180617b"
+    },
+    {
+      "path": "server/src/realtime/socket.ts",
+      "bytes": 14949,
+      "sha256": "3ef411c7a11ada8c0b08643986da37617ba4104ae28bcc3bbcbcdf6c6840aa2e"
+    },
+    {
+      "path": "server/src/rooms/avatars.ts",
+      "bytes": 810,
+      "sha256": "91922608c7e1f32ab9363db5c4cd92ff139dbdfb47c3c29aaa2e1d3d04368048"
+    },
+    {
+      "path": "server/src/rooms/dedupe.ts",
+      "bytes": 6122,
+      "sha256": "595d3bb0aacc7d8326e934d5a13c17c65e6dcf934b6fb4a244b0a2e05566dfb8"
+    },
+    {
+      "path": "server/src/rooms/store.ts",
+      "bytes": 21185,
+      "sha256": "40c1c6c16ac23c40d12794c782e2d9a86346cb1449150720447de1056c8605ff"
+    },
+    {
+      "path": "server/src/routes/audio.ts",
+      "bytes": 1749,
+      "sha256": "ee6afa1160ddbea671e9e14df236ad0cd04a3bd7cfe06b0f4e37999e53498dcf"
+    },
+    {
+      "path": "server/src/routes/cover.ts",
+      "bytes": 1175,
+      "sha256": "81c3ca5552a40268cdc0226044cc1fdee3ed74d21a84973440482ab519a40d3d"
+    },
+    {
+      "path": "server/src/routes/lyrics.ts",
+      "bytes": 1092,
+      "sha256": "b72da063b4720654ef05c1442bc4c8fad1c76001f5de0e1fef66e8951011de4b"
+    },
+    {
+      "path": "server/test/acceptance-regression.test.ts",
+      "bytes": 9780,
+      "sha256": "04137cc466ba2e4f5d65ffce5b6f0177368082674b649e3c688278379483bbfd"
+    },
+    {
+      "path": "server/test/app.test.ts",
+      "bytes": 10016,
+      "sha256": "805229a6e99aa4f207644105b16a1aede4edb50d0c2448ae9139ae0b07498f7f"
+    },
+    {
+      "path": "server/test/avatars.test.ts",
+      "bytes": 7331,
+      "sha256": "86f138356ae02b6228f556b76d97467dac30d58f520905b2510425418cec2e4a"
+    },
+    {
+      "path": "server/test/catalog-index.test.ts",
+      "bytes": 4097,
+      "sha256": "a8055fb198282bdd2de385a5e3d94923cc03449dd77e9131c35ab04e98c4fabe"
+    },
+    {
+      "path": "server/test/catalog-search.test.ts",
+      "bytes": 2861,
+      "sha256": "f73d3f39fe808447c7ca4e35fa330dee848e055b3f97613ed60ca5f13c09937e"
+    },
+    {
+      "path": "server/test/catalog.test.ts",
+      "bytes": 11594,
+      "sha256": "c7d6b10acf46d7ced81ca4b6548e5a0c07e9bd869df917dcea7cb846314c795e"
+    },
+    {
+      "path": "server/test/chat.test.ts",
+      "bytes": 9855,
+      "sha256": "86b339c846fe89b489a6eb678e957fce774ebc094801a259b81346041004dceb"
+    },
+    {
+      "path": "server/test/cover-cache.test.ts",
+      "bytes": 3336,
+      "sha256": "007038f33dca028a693d8286925af0675a14935c769452a564d7f3c83db5a9f4"
+    },
+    {
+      "path": "server/test/cover.test.ts",
+      "bytes": 5959,
+      "sha256": "c3b27d955c3f06ab7b8b53aacc5f760e4f8c0a24328395fd73a96bd1cdda88cf"
+    },
+    {
+      "path": "server/test/fixtures/catalog.json",
+      "bytes": 65,
+      "sha256": "5b41cf5d0786303af5b02f47fe90e9c6474f563144f692c6a028bce8c1dc8e1b"
+    },
+    {
+      "path": "server/test/fixtures/README.md",
+      "bytes": 131,
+      "sha256": "c3eab53e233ba8d440961a8ee7922a6b4170fc80f5a193fe44fe344b6dbe75ef"
+    },
+    {
+      "path": "server/test/fixtures/tone.mp3",
+      "bytes": 17179,
+      "sha256": "8557a34015f9c07974efdef58e3f0fd4607c0e36d728f01e527cbea1738dc52d"
+    },
+    {
+      "path": "server/test/lyrics.test.ts",
+      "bytes": 2853,
+      "sha256": "a3c954c5489d76c15204de9fd57f7359127c1a4ef3d2f97d6f58ae0e94e41650"
+    },
+    {
+      "path": "server/test/metadata.test.ts",
+      "bytes": 3180,
+      "sha256": "9944e41f3ab9f88bb52675feba7a213a1bc15cbac2226e1fa6c56f0ebf3f4dd6"
+    },
+    {
+      "path": "server/test/mini-schema.ts",
+      "bytes": 4642,
+      "sha256": "f0b2a21637ba65b813652ff6dc288ac1ee5298e3ee206c3556d421fccd5cca52"
+    },
+    {
+      "path": "server/test/protocol.test.ts",
+      "bytes": 10172,
+      "sha256": "0b48bd2d9cb2038c225503d999be0f07588b661f4a64e341aea5ab4c8ad177bc"
+    },
+    {
+      "path": "server/test/queue.test.ts",
+      "bytes": 16310,
+      "sha256": "f8758f4c96ec0b9f73c8bfcf1021924773ba74bc6ef680e2c0443b7535b2b691"
+    },
+    {
+      "path": "server/test/realtime.test.ts",
+      "bytes": 11802,
+      "sha256": "af20b276e5fe76536bee416f2c265f85ea73f44b8dd9a4f4b7b792319b757286"
+    },
+    {
+      "path": "server/test/rooms.test.ts",
+      "bytes": 9298,
+      "sha256": "768ce20d7fdaea335aeb674fd884e282a13b84887db5688aec5b1900e5224ee0"
+    },
+    {
+      "path": "server/test/token-revocation.test.ts",
+      "bytes": 3248,
+      "sha256": "48d5ac45db6d120aa714b08eec5836089605accf8df44682d28ac74200bcbf16"
+    },
+    {
+      "path": "server/tsconfig.json",
+      "bytes": 205,
+      "sha256": "c30f286d21916bc67002f2685b234d511cc1e1d6efa1503069ed9d399a235806"
+    }
+  ]
+}

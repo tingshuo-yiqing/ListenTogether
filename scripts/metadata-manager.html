@@ -447,6 +447,8 @@ async function refresh(keepSelection = true) {
     renderList();
     if (!currentId) {
       $('editor').style.display = 'none';
+      $('empty-tip').textContent = tracks.length ? '← 从左侧选择一首歌曲进行查看与编辑' :
+        '曲库为空，可从「新增歌曲」添加，或从「回收站」恢复。';
       $('empty-tip').style.display = 'block';
     }
     // 有未保存修改时只刷新列表、不重填表单，保住用户正在编辑的内容

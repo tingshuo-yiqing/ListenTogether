@@ -43,8 +43,9 @@ function check(schema: Schema, value: unknown, path: string, root: Schema): stri
   if (schema.enum && !schema.enum.includes(value)) errors.push(`${path}: ${JSON.stringify(value)} 不在枚举 ${JSON.stringify(schema.enum)} 内`);
   if (schema.type && !matchesType(schema.type, value)) return [...errors, `${path}: 类型应为 ${[].concat(schema.type).join('|')}，实际 ${typeName(value)}`];
   if (typeof value === 'string') {
-    if (schema.minLength !== undefined && value.length < schema.minLength) errors.push(`${path}: 长度 ${value.length} < ${schema.minLength}`);
-    if (schema.maxLength !== undefined && value.length > schema.maxLength) errors.push(`${path}: 长度 ${value.length} > ${schema.maxLength}`);
+    const length = [...value].length; // JSON Schema 字符长度按 Unicode 码点计，和运行时 Ajv 一致。
+    if (schema.minLength !== undefined && length < schema.minLength) errors.push(`${path}: 长度 ${length} < ${schema.minLength}`);
+    if (schema.maxLength !== undefined && length > schema.maxLength) errors.push(`${path}: 长度 ${length} > ${schema.maxLength}`);
     if (schema.pattern && !new RegExp(schema.pattern).test(value)) errors.push(`${path}: ${JSON.stringify(value)} 不匹配 ${schema.pattern}`);
   }
   if (typeof value === 'number') {

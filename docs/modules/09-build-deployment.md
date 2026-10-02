@@ -1,5 +1,17 @@
 # 09 构建、脚本与部署
 
+## 无曲库候选包与失败回滚（2026-10-02）
+
+check-doc-links.mjs 排除 .workbuddy/deploy-artifacts：这些目录里的下载运行时/候选包文档不属于项目文档，避免对 Node 发行包未附源码的链接误报；实际项目 Markdown 继续检查，首次失败日志与修正复跑已归档。
+
+在产后端升级使用 `scripts/package-deploy.ps1 -ServerOnly`，排除 media/demo-media，保留云端持久曲库；默认 Node 从 PATH 取，可 -NodePath 指定，时间戳含秒。旧默认打包行为仍保留，曲库维护不能混用。候选包含 schema 生成脚本与 protocol.md，解包后实际 SHA256 清单验证通过。
+
+本机 WSL/systemd 用生产 service 模板沙箱与 Restart=on-failure/5 秒，实际 dist 的坏入口/缺 node_modules 各触发 NRestarts≥1、ExecMainStatus=1；切回 good 两次恢复健康，5/5，临时服务与目录已收尾。WSL 使用临时 Node 24，未替换系统 Node 18。云端生产失败发布与 v2 部署没有执行。
+
+固定 APK 041b4295…（180/24、Lint 0）未装机，纯后端包与制品 hash 见 [本轮报告](../test-results/2026-10-02-desktop-tasks/README.md)；生产维护命令以部署手册为准。
+
+2026-10-01：协议生成步骤已加入 server 的 predev/prebuild/pretest；部署打包携带 server/scripts 与 docs/protocol.md，远端 npm run build 可从权威文档生成协议 TS。Ajv 为运行时依赖，生成产物不独立维护。只核对打包入口，本轮未运行含真实曲库的部署包或上云；复跑及当前版本见 [修复报告](../test-results/2026-10-01-queue-chat-fixes/README.md)。
+
 ## 当前职责与文件
 android的Gradle配置固定现有工具链：JDK17、Gradle8.11.1、SDK35，最低Android8.0。
 scripts包含后端启动/检查、安卓构建、USB安装、demo启动、真实HTTP/WS smoke。

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.listentogether.app.RoomUiInteractionTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-01T17:11:59" hostname="LAPTOP-8H39RU28" time="0.05">
+  <properties/>
+  <testcase name="pagingAppends45TracksAndDeduplicates" classname="com.listentogether.app.RoomUiInteractionTest" time="0.031"/>
+  <testcase name="failedMoreKeepsFirstPageAndRetryOffset" classname="com.listentogether.app.RoomUiInteractionTest" time="0.002"/>
+  <testcase name="rightSwipeClosesWithoutDeleting" classname="com.listentogether.app.RoomUiInteractionTest" time="0.001"/>
+  <testcase name="edgeScrollHasDirectionAndBound" classname="com.listentogether.app.RoomUiInteractionTest" time="0.0"/>
+  <testcase name="secondSwipeDeletesButSmallMovementKeepsActionVisible" classname="com.listentogether.app.RoomUiInteractionTest" time="0.0"/>
+  <testcase name="firstSwipeOnlyRevealsEvenWhenVeryLong" classname="com.listentogether.app.RoomUiInteractionTest" time="0.0"/>
+  <testcase name="dragAnchorUsesFinalOrderAtBothEnds" classname="com.listentogether.app.RoomUiInteractionTest" time="0.0"/>
+  <testcase name="thousandTracksUsesEveryOffsetOnce" classname="com.listentogether.app.RoomUiInteractionTest" time="0.007"/>
+  <testcase name="delayedMoreCannotOverwriteNewQuery" classname="com.listentogether.app.RoomUiInteractionTest" time="0.004"/>
+  <testcase name="catalogChangedClearsPagesAndRestartsFirstPage" classname="com.listentogether.app.RoomUiInteractionTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

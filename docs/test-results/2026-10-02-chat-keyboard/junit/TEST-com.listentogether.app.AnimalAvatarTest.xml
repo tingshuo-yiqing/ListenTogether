@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.listentogether.app.AnimalAvatarTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-01T16:41:22" hostname="LAPTOP-8H39RU28" time="0.029">
+  <properties/>
+  <testcase name="olderV2MissingOrNullAvatarKeepsNicknameFallback" classname="com.listentogether.app.AnimalAvatarTest" time="0.019"/>
+  <testcase name="historicalChatKeepsAvatarWithoutPresentMember" classname="com.listentogether.app.AnimalAvatarTest" time="0.001"/>
+  <testcase name="olderChatWithNoAvatarStillParses" classname="com.listentogether.app.AnimalAvatarTest" time="0.0"/>
+  <testcase name="sameNamedMembersKeepDifferentServerAvatars" classname="com.listentogether.app.AnimalAvatarTest" time="0.009"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

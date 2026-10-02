@@ -7,6 +7,9 @@ const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 const ignoredDirectories = new Set([
   '.git',
   '.gradle',
+  // 本地夹具、临时运行时与打包产物不属于项目文档。
+  '.workbuddy',
+  'deploy-artifacts',
   'build',
   'node_modules',
   'server',

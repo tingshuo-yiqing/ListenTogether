@@ -11,7 +11,7 @@ internal data class PlaybackView(
 /** 正常同步不占横幅；本机中断、错误与非默认消息始终有可见位置。 */
 internal fun showStatusNotice(ui: UiState, player: PlaybackView): Boolean =
     ui.status != ConnectionStatus.Ready || ui.locallyPaused ||
-        (player.failed && player.mediaId == ui.room?.trackId) ||
+        (player.failed && player.mediaId == ui.room?.track?.id) ||
         (ui.message.isNotBlank() && ui.message != "已同步")
 
 /** 入房失败留在表单附近；进行中状态由按钮和进度条承担。 */

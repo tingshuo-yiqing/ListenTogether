@@ -1,5 +1,6 @@
 package com.listentogether.app
 
+import com.listentogether.app.network.Track
 import com.listentogether.app.network.*
 import com.listentogether.app.ui.*
 import org.junit.Assert.*
@@ -9,7 +10,7 @@ import org.junit.Test
 class PlaybackViewTest {
     private val ready = UiState(
         status = ConnectionStatus.Ready, message = "已同步",
-        room = RoomState("host", emptyList(), "song", true, 0, 0, 1)
+        room = RoomState("host", emptyList(), Track("song", "歌曲", 120000), true, 0, 0, 1)
     )
     private val player = PlaybackView(mediaId = "song")
 

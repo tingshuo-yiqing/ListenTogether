@@ -23,7 +23,7 @@
  *
  * 字段口径（与 docs/track-metadata-design.md 对齐）：
  *   - title/artist/lyrics：catalog.json 现有字段（artist 手填优先于 ID3）；
- *   - album：设计稿已定的可选字段（第三轮服务端才消费，当前落库被忽略，属前向兼容）；
+ *   - album：服务端非空手填优先于 ID3，公开曲库/搜索/当前曲下发；旧云端仍未消费；
  *   - genre/year：本工具扩展的预留字段，服务端 loadCatalog 忽略未知键，不破坏兼容；
  *   - 封面：优先使用 catalog 的 cover 相对路径（media/covers/ 下的 JPG/PNG/WebP），
  *     没有独立图片时再回退到 MP3 内嵌 ID3；图片上限 1MB。

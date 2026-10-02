@@ -5,7 +5,7 @@ import { Fault, type Rooms } from '../rooms/store.js';
 export function audioRoutes(app: FastifyInstance, rooms: Rooms) {
   app.get<{ Params: { code: string; id: string } }>('/api/rooms/:code/audio/:id', async (req, reply) => {
     rooms.auth(req.params.code, req.headers.authorization?.replace(/^Bearer /, '') ?? '');
-    const track = rooms.tracks.find(t => t.id === req.params.id);
+    const track = rooms.byId.get(req.params.id);
     if (!track) throw new Fault(404, '歌曲不存在');
     const info = await stat(track.path).catch(() => { throw new Fault(404, '音乐文件缺失，请联系管理员'); });
     const size = info.size;

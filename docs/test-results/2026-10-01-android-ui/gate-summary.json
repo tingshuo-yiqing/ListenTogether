@@ -1,0 +1,50 @@
+{
+  "apkPath": "D:\\ListenTogether\\.workbuddy\\deliveries\\2026-10-01-ui\\ListenTogether-debug.apk",
+  "apkBytes": 21008793,
+  "apkSha256": "6C3E87586846E72B6369C0D38E6A8FAB0EE73DB986418A9634A4B999087860AA",
+  "installedSha256": "6C3E87586846E72B6369C0D38E6A8FAB0EE73DB986418A9634A4B999087860AA",
+  "installedMatches": true,
+  "unit": {
+    "failures": 0,
+    "tests": 147,
+    "skipped": 0,
+    "suites": 20,
+    "errors": 0
+  },
+  "lintIssues": 0,
+  "mediaCatalogSha256": "216FC9BA9DCFFD73E563652C56BC18A3EAA8A29691202E670CD140E4C0EA601C",
+  "protectedAndroidSources": [
+    {
+      "file": "main\\java\\com\\listentogether\\app\\playback\\PlaybackFailure.kt",
+      "unchanged": true
+    },
+    {
+      "file": "main\\java\\com\\listentogether\\app\\playback\\PlaybackService.kt",
+      "unchanged": true
+    },
+    {
+      "file": "main\\java\\com\\listentogether\\app\\sync\\ClockEstimator.kt",
+      "unchanged": true
+    },
+    {
+      "file": "main\\java\\com\\listentogether\\app\\sync\\PlaybackPolicy.kt",
+      "unchanged": true
+    },
+    {
+      "file": "main\\java\\com\\listentogether\\app\\sync\\SyncMath.kt",
+      "unchanged": true
+    }
+  ],
+  "device": "MuMu 127.0.0.1:16384 Android 15 x86_64 1080x1920 density280",
+  "v2Acceptance": "FAILED; ACC-01..12 remain open",
+  "ime": "UNVERIFIED: current MuMu IME not displayed",
+  "cleanup": {
+    "nightMode": "no",
+    "temporaryServerStopped": true,
+    "removedReverse": "tcp:3300",
+    "hardKeyboardImeSetting": 0,
+    "connectionPreferencesRestored": true,
+    "initialRotation": "accelerometer=1,userRotation=1,wm=free",
+    "temporaryObserversStopped": true
+  }
+}

@@ -1,15 +1,22 @@
 # 06 后端启动与 HTTP API
 
+## 当前元数据与真实令牌补验（2026-10-02）
+
+catalog/search/当前曲共用 `CatalogIndex.toSummary`：固定公开九字段 id/title/durationMs/artist/hasCover/coverVer/hasLyrics/lyricsVer/album。album=null 或非空字符串，不含 path/size；revision 纳入 album。协议 schema 与真实应用响应对照通过。
+
+token-revocation.test.ts 通过实际主动退出/60 秒离线清扫制造旧身份失效，HTTP catalog/media 与真实 TCP WS 握手均 401；新 join 换发 token 后 HTTP/WS 成功，房主不受影响。不新增公网管理员作废接口，不用 fault-proxy 假 401 替代此结论。设备失效横幅与重新加入另验。server 74/74；[证据](../test-results/2026-10-02-desktop-tasks/README.md)。
+
 ## 职责和入口
 index.ts：读取MEDIA_DIR、加载曲库、构建应用、监听HOST/PORT、处理SIGINT/SIGTERM。
 app.ts：注册限流和WebSocket、创建Rooms、定义HTTP接口、统一错误处理、启动/清理tick定时器。
 路由负责输入/身份验证与输出映射，房间业务规则放在Rooms，不在各路由复制。
 
 ## 当前接口
-- GET /health：进程存活，返回 ok 与 rooms/onlineMembers/wsConnections 三个只读计数（计数由 Rooms 与传输层共同维护）。
+- GET /health：进程存活，返回 ok 与 rooms/onlineMembers/wsConnections 只读计数（QC-D 起追加 eventLoop: {p50Ms,p99Ms,maxMs}，累计口径，Node 24 直方图随 onClose disable）。
 - POST /api/rooms，POST /api/rooms/:code/join：昵称入房，返回code/memberId/token。
-- GET /api/rooms/:code/catalog：成员鉴权后返回公开曲目数据（id/title/durationMs/artist/hasCover/coverVer/hasLyrics，无磁盘路径）。
-- GET /api/rooms/:code/cover/:id、GET /api/rooms/:code/lyrics/:id：成员令牌鉴权后分别下发封面字节与LRC文本；封面支持 JPG/PNG/WebP，缺失各自404。
+- GET /api/rooms/:code/catalog：成员鉴权后返回公开曲目数据（id/title/durationMs/artist/hasCover/coverVer/hasLyrics/lyricsVer/album，无磁盘路径）。
+- GET /api/rooms/:code/catalog/search?q&offset&limit&revision（2026-09-30 QC-A）：成员鉴权后的分页检索。q≤100 码点、offset 非负安全整数、limit 1–50（默认 30），非法 400；返回 {catalogRevision,total,offset,items}（公开字段口径同 catalog，无路径/字节）；请求带 revision 且与当前不一致 → 409 {"message","code":"CATALOG_CHANGED"}。实现走 `library/catalog-index.ts` 的 CatalogIndex（O(N) 过滤 + 稳定排序 + 内容 revision），千首内存夹具与 45 首真实编目形态均已覆盖单测。
+- GET /api/rooms/:code/cover/:id、GET /api/rooms/:code/lyrics/:id：成员令牌鉴权后分别下发封面字节与LRC文本；封面支持 JPG/PNG/WebP，缺失各自404。封面字节按 QC-D 改按需读取（CoverCache：32MiB 全服 LRU、≤4 路并发、同资源在途合并），文件缺失/换坏 404 且不进缓存，恢复后无需重启。
 - DELETE /api/rooms/:code/membership：主动退出。
 - 音频和WS分别由独立模块注册。完整协议见 [协议](../protocol.md)。
 
@@ -43,3 +50,5 @@ buildApp的依赖注入/关闭钩子、代理信任、日志裁剪、路由鉴�
 2026-09-24：/health 追加只读计数（保持 ok 兼容）；create 传入 req.ip 接存量配额；事件通过 EventSink 注入，测试构建下为空操作。
 2026-09-26：catalog 扩至 7 字段；新增 cover/lyrics 两个只读路由（同一鉴权模板，见模块 08）。
 2026-09-27：封面从临时占位恢复为 catalog 独立图片优先、ID3 回退；客户端继续按 coverVer 缓存。
+2026-09-30（QC-A）：buildApp 内构建 CatalogIndex 并挂 /catalog/search 检索路由；既有 v1 路由与序列化零改动。store.ts 播放路径的线性 find 迁移到按 ID 查找属 QC-B1（随 v2 队列一起切）。
+2026-09-30（QC-D）：cover/lyrics/audio 三路由改 byId O(1) 查找；封面经 CoverCache 按需读取（32MiB 全服 LRU、≤4 路并发、同资源在途合并，失败不缓存）；/health 追加 eventLoop 只读诊断。

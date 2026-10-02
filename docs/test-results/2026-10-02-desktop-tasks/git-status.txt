@@ -1,0 +1,119 @@
+ M .gitignore
+ M AGENTS.md
+ M README.md
+ M android/app/src/main/AndroidManifest.xml
+ M android/app/src/main/java/com/listentogether/app/MainActivity.kt
+ M android/app/src/main/java/com/listentogether/app/network/Models.kt
+ M android/app/src/main/java/com/listentogether/app/network/RoomClient.kt
+ M android/app/src/main/java/com/listentogether/app/playback/PlaybackService.kt
+ D android/app/src/main/java/com/listentogether/app/sync/TrackQueue.kt
+ M android/app/src/main/java/com/listentogether/app/ui/CommonUi.kt
+ M android/app/src/main/java/com/listentogether/app/ui/CoverView.kt
+ M android/app/src/main/java/com/listentogether/app/ui/HomeScreen.kt
+ M android/app/src/main/java/com/listentogether/app/ui/LyricsState.kt
+ M android/app/src/main/java/com/listentogether/app/ui/MemberAvatar.kt
+ M android/app/src/main/java/com/listentogether/app/ui/PlaybackView.kt
+ M android/app/src/main/java/com/listentogether/app/ui/RoomPlayer.kt
+ M android/app/src/main/java/com/listentogether/app/ui/RoomScreen.kt
+ M android/app/src/main/java/com/listentogether/app/ui/theme/Color.kt
+ M android/app/src/main/java/com/listentogether/app/ui/theme/Shape.kt
+ M android/app/src/main/java/com/listentogether/app/ui/theme/Theme.kt
+ M android/app/src/main/res/values-night/themes.xml
+ M android/app/src/main/res/values/themes.xml
+ M android/app/src/test/java/com/listentogether/app/LyricsStateTest.kt
+ M android/app/src/test/java/com/listentogether/app/PlaybackViewTest.kt
+ M android/app/src/test/java/com/listentogether/app/RoomClientSessionTest.kt
+ M android/app/src/test/java/com/listentogether/app/ScreenStateTest.kt
+ D android/app/src/test/java/com/listentogether/app/TrackQueueTest.kt
+ M docs/deployment.md
+ M docs/development-pitfalls.md
+ M docs/modules/01-android-ui.md
+ M docs/modules/02-client-session.md
+ M docs/modules/03-playback-service.md
+ M docs/modules/05-room-domain.md
+ M docs/modules/06-http-api.md
+ M docs/modules/07-websocket.md
+ M docs/modules/08-library-audio.md
+ M docs/modules/09-build-deployment.md
+ M docs/modules/10-testing-observability.md
+ M docs/next-development-plan.md
+ M docs/protocol.md
+ M docs/track-metadata-design.md
+ M docs/verification.md
+ M scripts/check-doc-links.mjs
+ M scripts/metadata-manager.html
+ M scripts/metadata-manager.mjs
+ M scripts/package-deploy.ps1
+ M server/package-lock.json
+ M server/package.json
+ M server/src/app.ts
+ M server/src/library/catalog.ts
+ M server/src/realtime/socket.ts
+ M server/src/rooms/store.ts
+ M server/src/routes/audio.ts
+ M server/src/routes/cover.ts
+ M server/src/routes/lyrics.ts
+ M server/test/app.test.ts
+ M server/test/catalog.test.ts
+ M server/test/cover.test.ts
+ M server/test/lyrics.test.ts
+ M server/test/mini-schema.ts
+ M server/test/protocol.test.ts
+ M server/test/realtime.test.ts
+ M server/test/rooms.test.ts
+?? android/app/src/main/java/com/listentogether/app/network/SnapshotCollector.kt
+?? android/app/src/main/java/com/listentogether/app/playback/TrackMetadata.kt
+?? android/app/src/main/java/com/listentogether/app/ui/AnimalAvatars.kt
+?? android/app/src/main/java/com/listentogether/app/ui/CatalogScreen.kt
+?? android/app/src/main/java/com/listentogether/app/ui/ConversationScreen.kt
+?? android/app/src/main/java/com/listentogether/app/ui/MembersSheet.kt
+?? android/app/src/main/java/com/listentogether/app/ui/QueueMove.kt
+?? android/app/src/main/java/com/listentogether/app/ui/QueueScreen.kt
+?? android/app/src/main/java/com/listentogether/app/ui/QueueSwipeRow.kt
+?? android/app/src/main/java/com/listentogether/app/ui/RoomLayout.kt
+?? android/app/src/main/java/com/listentogether/app/ui/ThemeSelector.kt
+?? android/app/src/main/res/drawable-nodpi/
+?? android/app/src/test/java/com/listentogether/app/AnimalAvatarTest.kt
+?? android/app/src/test/java/com/listentogether/app/QueueChatRecoveryTest.kt
+?? android/app/src/test/java/com/listentogether/app/RoomUiInteractionTest.kt
+?? android/app/src/test/java/com/listentogether/app/SnapshotCollectorTest.kt
+?? android/app/src/test/java/com/listentogether/app/TrackMetadataTest.kt
+?? docs/ListenTogether-queue-chat-design.md
+?? docs/ListenTogether-ui-design.md
+?? docs/test-results/2026-09-30-queue-chat-QC-0-QC-A/
+?? docs/test-results/2026-09-30-queue-chat-QC-B1-B2/
+?? docs/test-results/2026-09-30-queue-chat-QC-C/
+?? docs/test-results/2026-09-30-queue-chat-QC-D/
+?? docs/test-results/2026-09-30-queue-chat-acceptance/
+?? docs/test-results/2026-09-30-queue-chat-device/
+?? docs/test-results/2026-09-30-ui-concept/
+?? docs/test-results/2026-10-01-android-ui/
+?? docs/test-results/2026-10-01-animal-avatars/
+?? docs/test-results/2026-10-01-queue-chat-fixes/
+?? docs/test-results/2026-10-01-queue-chat-reacceptance/
+?? docs/test-results/2026-10-01-ui-minimal/
+?? docs/test-results/2026-10-02-chat-keyboard/
+?? docs/test-results/2026-10-02-desktop-tasks/
+?? docs/ui-prototype/
+?? scripts/qcd-bench.mjs
+?? scripts/qcd-fixture.mjs
+?? scripts/qcd-mixed-load.mjs
+?? scripts/qcd-slow-client.mjs
+?? server/scripts/
+?? server/src/library/catalog-index.ts
+?? server/src/library/cover-cache.ts
+?? server/src/library/pool.ts
+?? server/src/realtime/outbox.ts
+?? server/src/realtime/protocol.ts
+?? server/src/realtime/quotas.ts
+?? server/src/rooms/avatars.ts
+?? server/src/rooms/dedupe.ts
+?? server/test/acceptance-regression.test.ts
+?? server/test/avatars.test.ts
+?? server/test/catalog-index.test.ts
+?? server/test/catalog-search.test.ts
+?? server/test/chat.test.ts
+?? server/test/cover-cache.test.ts
+?? server/test/metadata.test.ts
+?? server/test/queue.test.ts
+?? server/test/token-revocation.test.ts

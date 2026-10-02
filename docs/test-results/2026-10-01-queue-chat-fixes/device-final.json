@@ -1,0 +1,45 @@
+{
+  "capturedAt": "2026-10-01T04:21:14.931Z",
+  "serial": "192.168.43.15:41293",
+  "model": "PHQ110",
+  "apk": {
+    "bytes": 21008793,
+    "sha256": "abcb8582ed25d87a50574f07043addc6d2e73d554bb1030b389177b6118eb17c"
+  },
+  "diagnosticFile": "diag-20261001-113157.jsonl",
+  "localPause": [
+    {
+      "type": "playback",
+      "deviceLabel": "OPPO PHQ110",
+      "wallClockMs": 1790825793587,
+      "monotonicMs": 431260990,
+      "roomCode": "9B99487B",
+      "trackId": "last-dance",
+      "version": 4,
+      "playerPositionMs": 137610,
+      "targetPositionMs": 137610,
+      "driftMs": 0,
+      "buffering": false,
+      "localPause": true,
+      "correction": "localPause",
+      "estimatedServerMs": 1790825792625
+    },
+    {
+      "type": "playback",
+      "deviceLabel": "OPPO PHQ110",
+      "wallClockMs": 1790826972988,
+      "monotonicMs": 432440392,
+      "roomCode": "9B99487B",
+      "trackId": "duo-yuan-dou-yao-zai-yi-qi",
+      "version": 9,
+      "playerPositionMs": 23671,
+      "targetPositionMs": 23671,
+      "driftMs": 0,
+      "buffering": false,
+      "localPause": true,
+      "correction": "localPause",
+      "estimatedServerMs": 1790826972020
+    }
+  ],
+  "runtimeErrors": ""
+}

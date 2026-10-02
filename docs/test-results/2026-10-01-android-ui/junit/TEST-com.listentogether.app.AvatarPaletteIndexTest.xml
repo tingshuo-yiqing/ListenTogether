@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.listentogether.app.AvatarPaletteIndexTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-09-30T21:49:26" hostname="LAPTOP-8H39RU28" time="0.044">
+  <properties/>
+  <testcase name="differentIdsAreAllowedToSpreadAcrossPalette" classname="com.listentogether.app.AvatarPaletteIndexTest" time="0.025"/>
+  <testcase name="indexAlwaysStaysWithinPalette" classname="com.listentogether.app.AvatarPaletteIndexTest" time="0.019"/>
+  <testcase name="sameMemberIdAlwaysGetsSameIndex" classname="com.listentogether.app.AvatarPaletteIndexTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

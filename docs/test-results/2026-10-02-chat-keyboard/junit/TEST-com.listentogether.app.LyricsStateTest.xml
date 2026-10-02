@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.listentogether.app.LyricsStateTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-10-01T16:41:22" hostname="LAPTOP-8H39RU28" time="0.003">
+  <properties/>
+  <testcase name="textWithoutTimestampsShowsNoTimeline" classname="com.listentogether.app.LyricsStateTest" time="0.001"/>
+  <testcase name="parsedLinesAreReady" classname="com.listentogether.app.LyricsStateTest" time="0.0"/>
+  <testcase name="noFlagShowsNoLyrics" classname="com.listentogether.app.LyricsStateTest" time="0.0"/>
+  <testcase name="nullAfterFetchFailureOffersRetryState" classname="com.listentogether.app.LyricsStateTest" time="0.0"/>
+  <testcase name="emptyTextWithFlagIsLoading" classname="com.listentogether.app.LyricsStateTest" time="0.0"/>
+  <testcase name="loadingAndFailureTextsDiffer" classname="com.listentogether.app.LyricsStateTest" time="0.0"/>
+  <testcase name="noTrackIsEmpty" classname="com.listentogether.app.LyricsStateTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

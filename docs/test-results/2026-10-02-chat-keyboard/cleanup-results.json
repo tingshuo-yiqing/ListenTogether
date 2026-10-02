@@ -1,0 +1,10 @@
+{
+  "defaultInputMethod": "com.sohu.inputmethod.sogou.chuizi/com.sohu.inputmethod.sogou.SogouIME",
+  "showImeWithHardKeyboard": "0",
+  "userRotation": "1",
+  "accelerometerRotation": "1",
+  "rotationMode": "free",
+  "temporaryKeyboardPackage": "",
+  "reverse": "",
+  "verifiedApkSha256": "041b42955fb8bf6b740960e5032bb3c0c9e8c0e8932304d8ac70e5693aa3c753"
+}

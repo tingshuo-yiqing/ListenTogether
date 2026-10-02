@@ -1,0 +1,28 @@
+{
+  "base": "http://127.0.0.1:64956",
+  "passed": 16,
+  "checks": [
+    "health",
+    "v2 capabilities",
+    "old HTTP client 426",
+    "old WS client 426",
+    "real WS and unique animal avatars",
+    "45 tracks and public album metadata",
+    "search pagination and album projection",
+    "stale revision 409",
+    "unauthorized catalog 401",
+    "audio Range 206/1024 bytes",
+    "audio without member 401",
+    "cover and lyrics readable",
+    "WS clock domain response",
+    "first request promotes paused current track",
+    "member add broadcasts pending queue",
+    "replayed request keeps one queue entry"
+  ],
+  "failure": {
+    "name": "AssertionError",
+    "message": "Expected values to be strictly equal:\n\nundefined !== 403\n"
+  },
+  "temporaryMembersExited": true,
+  "scope": "real HTTP/WS; no device or audible-sync claim"
+}

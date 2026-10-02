@@ -1,5 +1,6 @@
 package com.listentogether.app.ui
 
+import android.os.SystemClock
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -10,10 +11,13 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -24,30 +28,34 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items as itemsLrc
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.SkipNext
-import androidx.compose.material.icons.outlined.SkipPrevious
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -67,27 +75,29 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
-import android.os.SystemClock
 import com.listentogether.app.formatTime
 import com.listentogether.app.network.ConnectionStatus
 import com.listentogether.app.network.RoomClient
 import com.listentogether.app.network.Track
 import com.listentogether.app.network.UiState
-import com.listentogether.app.sync.TrackQueue
-import com.listentogether.app.ui.LrcLine
-import com.listentogether.app.ui.indexAt
-import com.listentogether.app.ui.parseLrc
 import kotlin.math.abs
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -165,7 +175,12 @@ internal fun rememberRoomPlayer(client: RoomClient, ui: UiState, track: Track?):
     }
     val positionFlow = remember(client) { client.state.map { it.positionMs }.distinctUntilChanged() }
     LaunchedEffect(state) { positionFlow.collect { state.positionMs = it } }
-    LaunchedEffect(state, track?.id) { state.dragged = null }
+    LaunchedEffect(state, track?.id, ui.room?.entryId) {
+        // 切曲或队列耗尽时只清 UI 预览，不能把上一条目的目标带到新曲。
+        state.dragged = null
+        state.pendingSeek = null
+        state.pendingSeekVersion = -1L
+    }
     // 快照确认：命令之后任何 version 更新的快照，其位置贴合目标即视为跳转已生效。
     // 确认条件用相对推进量，避免 target 很小时 `positionMs >= target - 1500` 对任意非负位置恒真。
     LaunchedEffect(state, ui.room) {
@@ -189,7 +204,7 @@ internal fun rememberRoomPlayer(client: RoomClient, ui: UiState, track: Track?):
     return state
 }
 
-/** 底部常驻 mini 播放器：细进度条 + 歌名 + 播放键；整条点击进入展开页。 */
+/** 当前曲唯一常驻入口：真实封面、曲名和歌手展开播放器，独立播放键不会触发展开。 */
 @Composable
 @UnstableApi
 internal fun MiniPlayer(
@@ -199,53 +214,74 @@ internal fun MiniPlayer(
     track: Track?,
     onExpand: () -> Unit,
 ) {
-    val duration = (track?.durationMs ?: 1).coerceAtLeast(1).toFloat()
+    if (track == null) return
+    val duration = track.durationMs.coerceAtLeast(1).toFloat()
     val playing = ui.room?.playing == true && !ui.locallyPaused
-    val shown = state.shownMs().toFloat().coerceIn(0f, duration)
-    val fraction = if (track != null) shown / duration else 0f
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        modifier = Modifier.fillMaxWidth().navigationBarsPadding(),
-    ) {
-        Column {
-            Box(
-                Modifier.fillMaxWidth().height(3.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Box(
-                    Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).fillMaxHeight()
-                        .background(MaterialTheme.colorScheme.primary)
-                )
-            }
-            Row(
-                // 用 clickable 而不是 detectTapGestures：前者带语义点击动作与涟漪，
-                // 读屏/TalkBack 才点得开播放页（手势写法对无障碍不可见）。
-                Modifier.fillMaxWidth().clickable(onClick = onExpand)
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                val cover = rememberCoverBitmap(client, track, 44.dp)
-                Box(modifier = Modifier.size(44.dp), contentAlignment = Alignment.Center) {
-                    if (cover != null) Image(bitmap = cover.asImageBitmap(), contentDescription = null, modifier = Modifier.size(44.dp).clip(RoundedCornerShape(6.dp)))
-                    else if (track != null) CoverPlaceholder(44.dp)
+    val fraction = (state.shownMs().toFloat() / duration).coerceIn(0f, 1f)
+    val playerColor = MaterialTheme.colorScheme.primary
+    val playerInk = MaterialTheme.colorScheme.onPrimary
+    Box(Modifier.fillMaxWidth().navigationBarsPadding(), contentAlignment = Alignment.Center) {
+        Surface(
+            color = playerColor,
+            contentColor = playerInk,
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.widthIn(max = 560.dp).fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+        ) {
+            Box {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Row(
+                        Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
+                            .clickable(role = Role.Button, onClickLabel = "展开播放器", onClick = onExpand)
+                            .padding(horizontal = 4.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        val cover = rememberCoverBitmap(client, track, 44.dp)
+                        if (cover != null) {
+                            Image(
+                                bitmap = cover.asImageBitmap(), contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.size(44.dp).clip(RoundedCornerShape(10.dp)),
+                            )
+                        } else CoverPlaceholder(44.dp, corner = 10.dp)
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                track.title, style = MaterialTheme.typography.titleMedium,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            )
+                            if (!track.artist.isNullOrBlank()) {
+                                Text(
+                                    track.artist, style = MaterialTheme.typography.bodySmall,
+                                    color = playerInk, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
+                    }
+                    PlayPauseButton(client, ui, track, playing, 48.dp, onPlayerBar = true)
+                    if (client.isHost) {
+                        NextButton(ui.status == ConnectionStatus.Ready, playerInk) { client.skipNext() }
+                    }
                 }
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    track?.title ?: if (client.isHost) "选一首喜欢的歌" else "等待房主选歌",
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-                Spacer(Modifier.width(12.dp))
-                PlayPauseButton(client, ui, track, playing, size = 44.dp)
+                Box(
+                    Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(2.dp)
+                        .background(playerInk.copy(alpha = 0.25f)),
+                ) {
+                    Box(Modifier.fillMaxWidth(fraction).fillMaxHeight().background(playerInk))
+                }
             }
         }
     }
 }
 
-/** 展开播放页内容：完整进度拖拽、切歌与时间显示；由 MainActivity 挂进 ModalBottomSheet。 */
+/**
+ * 竖屏展开页：主体可滚动，关闭及播放控制固定；只发送 RoomClient 意图，不持有播放器。
+ * 封面和歌词始终按顺序呈现，空当前曲退出弹层，避免队列耗尽后残留旧曲控制。
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @UnstableApi
@@ -254,76 +290,92 @@ internal fun PlayerSheet(
     ui: UiState,
     state: RoomPlayerState,
     track: Track?,
-    onLockedTap: () -> Unit,
+    @Suppress("UNUSED_PARAMETER") onLockedTap: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val duration = (track?.durationMs ?: 1).coerceAtLeast(1).toFloat()
-    val playing = ui.room?.playing == true && !ui.locallyPaused
-    val shown = state.shownMs().toFloat().coerceIn(0f, duration)
-    // 切歌只认连接就绪且歌单非空；房主发 select 指令（环形顺序见 TrackQueue），非房主交给调用方提示。
-    val canSkip = ui.status == ConnectionStatus.Ready && ui.tracks.isNotEmpty()
-    val skip: (Int) -> Unit = { direction ->
-        if (client.isHost) TrackQueue.skip(ui.tracks, ui.room?.trackId, direction)?.let { client.command("select", trackId = it) }
-        else onLockedTap()
+    if (track == null) {
+        LaunchedEffect(Unit) { onDismiss() }
+        return
     }
-    // skipPartiallyExpanded：默认会先停在"半屏"锚点，真机实测此时进度滑条与时间都在屏幕外
-    // （PHQ110，2026-09-25），主控制项要点开后再滚一次才看得到。改成直接展开到内容高度，
-    // 小屏/大字体仍由内容列自身的 verticalScroll 兜底。
+    val playing = ui.room?.playing == true && !ui.locallyPaused
+    val duration = track.durationMs.coerceAtLeast(1).toFloat()
+    val shown = state.shownMs().toFloat().coerceIn(0f, duration)
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    DisposableEffect(state) {
+        // 弹层关闭可取消正在拖动的显示预览；已发出的 pendingSeek 仍在房间作用域等待确认。
+        onDispose { state.dragged = null }
+    }
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        containerColor = MaterialTheme.colorScheme.surface,
+        dragHandle = null,
     ) {
-        // 以标题、主控与进度为中心；小屏或大字体时内容仍可滚动。
         Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp).padding(bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            Modifier.fillMaxWidth().fillMaxHeight(0.96f),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            val cover = rememberCoverBitmap(client, track, 180.dp)
-            if (cover != null) {
-                Image(
-                    bitmap = cover.asImageBitmap(),
-                    contentDescription = null,
-                    modifier = Modifier.size(180.dp).clip(RoundedCornerShape(12.dp))
-                )
-            } else if (track != null) {
-                CoverPlaceholder(180.dp, corner = 12.dp)
-            } else {
-                Spacer(Modifier.height(12.dp))
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp)) {
+                    Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = "收起播放器")
+                }
             }
-            Text(
-                track?.title ?: if (client.isHost) "选一首喜欢的歌" else "等待房主选歌",
-                style = MaterialTheme.typography.headlineSmall,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center
-            )
-            if (!track?.artist.isNullOrEmpty()) {
-                Text(
-                    track!!.artist!!,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center
-                )
+            BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+                // 可用高度决定封面，而主控制区不参与滚动；矮屏仍留出歌词观看区。
+                val coverSize = (maxHeight - 250.dp).coerceIn(132.dp, 252.dp)
+                val lyricHeight = (maxHeight - coverSize - 112.dp).coerceAtLeast(132.dp)
+                Column(
+                    Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
+                        .padding(horizontal = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    val cover = rememberCoverBitmap(client, track, coverSize)
+                    if (cover != null) {
+                        Image(
+                            bitmap = cover.asImageBitmap(), contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.size(coverSize).clip(RoundedCornerShape(24.dp)),
+                        )
+                    } else CoverPlaceholder(coverSize, corner = 24.dp)
+                    Spacer(Modifier.height(20.dp))
+                    Text(
+                        track.title, style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.SemiBold, maxLines = 2,
+                        overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
+                    )
+                    if (!track.artist.isNullOrBlank()) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            track.artist, style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
+                        )
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    // lyricsVer 同样重建子树：同曲换词也不短暂露出旧缓存与滚动位置。
+                    key(track.id, track.hasLyrics, track.lyricsVer) {
+                        LyricsSection(client, track, shown.toLong(), lyricHeight)
+                    }
+                }
             }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                SkipButton(Icons.Outlined.SkipPrevious, "上一首", canSkip) { skip(-1) }
-                PlayPauseButton(client, ui, track, playing, size = 64.dp)
-                SkipButton(Icons.Outlined.SkipNext, "下一首", canSkip) { skip(1) }
-            }
-            SliderRow(client, ui, state, track, duration, shown)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(formatTime(shown.toLong()), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(formatTime(track?.durationMs ?: 0), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            // 换曲重建取值与滚动状态，避免 produceState 沿用上一首已加载的文本。
-            key(track?.id, track?.hasLyrics) {
-                LyricsSection(client, track, shown.toLong())
+            Column(
+                Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                SliderRow(client, ui, state, track, duration, shown)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(28.dp),
+                ) {
+                    Spacer(Modifier.size(48.dp))
+                    PlayPauseButton(client, ui, track, playing, size = 68.dp)
+                    if (client.isHost) {
+                        NextButton(ui.status == ConnectionStatus.Ready) { client.skipNext() }
+                    } else Spacer(Modifier.size(48.dp))
+                }
             }
         }
     }
@@ -331,113 +383,138 @@ internal fun PlayerSheet(
 
 @Composable
 @UnstableApi
-private fun PlayPauseButton(client: RoomClient, ui: UiState, track: Track?, playing: Boolean, size: Dp) {
+private fun PlayPauseButton(
+    client: RoomClient,
+    ui: UiState,
+    track: Track?,
+    playing: Boolean,
+    size: Dp,
+    onPlayerBar: Boolean = false,
+) {
     val haptics = LocalHapticFeedback.current
-    FilledIconButton(
-        onClick = {
-            // 点击类动作用轻触感（TextHandleMove 是"轻点一下"级），长按级震动留给拖动确认；
-            // 失败与否由状态横幅承载，不用震动表达错误。
-            haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-            client.setPlaying(!playing)
-        },
-        enabled = ui.status == ConnectionStatus.Ready && track != null,
-        modifier = Modifier.size(size),
-        colors = IconButtonDefaults.filledIconButtonColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary
-        )
-    ) {
-        Icon(
-            if (playing) Icons.Outlined.Pause else Icons.Outlined.PlayArrow,
-            contentDescription = if (playing) "暂停" else "播放",
-            modifier = Modifier.size(size * 0.6f)
-        )
+    val label = if (client.isHost) {
+        if (playing) "暂停播放" else "播放"
+    } else if (playing) "暂停本机" else "恢复跟听"
+    val action = {
+        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        client.setPlaying(!playing)
+    }
+    val enabled = ui.status == ConnectionStatus.Ready && track != null
+    val icon = if (playing) Icons.Outlined.Pause else Icons.Outlined.PlayArrow
+    if (onPlayerBar) {
+        IconButton(onClick = action, enabled = enabled, modifier = Modifier.size(size)) {
+            Icon(icon, contentDescription = label, modifier = Modifier.size(24.dp))
+        }
+    } else {
+        FilledIconButton(
+            onClick = action, enabled = enabled, modifier = Modifier.size(size),
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+            ),
+        ) {
+            Icon(icon, contentDescription = label, modifier = Modifier.size(32.dp))
+        }
     }
 }
 
-/** 切歌键：上一首/下一首共用的 48dp 圆钮；禁用态由 canSkip 控制。 */
+/** 房主下一首允许在待播为空时清掉当前曲；不添加客户端猜测的队列状态。 */
 @Composable
-private fun SkipButton(icon: ImageVector, label: String, enabled: Boolean, onClick: () -> Unit) {
+private fun NextButton(
+    enabled: Boolean,
+    color: Color = MaterialTheme.colorScheme.onSurface,
+    onClick: () -> Unit,
+) {
     val haptics = LocalHapticFeedback.current
-    FilledTonalIconButton(
-        onClick = {
-            haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-            onClick()
-        },
-        enabled = enabled,
-        modifier = Modifier.size(48.dp)
+    IconButton(
+        onClick = { haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove); onClick() },
+        enabled = enabled, modifier = Modifier.size(48.dp),
     ) {
-        Icon(imageVector = icon, contentDescription = label)
+        Icon(Icons.Outlined.SkipNext, contentDescription = "下一首", tint = color.copy(alpha = if (enabled) 1f else 0.38f))
     }
 }
 
-/** 圆点端点 + 细轨道的进度拖拽条（默认 M3 Slider 手柄 4×44dp 竖条观感突兀）。 */
+/** 原生滑条保留触控、键盘与读屏进度；视觉时间仅在操作时出现，seek 仍等待服务端确认。 */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @UnstableApi
-private fun SliderRow(client: RoomClient, ui: UiState, state: RoomPlayerState, track: Track?, duration: Float, shown: Float) {
-    val sliderColors = SliderDefaults.colors()
-    val sliderEnabled = client.isHost && ui.status == ConnectionStatus.Ready && track != null
+private fun SliderRow(client: RoomClient, ui: UiState, state: RoomPlayerState, track: Track, duration: Float, shown: Float) {
+    val sliderEnabled = client.isHost && ui.status == ConnectionStatus.Ready
+    val interactions = remember { MutableInteractionSource() }
+    val dragging by interactions.collectIsDraggedAsState()
+    val pressed by interactions.collectIsPressedAsState()
+    val focused by interactions.collectIsFocusedAsState()
+    val inputMode = LocalInputModeManager.current.inputMode
+    val operating = sliderEnabled && (state.dragged != null || dragging || pressed || (focused && inputMode == InputMode.Keyboard))
+    val sliderColors = SliderDefaults.colors(
+        activeTrackColor = MaterialTheme.colorScheme.primary,
+        inactiveTrackColor = MaterialTheme.colorScheme.outlineVariant,
+    )
     val haptics = LocalHapticFeedback.current
-    Slider(
-        value = shown,
-        onValueChange = { state.dragged = it },
-        onValueChangeFinished = {
-            state.dragged?.let { dragged ->
-                // 拖动结束是"重"动作，保留长按级触感与点击类区分开。
-                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                state.seek(dragged.toLong().coerceIn(0L, duration.toLong()), ui.room?.version ?: -1L)
-            }
-        },
-        valueRange = 0f..duration,
-        enabled = sliderEnabled,
-        thumb = {
-            Box(
-                Modifier.size(14.dp)
-                    .clip(CircleShape)
-                    .background(if (sliderEnabled) sliderColors.thumbColor else sliderColors.disabledThumbColor)
-            )
-        },
-        track = {
-            val played = if (duration > 0f) shown / duration else 0f
-            Box(
-                Modifier.fillMaxWidth().height(5.dp)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(if (sliderEnabled) sliderColors.inactiveTrackColor else sliderColors.disabledInactiveTrackColor)
-            ) {
+    Column(Modifier.fillMaxWidth()) {
+        Slider(
+            value = shown,
+            onValueChange = { state.dragged = it },
+            onValueChangeFinished = {
+                state.dragged?.let { target ->
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    state.seek(target.toLong().coerceIn(0L, duration.toLong()), ui.room?.version ?: -1L)
+                }
+            },
+            modifier = Modifier.fillMaxWidth().height(48.dp).semantics {
+                contentDescription = "播放进度"
+                stateDescription = "${formatTime(shown.toLong())}，共 ${formatTime(track.durationMs)}"
+            },
+            valueRange = 0f..duration, enabled = sliderEnabled, interactionSource = interactions,
+            thumb = {
                 Box(
-                    Modifier.fillMaxWidth(played).fillMaxHeight()
-                        .background(if (sliderEnabled) sliderColors.activeTrackColor else sliderColors.disabledActiveTrackColor)
+                    Modifier.size(12.dp).clip(CircleShape)
+                        .background(if (operating) sliderColors.thumbColor else Color.Transparent),
                 )
+            },
+            track = {
+                Box(
+                    Modifier.fillMaxWidth().height(3.dp).clip(CircleShape)
+                        .background(sliderColors.inactiveTrackColor),
+                ) {
+                    Box(
+                        Modifier.fillMaxWidth((shown / duration).coerceIn(0f, 1f)).fillMaxHeight()
+                            .background(sliderColors.activeTrackColor),
+                    )
+                }
+            },
+        )
+        // 占位高度固定，时间显隐不会把播放键推到指尖之外。
+        Box(Modifier.fillMaxWidth().height(20.dp)) {
+            if (operating) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(formatTime(shown.toLong()), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(formatTime(track.durationMs), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
-    )
+    }
 }
 
 /**
- * 播放页内嵌滚动歌词：本机播放位置驱动逐行高亮（parseLrc/indexAt 纯函数定位）。
- * - 当前行滚到视口顶部偏下 70dp 处（foundation 1.8 没有像素级居中 API，用顶部留白近似）；
- *   跟随只在当前行变化或用户滚动结束恢复时触发，不做逐帧微调；
- * - 手势滚动暂停自动跟随；手势与惯性滚动停止 3 秒后自动恢复，期间继续滚动则重新计时；
- * - 无歌词 / 加载失败 / 歌词无时间轴时显示占位文案，不出现空白区。
+ * 真实 LRC 逐行跟随：仅当前行/恢复跟随时滚动，用户手势与惯性结束 3 秒后回位。
+ * 读取失败独立反馈并允许重试；不会用示意歌词或页面时间生成歌词内容。
  */
 @Composable
-private fun LyricsSection(client: RoomClient, track: Track?, positionMs: Long) {
-    // produceState 以 (id, hasLyrics) 为键：换曲立即重启取值。
-    // 首值用 ""（而非 null）区分"还没取"与"取到了但没有"：null=无歌词/失败，""=加载中。
-    val lyricText = produceState<String?>(if (track?.hasLyrics == true) "" else null, track?.id, track?.hasLyrics) {
-        if (track == null || !track.hasLyrics) { value = null; return@produceState }
+private fun LyricsSection(client: RoomClient, track: Track, positionMs: Long, height: Dp) {
+    var retryVersion by remember { mutableIntStateOf(0) }
+    val lyricText = produceState<String?>(if (track.hasLyrics) "" else null, track.id, track.lyricsVer, retryVersion) {
+        if (!track.hasLyrics) { value = null; return@produceState }
+        value = ""
         client.state.first { it.credentials != null }
-        value = client.fetchLyrics(track)
+        value = client.fetchLyrics(track)?.takeIf { it.isNotEmpty() }
     }.value
-    val lines = remember(track?.id, lyricText) { lyricText?.let { parseLrc(it) } ?: emptyList() }
+    val lines = remember(track.id, lyricText) { lyricText?.let { parseLrc(it) } ?: emptyList() }
     val listState = rememberLazyListState()
     val current = indexAt(lines, positionMs)
-    var manualPaused by remember(track?.id) { mutableStateOf(false) }
-    var resumeTick by remember(track?.id) { mutableIntStateOf(0) }
+    var manualPaused by remember(track.id) { mutableStateOf(false) }
+    var resumeTick by remember(track.id) { mutableIntStateOf(0) }
     val latestCurrent by rememberUpdatedState(current)
-
-    // 自动滚动不产生 UserInput 源事件；只由用户手势暂停，惯性结束后才开始恢复倒计时。
     val followStopper = Modifier.nestedScroll(object : NestedScrollConnection {
         override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
             if (source == NestedScrollSource.UserInput && (consumed.x != 0f || consumed.y != 0f)) {
@@ -453,8 +530,6 @@ private fun LyricsSection(client: RoomClient, track: Track?, positionMs: Long) {
         delay(3_000)
         manualPaused = false
     }
-
-    // 恢复事件也驱动跟随：歌曲暂停或处于长句时，当前行不变也必须回到观看位。
     LaunchedEffect(listState, lines) {
         snapshotFlow { LyricsFollowPosition(latestCurrent, manualPaused) }
             .lyricsFollowTargets()
@@ -462,35 +537,37 @@ private fun LyricsSection(client: RoomClient, track: Track?, positionMs: Long) {
                 if (target != null && target in lines.indices) listState.animateScrollToItem(target)
             }
     }
-
-    Box(Modifier.fillMaxWidth().height(220.dp), contentAlignment = Alignment.Center) {
-        // 状态判定抽到 LyricsState.kt 的纯函数：这里只负责渲染，文案与条件可被单测钉住。
+    Box(Modifier.fillMaxWidth().height(height), contentAlignment = Alignment.Center) {
         val uiState = lyricsUiState(track, lyricText, lines.size)
-        when (uiState) {
-            LyricsUiState.Ready -> LazyColumn(
+        if (uiState == LyricsUiState.Ready) {
+            LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxWidth().fillMaxHeight().then(followStopper),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(top = 70.dp, bottom = 150.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(top = 44.dp, bottom = height - 44.dp),
             ) {
-                itemsLrc(lines, key = { "${it.timeMs}-${it.text}" }) { line ->
-                    val active = line.timeMs == (lines.getOrNull(current)?.timeMs ?: -1L)
+                // 按行下标区分同时间/同文本的合法重复行，避免重复 key 导致 LazyColumn 崩溃。
+                itemsIndexed(lines, key = { index, line -> "$index-${line.timeMs}" }) { index, line ->
+                    val active = index == current
                     Text(
                         line.text,
-                        style = if (active) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium,
-                        color = if (active) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
+                        color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+                            .semantics { if (active) stateDescription = "当前歌词" },
                     )
                 }
             }
-            else -> lyricsPlaceholderText(uiState)?.let { text ->
-                Text(
-                    text,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
+        } else {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                lyricsPlaceholderText(uiState)?.let {
+                    Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                }
+                if (uiState == LyricsUiState.Failed) {
+                    TextButton(onClick = { retryVersion++ }) { Text("重试歌词") }
+                }
             }
         }
     }
