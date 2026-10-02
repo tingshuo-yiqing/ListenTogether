@@ -1,0 +1,64 @@
+listen-together-server-0.1.0-20261002-013255.tar.gz: OK
+listen-together-metadata-20261002.tar.gz: OK
+ffmpeg version 8.0.1-3ubuntu2 Copyright (c) 2000-2025 the FFmpeg developers
+
+added 112 packages, and audited 113 packages in 2s
+
+34 packages are looking for funding
+  run `npm fund` for details
+
+1 moderate severity vulnerability
+
+To address all issues, run:
+  npm audit fix
+
+Run `npm audit` for details.
+
+> listen-together-server@0.1.0 prebuild
+> node scripts/protocol-schema.mjs
+
+
+> listen-together-server@0.1.0 build
+> tsc
+
+
+up to date, audited 80 packages in 3s
+
+34 packages are looking for funding
+  run `npm fund` for details
+
+1 moderate severity vulnerability
+
+To address all issues, run:
+  npm audit fix
+
+Run `npm audit` for details.
+
+added 1 package, and audited 2 packages in 1s
+
+found 0 vulnerabilities
+
+added 112 packages, and audited 113 packages in 2s
+
+34 packages are looking for funding
+  run `npm fund` for details
+
+1 moderate severity vulnerability
+
+To address all issues, run:
+  npm audit fix
+
+Run `npm audit` for details.
+
+> listen-together-server@0.1.0 prebuild
+> node scripts/protocol-schema.mjs
+
+
+> listen-together-server@0.1.0 build
+> tsc
+
+npm notice
+npm notice New minor version of npm available! 11.6.0 -> 11.21.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.21.0
+npm notice To update run: npm install -g npm@11.21.0
+npm notice

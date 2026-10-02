@@ -1,0 +1,148 @@
+listen-together-server-0.1.0-20261002-122430.tar.gz: OK
+listen-together-metadata-20261002.tar.gz: OK
+deploy/listen-together.service: OK
+deploy/metadata-manager.service: OK
+deploy/nginx.conf: OK
+deploy/server.env.example: OK
+docs/deployment.md: OK
+docs/media-README.md: OK
+docs/protocol.md: OK
+server/package-lock.json: OK
+server/package.json: OK
+server/tsconfig.json: OK
+server/dist/app.js: OK
+server/dist/events.js: OK
+server/dist/index.js: OK
+server/dist/library/catalog-index.js: OK
+server/dist/library/catalog.js: OK
+server/dist/library/cover-cache.js: OK
+server/dist/library/pool.js: OK
+server/dist/realtime/limits.js: OK
+server/dist/realtime/outbox.js: OK
+server/dist/realtime/protocol-schema.generated.js: OK
+server/dist/realtime/protocol.js: OK
+server/dist/realtime/quotas.js: OK
+server/dist/realtime/socket.js: OK
+server/dist/rooms/avatars.js: OK
+server/dist/rooms/dedupe.js: OK
+server/dist/rooms/store.js: OK
+server/dist/routes/audio.js: OK
+server/dist/routes/cover.js: OK
+server/dist/routes/lyrics.js: OK
+server/scripts/protocol-schema.mjs: OK
+server/src/app.ts: OK
+server/src/events.ts: OK
+server/src/index.ts: OK
+server/src/library/catalog-index.ts: OK
+server/src/library/catalog.ts: OK
+server/src/library/cover-cache.ts: OK
+server/src/library/pool.ts: OK
+server/src/realtime/limits.ts: OK
+server/src/realtime/outbox.ts: OK
+server/src/realtime/protocol-schema.generated.ts: OK
+server/src/realtime/protocol.ts: OK
+server/src/realtime/quotas.ts: OK
+server/src/realtime/socket.ts: OK
+server/src/rooms/avatars.ts: OK
+server/src/rooms/dedupe.ts: OK
+server/src/rooms/store.ts: OK
+server/src/routes/audio.ts: OK
+server/src/routes/cover.ts: OK
+server/src/routes/lyrics.ts: OK
+server/test/acceptance-regression.test.ts: OK
+server/test/app.test.ts: OK
+server/test/avatars.test.ts: OK
+server/test/catalog-index.test.ts: OK
+server/test/catalog-search.test.ts: OK
+server/test/catalog.test.ts: OK
+server/test/chat.test.ts: OK
+server/test/cover-cache.test.ts: OK
+server/test/cover.test.ts: OK
+server/test/lyrics.test.ts: OK
+server/test/metadata.test.ts: OK
+server/test/mini-schema.ts: OK
+server/test/protocol.test.ts: OK
+server/test/queue.test.ts: OK
+server/test/realtime.test.ts: OK
+server/test/rooms.test.ts: OK
+server/test/token-revocation.test.ts: OK
+server/test/fixtures/catalog.json: OK
+server/test/fixtures/README.md: OK
+server/test/fixtures/tone.mp3: OK
+ffmpeg version 8.0.1-3ubuntu2 Copyright (c) 2000-2025 the FFmpeg developers
+
+added 112 packages, and audited 113 packages in 2s
+
+34 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+
+> listen-together-server@0.1.0 prebuild
+> node scripts/protocol-schema.mjs
+
+
+> listen-together-server@0.1.0 build
+> tsc
+
+
+up to date, audited 80 packages in 2s
+
+34 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+
+added 1 package, and audited 2 packages in 1s
+
+found 0 vulnerabilities
+
+added 112 packages, and audited 113 packages in 2s
+
+34 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+
+> listen-together-server@0.1.0 prebuild
+> node scripts/protocol-schema.mjs
+
+
+> listen-together-server@0.1.0 build
+> tsc
+
+npm notice
+npm notice New minor version of npm available! 11.6.0 -> 11.21.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.21.0
+npm notice To update run: npm install -g npm@11.21.0
+npm notice
+
+up to date, audited 80 packages in 1s
+
+34 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+PASS health
+PASS v2 capabilities
+PASS old HTTP client 426
+PASS old WS client 426
+PASS real WS and unique animal avatars
+PASS 45 tracks and public album metadata
+PASS search pagination and album projection
+PASS stale revision 409
+PASS unauthorized catalog 401
+PASS audio Range 206/1024 bytes
+PASS audio without member 401
+PASS cover and lyrics readable
+PASS WS clock domain response
+PASS first request promotes paused current track
+PASS member add broadcasts pending queue
+PASS replayed request keeps one queue entry
+PASS member shared playback command rejected
+PASS chat ack and both clients receive same message
+PASS chat retry deduplicates seq
+PASS host play and skip follow authoritative state
+PASS exhausted queue clears current track
+{"passed":21,"failure":null}
+PREPARED=20261002-013255,20261002-metadata-v2

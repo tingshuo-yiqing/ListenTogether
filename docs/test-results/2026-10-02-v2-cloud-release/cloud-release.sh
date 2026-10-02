@@ -88,6 +88,7 @@ prepare|resume)
  trap - EXIT
  chown -R root:listen "$release/server" "$metadata"
  chmod -R g+rX "$release/server" "$metadata"
+ chmod -R go-w "$release/server" "$metadata"
  printf 'PREPARED=%s,%s\n' "$id" "$meta_id"
  ;;
 publish)

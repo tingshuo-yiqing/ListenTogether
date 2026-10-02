@@ -1,0 +1,8 @@
+HEALTH={"ok":true,"rooms":1,"onlineMembers":0,"wsConnections":0,"eventLoop":{"p50Ms":20.12,"p99Ms":21.234,"maxMs":28.049}}
+CURRENT=id=20261002-013255
+prev=20260928-1815
+
+TEMP-PORT=
+MEDIA-HASH=216fc9ba9dcffd73e563652c56bc18a3eaa8a29691202e670cd140e4c0ea601c  /opt/listen-together/media/catalog.json
+
+PRODUCTION-ERRORS=0

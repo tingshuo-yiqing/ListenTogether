@@ -1,4 +1,22 @@
-# Ubuntu 部署（本项目未自动部署到云端）
+# Ubuntu 部署与维护
+
+## 当前在产版本（2026-10-02）
+
+后端 `/opt/listen-together/releases/20261002-013255/server`，前版20260928-1815；管理器 metadata-v2，前版metadata-03。当前是协议v2，旧v1 APK按设计426；debug试用APK [下载](http://8.166.126.136/downloads/ListenTogether-v2-20261002.apk)，SHA256 041b4295…；公网业务21项已验。用户明确授权先上线并在使用中修复，完整真机/双机门槛未改判。
+
+发布不覆盖 media；45首全文件hash与权限不变。server-only更新包实际版本/hash见 [发布记录](test-results/2026-10-02-v2-cloud-release/README.md)。FFmpeg8.0.1已装，管理器仍经SSH隧道访问。源码与候选包已锁Ajv8.18.0；当前包需要额外测试夹具（后端跨端头像、工具合成MP3），执行脚本按只读夹具上传，验后清除，不写持久曲库。
+
+需要紧急回退时，先确认当前使用状况，再分别把 server 与 metadata-manager 链接切回旧版本并 restart。版本文件随实际 id/prev 更新；当前版本发布时的私有环境和版本备份位于 release/ops，不上传 GitHub。回退到v1时新APK出现不兼容提示为预期，不能悄悄改协议。
+
+```bash
+sudo ln -sfn /opt/listen-together/releases/20260928-1815/server /opt/listen-together/server
+sudo ln -sfn /opt/listen-together/metadata-releases/20260928-metadata-03 /opt/listen-together/metadata-manager
+printf 'id=20260928-1815\nprev=20260928-1718\n' | sudo tee /opt/listen-together/current-version.txt
+sudo systemctl restart listen-together listen-together-metadata
+curl --noproxy '*' --max-time 5 --fail http://127.0.0.1:3000/health
+```
+
+本轮保留前版，没有主动对生产进行失败注入或回滚。以下模板继续供维护复用。
 
 > 2026-09-22 深夜更新：SSH 登录问题已解决（根因是 authorized_keys 此前从未实际写入成功），只读盘点与首次部署已完成，见 [test-results/2026-09-22-m4-first-deploy](test-results/2026-09-22-m4-first-deploy/README.md)。第 0 节排查记录保留存档；第 1 节末尾附实测注记（Node 安装方式、swap、构建权限细节与自检脚本）。
 

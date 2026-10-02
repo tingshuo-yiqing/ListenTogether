@@ -18,12 +18,23 @@
 
 发布时发现日常 `member-sim.mjs` HTTP/WS 缺 v2 头，已补齐；v1 后端仍可忽略该头。旧 `tunnel-verify.mjs` 硬编码 demo 曲库与旧协议，此轮不拿它判 v2 发布。当前发布执行器 [cloud-release.sh](cloud-release.sh) 分 prepare/publish：独立 release + npm ci/build/测试 + 33002 端口实测，正式切换前再次核对无活跃房间；失败恢复旧代码/管理器链接与版本文件，不覆盖真实曲库。
 
-## 当前状态
+## 发布结果（已完成）
+
+- GitHub main：源码提交 `48b9a71`、Ajv 修补与发布夹具提交 `08fc870` 已推送；本次成功证据随后单独提交。固定部署源码见 [GitHub 提交](https://github.com/tingshuo-yiqing/ListenTogether/commit/08fc870)。
+- 云端后端 `20261002-013255`、管理器 `20261002-metadata-v2` 已正式切换；旧链接/版本文件与环境配置备份留在服务端 ops，失败回滚 trap 在切换期间有效。本轮未主动制造生产失败/回滚。
+- 云端 Node 24.9.0 原生 npm ci/build：server **74/74**、工具 **51/51**；[服务器日志](server-tests.log)、[工具日志](metadata-tests.log)。33002 独立端口、正式回环与 Windows 到公网三轮业务检查各 **21/21**：[shadow](shadow-verify.json)、[production](production-verify.json)、[public](public-verify.json)。临时成员主动退出，空房按 TTL 自动回收，33002 已关闭。
+- 两项 systemd 服务 active/running、NRestarts=0；[服务状态](services-after.txt)，[发布后状态](final-cloud-state.txt)，[收尾复查](closeout-cloud-state.txt)确认临时空房已回收、rooms/online/ws 为 0。管理器 Hi 为默认，三视图与 FFmpeg 8.0.1 已生效，只通过原 SSH 隧道访问 3100。
+- 真实 media 全文件 SHA256、属主/组/权限不变：[发布前清单](media-before.sha256)、[发布后核对](media-after-check.log)、[权限前](media-before-permissions.txt)/[后](media-after-permissions.txt)。45 首 catalog SHA256 仍 `216fc9ba…`；没有音频/歌词/封面替换、删曲或真实曲库维护。
+- Ajv 固定 8.18.0，生产依赖审计 **0**；[修补前](npm-audit.json)、[修补后](npm-audit-after.json)。保留原失败日志，不把部署夹具缺失伪写为产品缺陷。
+- [APK 直接下载](http://8.166.126.136/downloads/ListenTogether-v2-20261002.apk) 与 [SHA256](http://8.166.126.136/downloads/ListenTogether-v2-20261002.apk.sha256)。实际公网下载 200、21,787,637 字节、SHA256 `041b42955fb8bf6b740960e5032bb3c0c9e8c0e8932304d8ac70e5693aa3c753`，与固定 APK 一致；[下载校验](apk-public.json)。静态文件由已有 Nginx 默认站点提供，不改播放 API、管理端口或 Nginx 配置。
+- 发布版本、两个包 hash、源码提交与验证总表见 [release.json](release.json)。保持 HTTP 试用路线 A；没有新真机/声音同步结论。
+
+## 准备阶段记录（历史）
 
 GitHub 主线首批提交 `48b9a71` 已推送。云端准备期间，服务端 73/74 的首次失败是后端包刻意未包含安卓契约测试资源；追加独立 15 张头像/映射夹具后 74/74。管理器首轮 47/51 同样缺少合成 demo-soft.mp3，已补测试夹具；保留首轮日志，夹具在验收后移除，不写真实 media。
 
 安装审计报告 Ajv `$data` ReDoS 已知问题；产品未启用该选项，本轮仍将同主版本依赖锁到修补版 8.18.0，并重跑本地 server 74/74。依据 [GitHub 官方公告](https://github.com/advisories/GHSA-2g4f-4pwh-qvx6)，不执行全库 npm audit fix。更新后的后端包见 [backend-package.json](backend-package.json)，替代准备阶段原后端包；APK 无改动。
 
-准备与本地验证已完成。真实云端切换、Git 提交/远端确认与 APK 下载结果将在执行后追加；此段不作为发布成功证据。
+此前处于准备阶段的记录已由上方真实发布证据更新；完整真机矩阵保持待验。
 
 新协议需要配套 APK `041b4295…`（debug 开发试用），旧 APK 收到 426 为设计行为。该 APK 已有独立 MuMu 布局实测，PHQ110 新包未安装；系统通知元数据显示、真实弱网/权限手势/字号小屏与 M2 双真机/声音仍待验。TLS/域名继续遵循已决定的试用路线 A；本轮未变更同步参数、真实曲库或手机。

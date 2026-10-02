@@ -1,0 +1,23 @@
+PASS health
+PASS v2 capabilities
+PASS old HTTP client 426
+PASS old WS client 426
+PASS real WS and unique animal avatars
+PASS 45 tracks and public album metadata
+PASS search pagination and album projection
+PASS stale revision 409
+PASS unauthorized catalog 401
+PASS audio Range 206/1024 bytes
+PASS audio without member 401
+PASS cover and lyrics readable
+PASS WS clock domain response
+PASS first request promotes paused current track
+PASS member add broadcasts pending queue
+PASS replayed request keeps one queue entry
+PASS member shared playback command rejected
+PASS chat ack and both clients receive same message
+PASS chat retry deduplicates seq
+PASS host play and skip follow authoritative state
+PASS exhausted queue clears current track
+{"passed":21,"failure":null}
+PUBLISHED=20261002-013255,20261002-metadata-v2

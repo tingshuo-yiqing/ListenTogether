@@ -1,5 +1,11 @@
 # 10 测试、诊断与验收
 
+## 云端发布验收（2026-10-02）
+
+在原生 Node24.9.0/cloud Linux 使用候选 npm ci 依赖实跑 server74/74、scripts51/51；修补 Ajv8.18.0 后生产审计0。独立候选33002、正式回环3000、Windows到公网各21项实际HTTP/WS/媒体/队列/聊天检查通过；临时成员退出，空房按TTL回收。APK公网200与SHA256匹配、真实曲库全文件哈希/权限不变。未补真机或音频层同步结论。
+
+部署首次缺少只读跨端头像/合成音频夹具导致73/74与47/51，保留原失败记录，补齐夹具再跑完整门禁，未跳过断言。结果见 [云端报告](../test-results/2026-10-02-v2-cloud-release/README.md)。
+
 ## 当前无真机门禁（2026-10-02）
 
 server build + 74/74、Android cleanTest 强制 180 项/24 套件（0 失败/错误/跳过）、assembleDebug 与 Lint XML issue=0、scripts 51/51。新增 server metadata 2/token-revocation 2、Android TrackMetadataTest 3；使用实际 ID3 标签、实际 HTTP/WS 与实际 Media3 builder，避免只重复实现的测试。

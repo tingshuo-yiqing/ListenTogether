@@ -1,0 +1,11 @@
+CheckedAt=2026-10-02T12:56:22.105960+08:00
+Id=listen-together.service
+ActiveState=active
+SubState=running
+NRestarts=0
+
+Id=listen-together-metadata.service
+ActiveState=active
+SubState=running
+NRestarts=0
+{"ok":true,"rooms":0,"onlineMembers":0,"wsConnections":0,"eventLoop":{"p50Ms":20.12,"p99Ms":21.234,"maxMs":30.573}}

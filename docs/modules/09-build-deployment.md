@@ -1,5 +1,13 @@
 # 09 构建、脚本与部署
 
+## 当前云端发布（2026-10-02 已执行）
+
+已按用户明确授权把全部待交付源码与证据推送 main，并发布后端 20261002-013255（旧 20260928-1815）、管理器 20261002-metadata-v2（旧 metadata-03）。在独立目录 npm ci/build/test、独立 33002 检查21项；正式切换前 room/online/ws=0，失败回滚 trap 就绪。正式与公网各21项通过，两个服务 active/running/NRestarts=0；真实曲库全文件 SHA256、属主/组/权限不变。代码归 root:listen，并收回组/其他写权限。
+
+Ajv 8.18.0，生产审计0；FFmpeg8.0.1供云端管理器 AAC/M4A 导入。只读安卓头像/合成音频夹具用于 Linux 门禁，验后移除，ServerOnly 包仍不带 media/demo-media。旧 helper member-sim 补 v2 HTTP/WS 头，旧 v1忽略该头。
+
+APK 041B4295… 通过已有 Nginx默认站点 /downloads 提供，公网下载与固定副本哈希一致；没有操作手机。完整数据、APK链接与回滚说明见 [发布报告](../test-results/2026-10-02-v2-cloud-release/README.md)。
+
 ## 无曲库候选包与失败回滚（2026-10-02）
 
 check-doc-links.mjs 排除 .workbuddy/deploy-artifacts：这些目录里的下载运行时/候选包文档不属于项目文档，避免对 Node 发行包未附源码的链接误报；实际项目 Markdown 继续检查，首次失败日志与修正复跑已归档。

@@ -1,0 +1,1 @@
+{"serviceVersion":"20260929-hi-aac","default":"higequ","minScore":0.8,"sources":[{"name":"higequ","label":"Hi歌曲优先（未命中时尝试其他来源）"},{"name":"qq","label":"QQ 音乐（华语覆盖最好，一次请求拿全字段）"},{"name":"netease","label":"网易云音乐（翻唱/AI 版本多，靠阈值卡住）"},{"name":"musicbrainz","label":"MusicBrainz（有流派与权威专辑年份，中文条目偏弱）"}]}

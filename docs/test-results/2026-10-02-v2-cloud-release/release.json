@@ -1,0 +1,55 @@
+{
+  "publishedAt": "2026-10-02T12:49:41.161752+08:00",
+  "sourceCommit": "08fc87070abfb5d4a46f96cf96a7455bed6d6a71",
+  "branch": "main",
+  "github": "https://github.com/tingshuo-yiqing/ListenTogether",
+  "server": {
+    "release": "20261002-013255",
+    "previous": "20260928-1815",
+    "package": {
+      "path": "deploy-artifacts/listen-together-server-0.1.0-20261002-122430.tar.gz",
+      "bytes": 142829,
+      "sha256": "aa9ad5c18b2e4186a0c7b1acd7f17de0727a401edffc71922f3455509127fdf4",
+      "checksumFile": "deploy-artifacts/SHA256SUMS-20261002-122430.txt",
+      "ajv": "8.18.0"
+    },
+    "base": "http://8.166.126.136:3000",
+    "protocol": 2
+  },
+  "metadata": {
+    "release": "20261002-metadata-v2",
+    "previous": "20260928-metadata-03",
+    "package": {
+      "path": "deploy-artifacts/listen-together-metadata-20261002.tar.gz",
+      "sha256": "09c6d590803e66fbb1c3ea0562a0956045b93f79eb2e0df0e1c577193138aba2",
+      "bytes": 294402,
+      "checksumFile": "deploy-artifacts/listen-together-metadata-20261002.tar.sha256",
+      "includesMedia": false
+    },
+    "defaultSource": "higequ",
+    "serviceVersion": "20260929-hi-aac"
+  },
+  "apk": {
+    "url": "http://8.166.126.136/downloads/ListenTogether-v2-20261002.apk",
+    "status": 200,
+    "bytes": 21787637,
+    "sha256": "041b42955fb8bf6b740960e5032bb3c0c9e8c0e8932304d8ac70e5693aa3c753",
+    "contentType": "application/octet-stream"
+  },
+  "validation": {
+    "linuxServerTests": 74,
+    "linuxMetadataTests": 51,
+    "shadowChecks": 21,
+    "productionChecks": 21,
+    "publicChecks": 21,
+    "npmProductionVulnerabilities": 0,
+    "mediaBytesUnchanged": true,
+    "mediaPermissionsUnchanged": true
+  },
+  "realTracks": 45,
+  "catalogSha256": "216fc9ba9dcffd73e563652c56bc18a3eaa8a29691202e670cd140e4c0ea601c",
+  "devicesOperated": false,
+  "syncParametersChanged": false,
+  "ffmpeg": "8.0.1-3ubuntu2",
+  "node": "24.9.0"
+}

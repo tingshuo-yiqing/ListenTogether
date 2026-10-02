@@ -1,0 +1,9 @@
+Id=listen-together.service
+ActiveState=active
+SubState=running
+NRestarts=0
+
+Id=listen-together-metadata.service
+ActiveState=active
+SubState=running
+NRestarts=0

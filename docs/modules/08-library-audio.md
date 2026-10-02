@@ -1,5 +1,7 @@
 # 08 曲库与音频传输
 
+2026-10-02 发布：album 第9字段已在云端 v2 生效；管理器当前 Hi 默认/三视图/导入/回收能力已发布，FFmpeg8.0.1可用。45 首 media 的全部字节、属主/组/权限未改，不是曲库数据维护。证据：[发布](../test-results/2026-10-02-v2-cloud-release/README.md)。
+
 ## 专辑与删除补验（2026-10-02）
 
 loadCatalog 读取 album：非空手填 trim 后优先；否则 ID3 common.album trim 后兜底；未知 null，与 artist 同一次 parseFile。公开 toSummary 第九字段 album，catalog/search/当前曲一致，revision 随值变化；真实 TALB 标签与应用响应两项测试通过。
