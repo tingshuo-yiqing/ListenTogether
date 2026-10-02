@@ -1,0 +1,7 @@
+{
+  "path": "deploy-artifacts/listen-together-server-0.1.0-20261002-122430.tar.gz",
+  "bytes": 142829,
+  "sha256": "aa9ad5c18b2e4186a0c7b1acd7f17de0727a401edffc71922f3455509127fdf4",
+  "checksumFile": "deploy-artifacts/SHA256SUMS-20261002-122430.txt",
+  "ajv": "8.18.0"
+}

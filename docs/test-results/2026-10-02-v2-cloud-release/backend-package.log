@@ -1,0 +1,7 @@
+[1/4] server 构建通过（tsc 0 错误）
+      ServerOnly：不包含 media 或 demo-media，云端持久曲库单独维护。
+[2/4] 暂存目录就绪：D:\ListenTogether\deploy-artifacts\staging-20261002-122430
+[3/4] 打包完成：D:\ListenTogether\deploy-artifacts\listen-together-server-0.1.0-20261002-122430.tar.gz
+      大小 0.1 MB
+[4/4] SHA256 清单：D:\ListenTogether\deploy-artifacts\SHA256SUMS-20261002-122430.txt
+暂存目录已清理。上传服务器后用 sha256sum -c SHA256SUMS-*.txt 校验（tarball 行需手工比对）。

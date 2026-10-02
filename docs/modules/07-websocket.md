@@ -1,5 +1,7 @@
 # 07 WebSocket 实时通信
 
+2026-10-02 发布准备：Ajv 保持 8.x 主版本并锁到 8.18.0 修补版；入站仍使用文档 schema、现有校验选项，不启用 $data。补丁后 server 74/74，通过报告见 [云端发布](../test-results/2026-10-02-v2-cloud-release/README.md)。
+
 2026-10-01 最新修复与设备边界见 [修复报告](../test-results/2026-10-01-queue-chat-fixes/README.md)及 [verification](../verification.md)：server 63/63、安卓 173、脚本 51/51、Lint 0；ACC 代码/自动化通过，完整设备矩阵与发布仍待验。当前 APK ABCB8582… 已覆盖安装 PHQ110；历史报告保持原失败与对应版本。
 
 入站协议由 server/scripts/protocol-schema.mjs 在 dev/build/test 前从 protocol.md 生成 TS；运行时 Ajv 初始化编译一次，仅校验客户端消息分支，unknown 安全格式化错误。命令/队列/聊天统一去重与确认；限频不消耗结果槽位，chat 429 带原 clientMessageId。outbox 对 queue/chat 快照按完整封装 UTF-8 限 32KiB 分块，一帧在途，回调/drain 继续；未开始同类快照合并，已开始完整发送；每连接待发 512KiB/全服 64MiB，关闭/错误回收且迟到回调不重复计费。

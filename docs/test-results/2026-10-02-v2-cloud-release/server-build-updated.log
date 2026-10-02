@@ -1,0 +1,7 @@
+
+> listen-together-server@0.1.0 prebuild
+> node scripts/protocol-schema.mjs
+
+
+> listen-together-server@0.1.0 build
+> tsc

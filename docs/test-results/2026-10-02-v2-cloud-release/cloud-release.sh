@@ -9,17 +9,26 @@ metadata="$base/metadata-releases/$meta_id"
 upload=/tmp/listentogether-publish-20261002
 ops="$release/ops"
 media="$base/media"
+server_archive=${2:-listen-together-server-0.1.0-20261002-013255.tar.gz}
+server_sums=${3:-SHA256SUMS-20261002-013255.txt}
 case "${1:-}" in
-prepare)
+prepare|resume)
+ if [[ "$1" == prepare ]]; then
  test ! -e "$release"
  test ! -e "$metadata"
+ else
+ test -s "$ops/previous-server.txt"
+ test -s "$ops/media-before.sha256"
+ test "$(readlink -f "$base/server")" != "$release/server"
+ fi
  cd "$upload"
- head -n 1 SHA256SUMS-20261002-013255.txt | sha256sum -c -
+ head -n 1 "$server_sums" | sha256sum -c -
  sha256sum -c listen-together-metadata-20261002.tar.sha256
+ if [[ "$1" == prepare ]]; then
  mkdir -p "$release" "$metadata"
- tar -xzf listen-together-server-0.1.0-20261002-013255.tar.gz -C "$release"
+ tar -xzf "$server_archive" -C "$release"
  cd "$release"
- tail -n +2 "$upload/SHA256SUMS-20261002-013255.txt" | sha256sum -c -
+ tail -n +2 "$upload/$server_sums" | sha256sum -c -
  test ! -e "$release/media"
  test ! -e "$release/demo-media"
  tar -xzf "$upload/listen-together-metadata-20261002.tar.gz" -C "$metadata"
@@ -34,6 +43,17 @@ prepare)
  cp -p "$media/catalog.json" "$ops/catalog-before.json"
  (cd "$media"; find . -type f -print0 | sort -z | xargs -0 sha256sum) > "$ops/media-before.sha256"
  (cd "$media"; find . -type f -printf '%P %U %G %m\n' | sort) > "$ops/media-before-permissions.txt"
+ fi
+ if [[ "$1" == resume ]]; then
+ tar -xzf "$upload/$server_archive" -C "$release"
+ (cd "$release"; tail -n +2 "$upload/$server_sums" | sha256sum -c -)
+ tar -xzf "$upload/listen-together-metadata-20261002.tar.gz" -C "$metadata"
+ fi
+ # 跨端契约测试读取 15 个安卓头像；单独上传只读夹具，后端发布包仍不含 Android 工程。
+ mkdir -p "$release/test-contracts"
+ tar -xzf "$upload/avatar-contracts.tar.gz" -C "$release/test-contracts"
+ ln -sfn "$release/test-contracts/android" "$release/android"
+ ln -sfn "$release/test-contracts/demo-media" "$metadata/demo-media"
  if ! command -v ffmpeg >/dev/null; then
    DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l apt-get update
    DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l apt-get install -y --no-install-recommends ffmpeg
@@ -44,6 +64,7 @@ prepare)
  runuser -u listen -- npm ci --cache /tmp/npm-cache-listen
  runuser -u listen -- npm run build
  runuser -u listen -- npm test > "$ops/server-tests.log" 2>&1
+ unlink "$release/android"
  runuser -u listen -- npm prune --omit=dev
  chown -R listen-metadata:listen "$metadata"
  cd "$metadata"
@@ -53,6 +74,8 @@ prepare)
  runuser -u listen-metadata -- npm run build
  cd "$metadata"
  runuser -u listen-metadata -- node --test 'scripts/**/*.test.mjs' > "$ops/metadata-tests.log" 2>&1
+ unlink "$metadata/demo-media"
+ case "$release/test-contracts" in /opt/listen-together/releases/20261002-013255/test-contracts) rm -rf -- "$release/test-contracts" ;; *) exit 2 ;; esac
  cd "$metadata/server"
  runuser -u listen-metadata -- npm prune --omit=dev
  # 使用 listen 身份和同一只读真实曲库，在独立端口验证候选；没有操作在产房间。
@@ -100,10 +123,11 @@ publish)
  (cd "$media"; find . -type f -printf '%P %U %G %m\n' | sort) > "$ops/media-after-permissions.txt"
  cmp "$ops/media-before-permissions.txt" "$ops/media-after-permissions.txt"
  systemctl show listen-together listen-together-metadata -p Id -p ActiveState -p SubState -p NRestarts > "$ops/services-after.txt"
- systemctl is-active --quiet listen-together listen-together-metadata
+ systemctl is-active --quiet listen-together
+ systemctl is-active --quiet listen-together-metadata
  published=1
  trap - EXIT
  printf 'PUBLISHED=%s,%s\n' "$id" "$meta_id"
  ;;
-*) echo 'usage: cloud-release.sh prepare|publish' >&2; exit 2 ;;
+*) echo 'usage: cloud-release.sh prepare|resume|publish' >&2; exit 2 ;;
 esac
